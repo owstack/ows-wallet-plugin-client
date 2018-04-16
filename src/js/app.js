@@ -1,6 +1,7 @@
 'use strict';
 
 var modules = [
+  'gettext',
 	'ngLodash',
 	'owsWalletPluginClient.api',
 	'owsWalletPluginClient.impl'

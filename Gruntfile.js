@@ -50,17 +50,22 @@ module.exports = function(grunt) {
       },
       js: {
         src: [
-          'src/js/api/*.js',
-          'src/js/impl/**/*.js'
+          'src/js/app.js',
+          'src/js/translations.js',
+          'src/js/impl/**/*.js',
+          'src/js/api/*.js'
         ],
         dest: 'build/ows-wallet-plugin-client.js'
       },
       js_bundle: {
         src: [
-          'src/js/api/*.js',
-          'src/js/impl/**/*.js',
+          'bower_components/ionic/release/js/ionic.bundle.min.js',
+          'bower_components/angular-gettext/dist/angular-gettext.js',
           'bower_components/ng-lodash/build/ng-lodash.js',
-          'bower_components/ionic/release/js/ionic.bundle.min.js'
+          'src/js/app.js',
+          'src/js/translations.js',
+          'src/js/impl/**/*.js',
+          'src/js/api/*.js'
         ],
         dest: 'build/ows-wallet-plugin-client.bundle.js'
       },
@@ -125,8 +130,7 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.registerTask('default', ['nggettext_compile', 'sass', 'concat']);
-  grunt.registerTask('release', ['default', 'copy:release', 'uglify']);
+  grunt.registerTask('default', ['nggettext_compile', 'sass', 'concat', 'copy:release', 'uglify']);
   grunt.registerTask('translate', ['nggettext_extract']);
   grunt.registerTask('clean', ['exec:clean']);
 };
