@@ -2,7 +2,7 @@
   "name": "@owstack/ows-wallet-plugin-client",
   "description": "The client framework and API for OWS Wallet.",
   "author": "Open Wallet Stack",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "androidVersionCode": "0",
   "keywords": [
     "ows",

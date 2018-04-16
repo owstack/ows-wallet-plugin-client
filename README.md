@@ -1,7 +1,7 @@
-
 OWS Wallet Plugin Client
+=======
 
-This is plugin client framework and API for OWS Wallet.
+The plugin client framework and API for OWS Wallet.
 
 ## Installation
 
