@@ -1,0 +1,13 @@
+{
+  "name": "ows-wallet-plugin-client",
+  "keywords": [
+    "ows",
+    "open wallet stack",
+    "wallet",
+    "multisignature"
+  ],
+  "dependencies": {
+    "ionic": "https://github.com/owstack/ionic-v1.git#ows-release",
+    "ng-lodash": "0.2.3"
+  }
+}
