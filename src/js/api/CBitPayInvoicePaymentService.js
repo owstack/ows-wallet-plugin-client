@@ -5,7 +5,7 @@ angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentServic
   /**
    * Service identification
    * { 
-   *   "pluginId": "com.bitpay.copay.plugin.service.invoice-payment",
+   *   "pluginId": "org.openwalletstack.ows-wallet.plugin.service.invoice-payment",
    *   "memo": "American Red Cross donation.",
    *   "api": {
    *     "url": "https://test.bitpay.com",
@@ -23,7 +23,7 @@ angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentServic
    *   }
    * }
    */
-  var pluginId = 'com.bitpay.copay.plugin.service.invoice-payment';
+  var pluginId = 'org.openwalletstack.ows-wallet.plugin.service.invoice-payment';
   var serviceDescProperties = [
     '.pluginId',
     '.memo',

@@ -380,7 +380,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   CApplet.prototype.initService = function(pluginId) {
     var request = {
       method: 'POST',
-      url: '/applet/' + this.header.appletId + '/service/' + pluginId + '/init',
+      url: '/applet/' + this.header.id + '/service/' + pluginId + '/init',
       data: {}
     }
 
@@ -394,7 +394,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   CApplet.prototype.hideSplash = function() {
     var request = {
       method: 'POST',
-      url: '/applet/' + this.header.appletId + '/config',
+      url: '/applet/' + this.header.id + '/config',
       data: {
         showSplash: false
       }
@@ -414,7 +414,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   CApplet.prototype.property = function(name, value) {
     var request = {
       method: 'POST',
-      url: '/applet/' + this.header.appletId + '/property/' + name,
+      url: '/applet/' + this.header.id + '/property/' + name,
       data: {
         value: value
       }
@@ -436,7 +436,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   CApplet.prototype.propertySet = function(set) {
     var request = {
       method: 'POST',
-      url: '/applet/' + this.header.appletId + '/propertyset',
+      url: '/applet/' + this.header.id + '/propertyset',
       data: {
         set: set
       }
@@ -457,7 +457,7 @@ angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentServic
   /**
    * Service identification
    * { 
-   *   "pluginId": "com.bitpay.copay.plugin.service.invoice-payment",
+   *   "pluginId": "org.openwalletstack.ows-wallet.plugin.service.invoice-payment",
    *   "memo": "American Red Cross donation.",
    *   "api": {
    *     "url": "https://test.bitpay.com",
@@ -475,7 +475,7 @@ angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentServic
    *   }
    * }
    */
-  var pluginId = 'com.bitpay.copay.plugin.service.invoice-payment';
+  var pluginId = 'org.openwalletstack.ows-wallet.plugin.service.invoice-payment';
   var serviceDescProperties = [
     '.pluginId',
     '.memo',
