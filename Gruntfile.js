@@ -59,7 +59,6 @@ module.exports = function(grunt) {
       },
       js_bundle: {
         src: [
-          'bower_components/ionic/release/js/ionic.bundle.min.js',
           'bower_components/angular-gettext/dist/angular-gettext.js',
           'bower_components/ng-lodash/build/ng-lodash.js',
           'src/js/app.js',
@@ -77,8 +76,7 @@ module.exports = function(grunt) {
       },
       css_bundle: {
         src: [
-          'build/css/*.css',
-          'bower_components/ionic/release/css/ionic.min.css'
+          'build/css/*.css'
         ],
         dest: 'build/ows-wallet-plugin-client.bundle.css'
       }
