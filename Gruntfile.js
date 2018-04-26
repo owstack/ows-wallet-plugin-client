@@ -101,7 +101,9 @@ module.exports = function(grunt) {
       },
       css_pre: {
         src: [
-          'build/css/*.css'
+          'build/css/*.css',
+          'bower_components/angular-gridster/dist/angular-gridster.min.css',
+          'bower_components/pattern-lock/pattern-lock.css'
         ],
         dest: 'build/ows-wallet-pre.css'
       }
