@@ -28,6 +28,9 @@ module.exports = function(grunt) {
         tasks: ['concat:js']
       }
     },
+    clean: {
+      release: ['release/']
+    },
     sass: {
       dist: {
         options: {
@@ -47,6 +50,13 @@ module.exports = function(grunt) {
       options: {
         sourceMap: false,
         sourceMapStyle: 'link' // embed, link, inline
+      },
+      djv: {
+        src: [
+          'node_modules/djv/djv.js',
+          'angular-djv/index.js'
+        ],
+        dest: 'angular-djv/angular-djv.js'
       },
       js_client: {
         src: [
@@ -151,11 +161,30 @@ module.exports = function(grunt) {
         files: {
           'src/js/translations.js': ['i18n/po/*.po']
         }
-      },
+      }
+    },
+    browserify: {
+      dist: {
+        files: {
+          'angular-bitauth/angular-bitauth.js': ['angular-bitauth/index.js']
+        },
+        options: {
+          exclude: ['www/index.html']
+        }
+      }
     }
   });
 
-  grunt.registerTask('default', ['nggettext_compile', 'sass', 'concat', 'copy:release', 'uglify']);
+  grunt.registerTask('default', [
+    'clean:release',
+    'nggettext_compile',
+    'sass',
+    'browserify',
+    'concat',
+    'copy:release',
+    'uglify'
+  ]);
+
   grunt.registerTask('translate', ['nggettext_extract']);
-  grunt.registerTask('clean', ['exec:clean']);
+  grunt.registerTask('trash', ['exec:clean']);
 };
