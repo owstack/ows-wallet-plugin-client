@@ -48,7 +48,7 @@ module.exports = function(grunt) {
         sourceMap: false,
         sourceMapStyle: 'link' // embed, link, inline
       },
-      js: {
+      js_client: {
         src: [
           'src/js/app.js',
           'src/js/translations.js',
@@ -57,28 +57,53 @@ module.exports = function(grunt) {
         ],
         dest: 'build/ows-wallet-plugin-client.js'
       },
-      js_bundle: {
+      js_pre: {
         src: [
+          // String translation/localization
           'bower_components/angular-gettext/dist/angular-gettext.js',
+          // Javascript utilities
           'bower_components/ng-lodash/build/ng-lodash.js',
-          'src/js/app.js',
-          'src/js/translations.js',
-          'src/js/impl/**/*.js',
-          'src/js/api/*.js'
+          // Create QR codes
+          'bower_components/qrcode-generator/js/qrcode.js',
+          'bower_components/qrcode-generator/js/qrcode_UTF8.js',
+          'bower_components/angular-qrcode/angular-qrcode.js',
+          // Time-ago utilities
+          'bower_components/moment/min/moment-with-locales.js',
+          'bower_components/angular-moment/angular-moment.js',
+          // CSV exporting
+          'bower_components/ng-csv/build/ng-csv.js', 
+          // MD5 checksum; supports Gravatar
+          'bower_components/angular-md5/angular-md5.js',
+          // Touch device directives
+          'bower_components/ngtouch/src/ngTouch.js',
+          // Copy to OS clipboard
+          'bower_components/angular-clipboard/angular-clipboard.js',
+          // UI notification overlays
+          'bower_components/ionic-toast/dist/ionic-toast.bundle.min.js',
+          // Drag-and-drop multi-column grid
+          'bower_components/angular-gridster/dist/angular-gridster.min.js',
+          // An Android style pattern lock interface
+          'bower_components/pattern-lock/angular-pattern-lock.min.js',
+          // Passwordless authentication using Bitcoin cryptography
+          'angular-bitauth/angular-bitauth.js',
+          // Dynamic JSON validator
+          'angular-djv/angular-djv.js',
+          // OWS Wallet plugin API client
+          'build/ows-wallet-plugin-client.js'
         ],
-        dest: 'build/ows-wallet-plugin-client.bundle.js'
+        dest: 'build/ows-wallet-pre.js'
       },
-      css: {
+      css_client: {
         src: [
           'build/css/*.css'
         ],
         dest: 'build/ows-wallet-plugin-client.css'
       },
-      css_bundle: {
+      css_pre: {
         src: [
           'build/css/*.css'
         ],
-        dest: 'build/ows-wallet-plugin-client.bundle.css'
+        dest: 'build/ows-wallet-pre.css'
       }
     },
     copy: {
@@ -87,10 +112,10 @@ module.exports = function(grunt) {
         flatten: false,
         cwd: 'build/',
         src: [
-          'ows-wallet-plugin-client.js',
-          'ows-wallet-plugin-client.bundle.js',
           'ows-wallet-plugin-client.css',
-          'ows-wallet-plugin-client.bundle.css'
+          'ows-wallet-plugin-client.js',
+          'ows-wallet-pre.css',
+          'ows-wallet-pre.js'
         ],
         dest: 'release/'
       }
@@ -102,7 +127,7 @@ module.exports = function(grunt) {
       prod: {
         files: {
           'release/ows-wallet-plugin-client.min.js': ['release/ows-wallet-plugin-client.js'],
-          'release/ows-wallet-plugin-client.bundle.min.js': ['release/ows-wallet-plugin-client.bundle.js']
+          'release/ows-wallet-pre.min.js': ['release/ows-wallet-pre.js']
         }
       }
     },
