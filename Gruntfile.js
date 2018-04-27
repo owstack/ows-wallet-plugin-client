@@ -51,13 +51,6 @@ module.exports = function(grunt) {
         sourceMap: false,
         sourceMapStyle: 'link' // embed, link, inline
       },
-      djv: {
-        src: [
-          'node_modules/djv/djv.js',
-          'angular-djv/index.js'
-        ],
-        dest: 'angular-djv/angular-djv.js'
-      },
       js_client: {
         src: [
           'src/js/app.js',
@@ -97,7 +90,8 @@ module.exports = function(grunt) {
           // Passwordless authentication using Bitcoin cryptography
           'angular-bitauth/angular-bitauth.js',
           // Dynamic JSON validator
-          'angular-djv/angular-djv.js',
+          'node_modules/djv/djv.js',
+          'angular-djv/index.js',
           // OWS Wallet plugin API client
           'build/ows-wallet-plugin-client.js'
         ],

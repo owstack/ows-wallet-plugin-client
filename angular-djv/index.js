@@ -1,9 +1,9 @@
 var djvModule = angular.module('djvModule', []);
-var djv = require('djv');
 
 djvModule.constant('MODULE_VERSION', '1.0.0');
 
-djvModule.provider("djv", function() {
+// 'djv' is a global provided by node_modules/djv/djv.js
+djvModule.provider('djv', function() {
   var provider = {};
 
   provider.$get = function() {
