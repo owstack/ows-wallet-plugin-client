@@ -122,6 +122,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   var sequence = 0;
   var promises = [];
 
+  init();
+
   root.sendMessage = function(request) {
     return new Promise(function(resolve, reject) {
 
@@ -183,43 +185,6 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     });
   };
 
-  function init() {
-    window.addEventListener('message', receiveMessage.bind(this));
-    start();
-    return this;
-  };
-
-  function start() {
-    var request = {
-     method: 'POST',
-     url: START_URL,
-     data: {}
-    }
-
-    root.sendMessage(request).then(function(response) {
-      $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: 200,
-        statusText: response.statusText
-      };
-
-      root.refreshScope(function(error) {
-        $rootScope.$emit('Client/Start', error);
-      });
-
-    }, function(error) {
-      $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: error.statusCode,
-        statusText: error.message
-      };
-      $rootScope.$emit('Client/Start', error);
-
-    });
-  };
-
   root.refreshScope = function(callback) {
     var request = {
      method: 'GET',
@@ -244,6 +209,44 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     }, function(error) {
       $log.error('[client] SCOPE ERROR: ' + error.message + ' (' + error.statusCode + ')');
       callback(error);
+    });
+  };
+
+  function init() {
+    window.addEventListener('message', receiveMessage.bind(this));
+    start();
+    return this;
+  };
+
+  function start() {
+    var request = {
+     method: 'POST',
+     url: START_URL,
+     data: {}
+    }
+
+    root.sendMessage(request).then(function(response) {
+      $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
+
+      clientServiceState = {
+        statusCode: 200,
+        statusText: response.statusText
+      };
+
+      root.refreshScope(function(error) {
+        if (!error) {
+          $rootScope.$emit('$pre.ready');
+        }
+      });
+
+    }, function(error) {
+      $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
+
+      clientServiceState = {
+        statusCode: error.statusCode,
+        statusText: error.message
+      };
+
     });
   };
 
@@ -308,8 +311,6 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     }
   };
 
-  init();
-
   return root;
 });
 
@@ -318,8 +319,15 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
 angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, pluginClientService) {
 
   /**
-   * Applet Properties.
-   * ------------------
+   * CApplet
+   *
+   * This class provides access to applet behavior. An instance of this class should be obtained from
+   * CContext/CSession or the singleton CEnvironment.
+   */
+
+  /**
+   * Applet Properties
+   * -----------------
    * 
    * Root scope provides access to the folling applet functions and properties.
    * 
@@ -342,20 +350,20 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    *   
    * applet.view - Applet view property.
    *   <div ng-style="{'background':applet.view.background}"></div>
-   * 
-   *
-   * Applet Events.
-   * --------------
+   */
+
+   /**
+   * Applet Events
+   * -------------
    * 
    * Each of the following events provide the following arguments to the subscriber:
    *   applet - the subject Applet object
    *   walletId - the wallet identifier on which the applet is presented
    * 
-   * 'Local/AppletEnter' - broadcast when opening an applet, before the applet is shown
-   * 'Local/AppletShown' - broadcast when opening an applet, after the applet is shown
-   * 'Local/AppletLeave' - broadcast when closing an applet, before before the applet is hidden
-   * 'Local/AppletHidden' - broadcast when closing an applet, after the applet is hidden
-   * 
+   * '$pre.beforeEnter' - broadcast when opening an applet, before the applet is shown
+   * '$pre.afterEnter' - broadcast when opening an applet, after the applet is shown
+   * '$pre.beforeLeave' - broadcast when closing an applet, before before the applet is hidden
+   * '$pre.afterLeave' - broadcast when closing an applet, after the applet is hidden
    */
 
   var _applet;
@@ -406,6 +414,10 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   /**
    * Set or get an applet property. Available property names are:
    *   'title' - set the applet header bar text.
+   *
+   * Get a property by omitting the value.
+   * Set a property by specifying a name-value pair.
+   *
    * @param {String} name - The applet property name to set or get.
    * @param {String} [value] - The value to set.
    * @return {String} The value of the specified property.
@@ -429,8 +441,11 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   /**
    * Set or get a set of applet properties. Available property names are:
    *   'title' - set the applet header bar text.
-   * @param {String} name - The applet property name to set or get.
-   * @param {String} [value] - The value to set.
+   *
+   * Set properties by providing an object of name-value pairs.
+   * Get properties by providing an array of names, one for each property.
+   * 
+   * @param {String} set - The applet property set; either an array or an object of name-values.
    * @return {Promise} A promise at completion.
    */
   CApplet.prototype.propertySet = function(set) {
@@ -653,6 +668,12 @@ angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentServic
 angular.module('owsWalletPluginClient.api').factory('CConst', function () {
 
   /**
+   * CConstants
+   *
+   * This class provides commonly used constant values.
+   */
+
+  /**
    * Constructor.
    * @return {CConst} An instance of CConst.
    * @constructor
@@ -672,20 +693,19 @@ angular.module('owsWalletPluginClient.api').factory('CConst', function () {
 angular.module('owsWalletPluginClient.api').factory('CContext', function (pluginClientService) {
 
   /**
+   * CContext
+   *
+   * This class provides the base context for bootstrapping an applet by retrieving and creating 
+   * the session object.
+   */
+
+  /**
    * Constructor.
    * @return {CContext} An instance of CContext.
    * @constructor
    */
   function CContext() {
     return this;
-  };
-
-  function sessionId() {
-    var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
-    if (sessionId.indexOf('&') >= 0) {
-      sessionId = sessionId.substring(0, sessionId.indexOf('&'));
-    }
-    return sessionId;
   };
 
   /**
@@ -702,12 +722,87 @@ angular.module('owsWalletPluginClient.api').factory('CContext', function (plugin
     return pluginClientService.sendMessage(request);
   };
 
+  /**
+   * Get the sessionId from the URL.
+   * @return {string} The seesion id.
+   * @private
+   */
+  function sessionId() {
+    var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
+    if (sessionId.indexOf('&') >= 0) {
+      sessionId = sessionId.substring(0, sessionId.indexOf('&'));
+    }
+    return sessionId;
+  };
+
   return CContext;
 });
 
 'use strict';
 
+angular.module('owsWalletPluginClient.api').factory('CEnvironment', function (CContext) {
+
+  /**
+   * CEnvironment
+   *
+   * This class provides a singleton object with reference to the complete applet runtime environment
+   * including session and applet oebjects.
+   */
+
+  var instance;
+
+  /**
+   * Constructor. This is a singleton class. An instance may be obtained using either
+   *   var env = new CEnvironment();
+   *   var env - CEnvironment.getInstance();
+   *
+   * @return {Object} The single instance of CEnvironment.
+   * @constructor
+   */
+  function CEnvironment() {
+  	var self = this;
+
+		if (instance) {
+    	return instance;
+    }
+    instance = self;
+
+    CContext.getSession().then(function(session) {
+      self.session = session;
+      return self.session.getApplet();
+
+    }).catch(function(error) {
+      $log.error("Failed to get session: " + error.message + ' (' + error.statusCode + ')');
+      throw error;
+
+    }).then(function(applet) {
+      self.applet = applet;
+
+    }).catch(function(error) {
+      $log.error("Failed to Initialize: " + error.message + ' (' + error.statusCode + ')');
+    });
+  };
+
+  /**
+   * Return the single instance of this class.
+   * @return {CEnvironment} The single instance of this class.
+   */
+  CEnvironment.getInstance = function() {
+    return instance || new CEnvironment();
+  };
+
+  return CEnvironment;
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) {
+
+  /**
+   * CError
+   *
+   * This class provides a wrapper for error messages coming from the host app.
+   */
 
   /**
    * Constructor.
@@ -728,30 +823,34 @@ angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) 
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem, PluginRegistry) {
+angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem) {
 
   /**
-   * PluginObject.
-   * -------------
+   * CPlugin
+   *
+   * This class provides access to plugin information.
+   */
+
+  /**
+   * PluginObject
+   * ------------
    * 
-   * Plugins are registered during the application build process.  Each plugin is represented
-   * as a plugin registry entry and defines properties as follows.
+   * Plugins are registered during the application build process.  Each plugin is represented as a
+   * plugin catalog entry and defines properties as follows.
    *
    * Properties shared by all plugins.
    *
-   *   {String} type - The type of plugin, 'applet' or 'service'.
-   *   {String} pluginId - The unique plugin identifier.
+   *   {String} kind - The type of plugin, 'applet' or 'service'.
+   *   {String} id - The unique plugin identifier.
    *   {String} name - Human readable name of the plugin.
    *   {String} description - A short description of the plugin.
    *   {String} author - The author of the plugin.
-   *   {String} date - The date the plugin is made available (typ. 'mm/dd/yyyy').
    *   {String} version - A version identfier for the plugin (typ. 'x.y.z').
    * 
    * Applet specific plugin properties.
    * 
-   *   {String} mainViewUri - The relative path to the applet main view.
-   *   {String} path - The relative path to the applet root location.
-   *   {Array of String} stylesheets - A list of style sheets to apply when the applet is opened.
+   *   {String} mainView - The relative path to the applet main view.
+   *   {String} uri - The relative path to the applet root location.
    *
    * Service specific plugin properties.
    * 
@@ -768,37 +867,35 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
   };
 
   /**
-   * Return the plugin registry entry for the specified plugin id.
-   * @param {String} pluginId - The plugin id that identifies a registered plugin.
+   * Return the plugin catalog entry for the specified plugin id.
+   * @param {String} id - The plugin id that identifies a plugin.
    * @return {PluginObject} An instance of a plugin object.
-   * @throws Will throw an error if no plugin registry was found.
+   * @throws Will throw an error if no plugin entry was found.
    * @static
    */
-  CPlugin.getRegistryEntry = function(pluginId) {
-//    return PluginRegistry.getEntry(pluginId);
+  CPlugin.getCatalogEntry = function(id) {
     var request = {
      method: 'GET',
-     url: '/plugin-registry?id=' + pluginId
+     url: '/plugin-catalog?id=' + id
     }
     return pluginClientService.sendMessage(request);
-
   };
 
   /**
    * Validate that the specified service description object contains all required properties.
    * @param {String} serviceDesc - A service description object specified in a skin.
    * @param {Array} requiredProperties - An array of required properties; e.g., ['.a','.b','.b.c'].
-   * @param {String} pluginId - The plugin id of the requestor.
+   * @param {String} id - The plugin id of the requestor.
    * @throws Will throw an error if serviceDesc is missing any required properties.
    * @static
    */
-  CPlugin.validateServiceDesc = function(serviceDesc, requiredProperties, pluginId) {
+  CPlugin.validateServiceDesc = function(serviceDesc, requiredProperties, id) {
     var result = CSystem.checkObject(serviceDesc, requiredProperties);
     if (result.missing.length > 0) {
-      throw new Error('Error: A skin with service plugin \'' + pluginId + '\' is missing required properties \'' + result.missing.toString() + '\'');
+      throw new Error('A skin with service plugin \'' + pluginId + '\' is missing required properties \'' + result.missing.toString() + '\'');
     }
     if (result.other.length > 0) {
-      $log.warn('Warning: A skin with service plugin \'' + pluginId + '\' has unrecognized properties \'' + result.other.toString() + '\'');
+      $log.warn('A skin with service plugin \'' + pluginId + '\' has unrecognized properties \'' + result.other.toString() + '\'');
     }
   };
 
@@ -808,6 +905,13 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
 'use strict';
 
 angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService, CApplet) {
+
+  /**
+   * CSession
+   *
+   * This class provides session functionality including reading and writing persistent data. An instance of
+   * this class should be obtained from CContext or the singleton CEnvironment.
+   */
 
   var _session;
 
@@ -906,6 +1010,12 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
 angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
 
   /**
+   * CSystem
+   *
+   * This class provides general purpose system utilities.
+   */
+
+  /**
    * Constructor.
    * @return {CSystem} An instance of CSystem.
    * @constructor
@@ -961,6 +1071,12 @@ angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
 angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateService) {
 
   /**
+   * CUtils
+   *
+   * This class provides business level utilities.
+   */
+
+  /**
    * Constructor.
    * @return {CUtils} An instance of CUtils.
    * @constructor
@@ -985,6 +1101,12 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
 'use strict';
 
 angular.module('owsWalletPluginClient.api').factory('CWallet', function (configService, txFormatService, FocusedWallet) {
+
+  /**
+   * CWallet
+   *
+   * This class provides host app wallet access.
+   */
 
   /**
    * Constructor.
