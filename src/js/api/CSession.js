@@ -6,10 +6,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * CSession
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained from CContext or the singleton CEnvironment.
+   * this class should be obtained from the '$pre.ready' event or the CContext class.
    */
-
-  var _session;
 
   /**
    * Constructor.  An instance of this class must be obtained from CContext.
@@ -19,7 +17,6 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    */
   function CSession(appletSession) {
     lodash.assign(this, appletSession);
-    _session = appletSession;
     return this;
   };
 
@@ -53,12 +50,15 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * @return {Promise<CApplet>} A promise for the applet.
    */
   CSession.prototype.getApplet = function () {
+    return this.applet;
+/*
     var request = {
       method: 'GET',
       url: '/session/' + this.id + '/applet',
       responseObj: 'CApplet'
     }
     return pluginClientService.sendMessage(request);
+*/
   };
 
   /**

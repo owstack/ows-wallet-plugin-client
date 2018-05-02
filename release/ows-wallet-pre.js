@@ -57657,11 +57657,9 @@ angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettext
 
 angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($log, lodash) {
 
-  var self;
-
   function ApiMessage(eventOrRequest, sequence) {
-    self = this;
-    self.event = {};
+    var self = this;
+    this.event = {};
 
     // Sequence must not be provided with an event.
     if (lodash.isUndefined(sequence)) {
@@ -57672,69 +57670,73 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($lo
       }
 
       // Construct a message from the event data.
-      self.event = event;
+      this.event = event;
 
       // Check the itegrity of the message event.
       validateEvent();
 
       // Assign the event message data to this message object and make alias assignments.
-      var data = JSON.parse(self.event.data);
-      lodash.assign(self, data);
+      var data = JSON.parse(this.event.data);
+      lodash.assign(this, data);
 
     } else {
       var request = eventOrRequest;
 
       // Construct a new message from the data and make alias assignments.
-      self.header = {
+      this.header = {
         sequence: (!lodash.isUndefined(sequence) ? sequence : -1),
         id: '' + new Date().getTime(),
         timestamp: new Date()
       };
-      self.request = request || {};
-      self.response = {};
+      this.request = request || {};
+      this.response = {};
     }
 
-    return self;
+    // Private methods
+    //
+    function transport() {
+      return {
+        header: this.header,
+        request: this.request,
+        response: this.response
+      }
+    };
+
+    function validateEvent() {
+      if(lodash.isUndefined(this.event.data)) {
+
+        // Invalid event.
+        this.response = {
+          statusCode: 500,
+          statusText: 'Invalid message event, no \'data\' found.',
+          data: {}
+        };
+        throw new Error();
+
+      } else if (!lodash.isString(this.event.data)) {
+
+        // Event data not a string.
+        this.response = {
+          statusCode: 500,
+          statusText: 'Invalid message event data, expected string argument but received object.',
+          data: {}
+        };
+        throw new Error();
+      }
+    };
+
+    return this;
   };
 
+  // Public methods
+  //
   ApiMessage.prototype.send = function(host) {
-    $log.info('[client] REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport()));
+    $log.info('[client] REQUEST  ' + this.header.sequence + ': ' + angular.toJson(transport()));
     host.postMessage(angular.toJson(transport()), '*');
   };
 
   ApiMessage.prototype.serialize = function() {
     return angular.toJson(transport());
-  };
-
-  function transport() {
-    return {
-      header: self.header,
-      request: self.request,
-      response: self.response
-    }
-  };
-
-  function validateEvent() {
-    if(lodash.isUndefined(self.event.data)) {
-
-      // Invalid event.
-      self.response = {
-        statusCode: 500,
-        statusText: 'Invalid message event, no \'data\' found.',
-        data: {}
-      };
-      throw new Error();
-
-    } else if (!lodash.isString(self.event.data)) {
-
-      // Event data not a string.
-      self.response = {
-        statusCode: 500,
-        statusText: 'Invalid message event data, expected string argument but received object.',
-        data: {}
-      };
-      throw new Error();
-    }
   };
 
   return ApiMessage;
@@ -57759,6 +57761,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   var sequence = 0;
   var promises = [];
 
+  // Public functions
+  //
   root.sendMessage = function(request) {
     return new Promise(function(resolve, reject) {
 
@@ -57811,7 +57815,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         // The client service is not ready. Short circuit the communication and immediatley respond.
         message.response = {
           statusCode: 503,
-          statusText: 'Client service is not ready.',
+          statusText: 'Client service not ready.',
           data: {}
         };
         onComplete(message);
@@ -57847,6 +57851,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     });
   };
 
+  // Private functions
+  //
   function init() {
     window.addEventListener('message', receiveMessage.bind(this));
     start();
@@ -57868,10 +57874,16 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         statusText: response.statusText
       };
 
-      root.refreshScope(function(error) {
-        if (!error) {
-          $rootScope.$emit('$pre.ready');
-        }
+      CContext.getSession().then(function(session) {
+
+        root.refreshScope(function(error) {
+          if (!error) {
+            $rootScope.$emit('$pre.ready', session);
+          }
+        });
+
+      }).catch(function(error) {
+        throw error;
       });
 
     }, function(error) {
@@ -57958,8 +57970,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   /**
    * CApplet
    *
-   * This class provides access to applet behavior. An instance of this class should be obtained from
-   * CContext/CSession or the singleton CEnvironment.
+   * This class provides access to applet behavior. An instance of this class should be obtained
+   * from the CSession instance provided by the '$pre.ready' event.
    */
 
   /**
@@ -58003,8 +58015,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    * '$pre.afterLeave' - broadcast when closing an applet, after the applet is hidden
    */
 
-  var _applet;
-
   /**
    * Constructor.  An instance of this class must be obtained from CContext.
    * @param {Applet} applet - An internal Applet object.
@@ -58013,7 +58023,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    */
   function CApplet(applet) {
     lodash.assign(this, applet);
-    _applet = applet;
     return this;
   };
 
@@ -58342,7 +58351,7 @@ angular.module('owsWalletPluginClient.api').factory('CContext', function (plugin
    * @constructor
    */
   function CContext() {
-    return this;
+    throw new Error('CContext is a static class');
   };
 
   /**
@@ -58373,62 +58382,6 @@ angular.module('owsWalletPluginClient.api').factory('CContext', function (plugin
   };
 
   return CContext;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CEnvironment', function ($log, CContext) {
-
-  /**
-   * CEnvironment
-   *
-   * This class provides a singleton object with reference to the complete applet runtime environment
-   * including session and applet oebjects.
-   */
-
-  var instance;
-
-  /**
-   * Constructor. This is a singleton class. An instance may be obtained using either
-   *   var env = new CEnvironment();
-   *   var env - CEnvironment.getInstance();
-   *
-   * @return {Object} The single instance of CEnvironment.
-   * @constructor
-   */
-  function CEnvironment() {
-  	var self = this;
-
-		if (instance) {
-    	return instance;
-    }
-    instance = self;
-
-    CContext.getSession().then(function(session) {
-      self.session = session;
-      return self.session.getApplet();
-
-    }).catch(function(error) {
-      $log.error("Failed to get session: " + error.message + ' (' + error.statusCode + ')');
-      throw error;
-
-    }).then(function(applet) {
-      self.applet = applet;
-
-    }).catch(function(error) {
-      $log.error("Failed to Initialize: " + error.message + ' (' + error.statusCode + ')');
-    });
-  };
-
-  /**
-   * Return the single instance of this class.
-   * @return {CEnvironment} The single instance of this class.
-   */
-  CEnvironment.getInstance = function() {
-    return instance || new CEnvironment();
-  };
-
-  return CEnvironment;
 });
 
 'use strict';
@@ -58500,7 +58453,7 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
    * @constructor
    */
   function CPlugin() {
-    return this;
+    throw new Error('CPlugin is a static class');
   };
 
   /**
@@ -58547,10 +58500,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * CSession
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained from CContext or the singleton CEnvironment.
+   * this class should be obtained from the '$pre.ready' event or the CContext class.
    */
-
-  var _session;
 
   /**
    * Constructor.  An instance of this class must be obtained from CContext.
@@ -58560,7 +58511,6 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    */
   function CSession(appletSession) {
     lodash.assign(this, appletSession);
-    _session = appletSession;
     return this;
   };
 
@@ -58594,12 +58544,15 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * @return {Promise<CApplet>} A promise for the applet.
    */
   CSession.prototype.getApplet = function () {
+    return this.applet;
+/*
     var request = {
       method: 'GET',
       url: '/session/' + this.id + '/applet',
       responseObj: 'CApplet'
     }
     return pluginClientService.sendMessage(request);
+*/
   };
 
   /**
@@ -58658,7 +58611,7 @@ angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
    * @constructor
    */
   function CSystem() {
-    return this;
+    throw new Error('CSystem is a static class');
   };
 
   /**
@@ -58719,7 +58672,7 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
    * @constructor
    */
   function CUtils() {
-    return this;
+    throw new Error('CUtils is a static class');
   };
 
   /**
@@ -58751,7 +58704,7 @@ angular.module('owsWalletPluginClient.api').factory('CWallet', function (configS
    * @constructor
    */
   function CWallet() {
-    return this;
+    throw new Error('CWallet is a static class');
   };
 
   /**

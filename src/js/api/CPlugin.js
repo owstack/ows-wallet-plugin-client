@@ -40,7 +40,7 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
    * @constructor
    */
   function CPlugin() {
-    return this;
+    throw new Error('CPlugin is a static class');
   };
 
   /**

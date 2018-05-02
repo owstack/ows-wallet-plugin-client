@@ -14,7 +14,7 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
    * @constructor
    */
   function CUtils() {
-    return this;
+    throw new Error('CUtils is a static class');
   };
 
   /**

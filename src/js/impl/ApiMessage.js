@@ -2,11 +2,9 @@
 
 angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($log, lodash) {
 
-  var self;
-
   function ApiMessage(eventOrRequest, sequence) {
-    self = this;
-    self.event = {};
+    var self = this;
+    this.event = {};
 
     // Sequence must not be provided with an event.
     if (lodash.isUndefined(sequence)) {
@@ -17,69 +15,73 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($lo
       }
 
       // Construct a message from the event data.
-      self.event = event;
+      this.event = event;
 
       // Check the itegrity of the message event.
       validateEvent();
 
       // Assign the event message data to this message object and make alias assignments.
-      var data = JSON.parse(self.event.data);
-      lodash.assign(self, data);
+      var data = JSON.parse(this.event.data);
+      lodash.assign(this, data);
 
     } else {
       var request = eventOrRequest;
 
       // Construct a new message from the data and make alias assignments.
-      self.header = {
+      this.header = {
         sequence: (!lodash.isUndefined(sequence) ? sequence : -1),
         id: '' + new Date().getTime(),
         timestamp: new Date()
       };
-      self.request = request || {};
-      self.response = {};
+      this.request = request || {};
+      this.response = {};
     }
 
-    return self;
+    // Private methods
+    //
+    function transport() {
+      return {
+        header: this.header,
+        request: this.request,
+        response: this.response
+      }
+    };
+
+    function validateEvent() {
+      if(lodash.isUndefined(this.event.data)) {
+
+        // Invalid event.
+        this.response = {
+          statusCode: 500,
+          statusText: 'Invalid message event, no \'data\' found.',
+          data: {}
+        };
+        throw new Error();
+
+      } else if (!lodash.isString(this.event.data)) {
+
+        // Event data not a string.
+        this.response = {
+          statusCode: 500,
+          statusText: 'Invalid message event data, expected string argument but received object.',
+          data: {}
+        };
+        throw new Error();
+      }
+    };
+
+    return this;
   };
 
+  // Public methods
+  //
   ApiMessage.prototype.send = function(host) {
-    $log.info('[client] REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport()));
+    $log.info('[client] REQUEST  ' + this.header.sequence + ': ' + angular.toJson(transport()));
     host.postMessage(angular.toJson(transport()), '*');
   };
 
   ApiMessage.prototype.serialize = function() {
     return angular.toJson(transport());
-  };
-
-  function transport() {
-    return {
-      header: self.header,
-      request: self.request,
-      response: self.response
-    }
-  };
-
-  function validateEvent() {
-    if(lodash.isUndefined(self.event.data)) {
-
-      // Invalid event.
-      self.response = {
-        statusCode: 500,
-        statusText: 'Invalid message event, no \'data\' found.',
-        data: {}
-      };
-      throw new Error();
-
-    } else if (!lodash.isString(self.event.data)) {
-
-      // Event data not a string.
-      self.response = {
-        statusCode: 500,
-        statusText: 'Invalid message event data, expected string argument but received object.',
-        data: {}
-      };
-      throw new Error();
-    }
   };
 
   return ApiMessage;

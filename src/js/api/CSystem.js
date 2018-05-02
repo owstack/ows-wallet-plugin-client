@@ -14,7 +14,7 @@ angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
    * @constructor
    */
   function CSystem() {
-    return this;
+    throw new Error('CSystem is a static class');
   };
 
   /**

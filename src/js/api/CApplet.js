@@ -5,8 +5,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
   /**
    * CApplet
    *
-   * This class provides access to applet behavior. An instance of this class should be obtained from
-   * CContext/CSession or the singleton CEnvironment.
+   * This class provides access to applet behavior. An instance of this class should be obtained
+   * from the CSession instance provided by the '$pre.ready' event.
    */
 
   /**
@@ -50,8 +50,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    * '$pre.afterLeave' - broadcast when closing an applet, after the applet is hidden
    */
 
-  var _applet;
-
   /**
    * Constructor.  An instance of this class must be obtained from CContext.
    * @param {Applet} applet - An internal Applet object.
@@ -60,7 +58,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    */
   function CApplet(applet) {
     lodash.assign(this, applet);
-    _applet = applet;
     return this;
   };
 

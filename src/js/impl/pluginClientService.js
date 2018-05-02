@@ -17,6 +17,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   var sequence = 0;
   var promises = [];
 
+  // Public functions
+  //
   root.sendMessage = function(request) {
     return new Promise(function(resolve, reject) {
 
@@ -69,7 +71,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         // The client service is not ready. Short circuit the communication and immediatley respond.
         message.response = {
           statusCode: 503,
-          statusText: 'Client service is not ready.',
+          statusText: 'Client service not ready.',
           data: {}
         };
         onComplete(message);
@@ -105,6 +107,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     });
   };
 
+  // Private functions
+  //
   function init() {
     window.addEventListener('message', receiveMessage.bind(this));
     start();
@@ -126,10 +130,16 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         statusText: response.statusText
       };
 
-      root.refreshScope(function(error) {
-        if (!error) {
-          $rootScope.$emit('$pre.ready');
-        }
+      CContext.getSession().then(function(session) {
+
+        root.refreshScope(function(error) {
+          if (!error) {
+            $rootScope.$emit('$pre.ready', session);
+          }
+        });
+
+      }).catch(function(error) {
+        throw error;
       });
 
     }, function(error) {

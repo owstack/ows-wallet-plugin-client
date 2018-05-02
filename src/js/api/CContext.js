@@ -15,7 +15,7 @@ angular.module('owsWalletPluginClient.api').factory('CContext', function (plugin
    * @constructor
    */
   function CContext() {
-    return this;
+    throw new Error('CContext is a static class');
   };
 
   /**
