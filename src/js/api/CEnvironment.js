@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CEnvironment', function (CContext) {
+angular.module('owsWalletPluginClient.api').factory('CEnvironment', function ($log, CContext) {
 
   /**
    * CEnvironment
