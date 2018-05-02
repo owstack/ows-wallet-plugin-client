@@ -3,6 +3,12 @@
 angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
 
   /**
+   * CSystem
+   *
+   * This class provides general purpose system utilities.
+   */
+
+  /**
    * Constructor.
    * @return {CSystem} An instance of CSystem.
    * @constructor

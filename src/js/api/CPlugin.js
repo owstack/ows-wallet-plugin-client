@@ -1,29 +1,33 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem, PluginRegistry) {
+angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem) {
 
   /**
-   * PluginObject.
-   * -------------
+   * CPlugin
+   *
+   * This class provides access to plugin information.
+   */
+
+  /**
+   * PluginObject
+   * ------------
    * 
-   * Plugins are registered during the application build process.  Each plugin is represented
-   * as a plugin registry entry and defines properties as follows.
+   * Plugins are registered during the application build process.  Each plugin is represented as a
+   * plugin catalog entry and defines properties as follows.
    *
    * Properties shared by all plugins.
    *
-   *   {String} type - The type of plugin, 'applet' or 'service'.
-   *   {String} pluginId - The unique plugin identifier.
+   *   {String} kind - The type of plugin, 'applet' or 'service'.
+   *   {String} id - The unique plugin identifier.
    *   {String} name - Human readable name of the plugin.
    *   {String} description - A short description of the plugin.
    *   {String} author - The author of the plugin.
-   *   {String} date - The date the plugin is made available (typ. 'mm/dd/yyyy').
    *   {String} version - A version identfier for the plugin (typ. 'x.y.z').
    * 
    * Applet specific plugin properties.
    * 
-   *   {String} mainViewUri - The relative path to the applet main view.
-   *   {String} path - The relative path to the applet root location.
-   *   {Array of String} stylesheets - A list of style sheets to apply when the applet is opened.
+   *   {String} mainView - The relative path to the applet main view.
+   *   {String} uri - The relative path to the applet root location.
    *
    * Service specific plugin properties.
    * 
@@ -40,37 +44,35 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
   };
 
   /**
-   * Return the plugin registry entry for the specified plugin id.
-   * @param {String} pluginId - The plugin id that identifies a registered plugin.
+   * Return the plugin catalog entry for the specified plugin id.
+   * @param {String} id - The plugin id that identifies a plugin.
    * @return {PluginObject} An instance of a plugin object.
-   * @throws Will throw an error if no plugin registry was found.
+   * @throws Will throw an error if no plugin entry was found.
    * @static
    */
-  CPlugin.getRegistryEntry = function(pluginId) {
-//    return PluginRegistry.getEntry(pluginId);
+  CPlugin.getCatalogEntry = function(id) {
     var request = {
      method: 'GET',
-     url: '/plugin-registry?id=' + pluginId
+     url: '/plugin-catalog?id=' + id
     }
     return pluginClientService.sendMessage(request);
-
   };
 
   /**
    * Validate that the specified service description object contains all required properties.
    * @param {String} serviceDesc - A service description object specified in a skin.
    * @param {Array} requiredProperties - An array of required properties; e.g., ['.a','.b','.b.c'].
-   * @param {String} pluginId - The plugin id of the requestor.
+   * @param {String} id - The plugin id of the requestor.
    * @throws Will throw an error if serviceDesc is missing any required properties.
    * @static
    */
-  CPlugin.validateServiceDesc = function(serviceDesc, requiredProperties, pluginId) {
+  CPlugin.validateServiceDesc = function(serviceDesc, requiredProperties, id) {
     var result = CSystem.checkObject(serviceDesc, requiredProperties);
     if (result.missing.length > 0) {
-      throw new Error('Error: A skin with service plugin \'' + pluginId + '\' is missing required properties \'' + result.missing.toString() + '\'');
+      throw new Error('A skin with service plugin \'' + pluginId + '\' is missing required properties \'' + result.missing.toString() + '\'');
     }
     if (result.other.length > 0) {
-      $log.warn('Warning: A skin with service plugin \'' + pluginId + '\' has unrecognized properties \'' + result.other.toString() + '\'');
+      $log.warn('A skin with service plugin \'' + pluginId + '\' has unrecognized properties \'' + result.other.toString() + '\'');
     }
   };
 

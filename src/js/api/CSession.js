@@ -2,6 +2,13 @@
 
 angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService, CApplet) {
 
+  /**
+   * CSession
+   *
+   * This class provides session functionality including reading and writing persistent data. An instance of
+   * this class should be obtained from CContext or the singleton CEnvironment.
+   */
+
   var _session;
 
   /**

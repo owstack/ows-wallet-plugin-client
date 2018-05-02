@@ -17,6 +17,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   var sequence = 0;
   var promises = [];
 
+  init();
+
   root.sendMessage = function(request) {
     return new Promise(function(resolve, reject) {
 
@@ -78,43 +80,6 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     });
   };
 
-  function init() {
-    window.addEventListener('message', receiveMessage.bind(this));
-    start();
-    return this;
-  };
-
-  function start() {
-    var request = {
-     method: 'POST',
-     url: START_URL,
-     data: {}
-    }
-
-    root.sendMessage(request).then(function(response) {
-      $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: 200,
-        statusText: response.statusText
-      };
-
-      root.refreshScope(function(error) {
-        $rootScope.$emit('Client/Start', error);
-      });
-
-    }, function(error) {
-      $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: error.statusCode,
-        statusText: error.message
-      };
-      $rootScope.$emit('Client/Start', error);
-
-    });
-  };
-
   root.refreshScope = function(callback) {
     var request = {
      method: 'GET',
@@ -139,6 +104,44 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     }, function(error) {
       $log.error('[client] SCOPE ERROR: ' + error.message + ' (' + error.statusCode + ')');
       callback(error);
+    });
+  };
+
+  function init() {
+    window.addEventListener('message', receiveMessage.bind(this));
+    start();
+    return this;
+  };
+
+  function start() {
+    var request = {
+     method: 'POST',
+     url: START_URL,
+     data: {}
+    }
+
+    root.sendMessage(request).then(function(response) {
+      $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
+
+      clientServiceState = {
+        statusCode: 200,
+        statusText: response.statusText
+      };
+
+      root.refreshScope(function(error) {
+        if (!error) {
+          $rootScope.$emit('$pre.ready');
+        }
+      });
+
+    }, function(error) {
+      $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
+
+      clientServiceState = {
+        statusCode: error.statusCode,
+        statusText: error.message
+      };
+
     });
   };
 
@@ -202,8 +205,6 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
       $log.debug('Message request timed out but there is no promise to fulfill: ' + message.serialize());
     }
   };
-
-  init();
 
   return root;
 });

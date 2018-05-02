@@ -3,6 +3,12 @@
 angular.module('owsWalletPluginClient.api').factory('CWallet', function (configService, txFormatService, FocusedWallet) {
 
   /**
+   * CWallet
+   *
+   * This class provides host app wallet access.
+   */
+
+  /**
    * Constructor.
    * @return {Object} An instance of CWallet.
    * @constructor

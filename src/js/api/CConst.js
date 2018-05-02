@@ -3,6 +3,12 @@
 angular.module('owsWalletPluginClient.api').factory('CConst', function () {
 
   /**
+   * CConstants
+   *
+   * This class provides commonly used constant values.
+   */
+
+  /**
    * Constructor.
    * @return {CConst} An instance of CConst.
    * @constructor
