@@ -17,8 +17,6 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   var sequence = 0;
   var promises = [];
 
-  init();
-
   root.sendMessage = function(request) {
     return new Promise(function(resolve, reject) {
 
@@ -205,6 +203,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
       $log.debug('Message request timed out but there is no promise to fulfill: ' + message.serialize());
     }
   };
+
+  init();
 
   return root;
 });
