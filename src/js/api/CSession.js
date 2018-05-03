@@ -1,21 +1,20 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, ApiMessage, CScope) {
 
   /**
    * CSession
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained from the '$pre.ready' event or the CContext class.
+   * this class should be obtained from the '$pre.ready' event or by calling CSession.getInstance().
    */
 
    var START_URL = '/start';
    var instance;
 
   /**
-   * Constructor.  An instance of this class must be obtained from CContext.
-   * @param {AppletSession} session - An internal Session object.
-   * @return {Object} An instance of CSession.
+   * Constructor.
+   * @return {Object} The single instance of CSession.
    * @constructor
    */
   function CSession() {
@@ -37,8 +36,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      * Priviledged methods
      */
 
-    this.isValid = function() {
-      return state.statusCode >= 200 && state.statusCode <= 299 || state.statusCode == 100;
+    this.isOK = function() {
+      return state.statusCode >= 200 && state.statusCode <= 299;
     };
 
     /**
@@ -52,7 +51,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
        data: {}
       }
 
-      pluginClientService.sendMessage(request).then(function(response) {
+      return new ApiMessage(request).send().then(function(response) {
         $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
 
         state = {
@@ -60,9 +59,11 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
           statusText: response.statusText
         };
 
+        $rootScope.$emit('$pre.start', state);
+
         getSession().then(function(session) {
 
-          pluginClientService.refreshScope(function(error) {
+          CScope.refresh(function(error) {
             if (!error) {
               $rootScope.$emit('$pre.ready', self);
             }
@@ -80,6 +81,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
           statusText: error.message
         };
 
+        $rootScope.$emit('$pre.start', state);
+
       });
     };
 
@@ -89,7 +92,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
        url: '/session/' + sessionId(),
        responseObj: 'CSession'
       }
-      return pluginClientService.sendMessage(request);
+
+      return new ApiMessage(request).send();
     };
 
     /**
@@ -125,7 +129,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      method: 'POST',
      url: '/session/flush'
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -138,7 +143,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      method: 'GET',
      url: '/session/' + this.id + '/var/' + name
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -147,14 +153,6 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    */
   CSession.prototype.getApplet = function () {
     return this.applet;
-/*
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/applet',
-      responseObj: 'CApplet'
-    }
-    return pluginClientService.sendMessage(request);
-*/
   };
 
   /**
@@ -168,7 +166,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
       data: {}
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -187,11 +185,12 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
       }
     }
 
-    pluginClientService.sendMessage(request).then(function(response) {
+    return new ApiMessage(request).send().then(function(response) {
       if (publish) {
-        pluginClientService.refreshScope();
+        CScope.refresh();
       }
     });
+
   };
 
   return CSession;

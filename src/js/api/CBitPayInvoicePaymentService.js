@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentService', function (pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentService', function () {
 
   /**
    * Service identification

@@ -57655,19 +57655,42 @@ angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettext
 }]);
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($log, lodash) {
+angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, $log, lodash,  $injector, $timeout, CError) {
 
-  function ApiMessage(eventOrRequest, sequence) {
+  var host = window.parent;
+  var REQUEST_TIMEOUT = 3000; // milliseconds
+
+  var START_URL = '/start';
+
+  var state = {
+    statusCode: -1,
+    statusText: ''
+  };
+
+  var sequence = 0;
+  var promises = [];
+
+  window.addEventListener('message', receiveMessage.bind(this));
+
+  /**
+   * Events
+   */
+
+  $rootScope.$on('$pre.start', function(event, stateObj) {
+    state = stateObj;
+  });
+
+  /**
+   * Constructor
+   */
+
+  function ApiMessage(eventOrRequest) {
     var self = this;
     this.event = {};
 
     // Sequence must not be provided with an event.
-    if (lodash.isUndefined(sequence)) {
+    if (eventOrRequest instanceof MessageEvent) {
       var event = eventOrRequest;
-
-      if (lodash.isUndefined(event) || !(event instanceof MessageEvent)) {
-        throw Error('event is not a MessageEvent');
-      }
 
       // Construct a message from the event data.
       this.event = event;
@@ -57683,24 +57706,19 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($lo
       var request = eventOrRequest;
 
       // Construct a new message from the data and make alias assignments.
+      var now = new Date();
       this.header = {
-        sequence: (!lodash.isUndefined(sequence) ? sequence : -1),
-        id: '' + new Date().getTime(),
-        timestamp: new Date()
+        sequence: sequence++,
+        id: '' + now.getTime(),
+        timestamp: now
       };
       this.request = request || {};
       this.response = {};
     }
 
-    // Private methods
-    //
-    function transport() {
-      return {
-        header: this.header,
-        request: this.request,
-        response: this.response
-      }
-    };
+    /**
+     * Private methods
+     */
 
     function validateEvent() {
       if(lodash.isUndefined(this.event.data)) {
@@ -57725,45 +57743,34 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($lo
       }
     };
 
+    function isStartMessage() {
+      return this.request.url == START_URL;
+    };
+
+    function messageServiceIsOK() {
+      return state.statusCode >= 200 && state.statusCode <= 299;
+    };
+
+    function serialize() {
+      return angular.toJson(transport());
+    };
+
+    function transport() {
+      return {
+        header: this.header,
+        request: this.request,
+        response: this.response
+      }
+    };
+
     return this;
   };
 
-  // Public methods
-  //
-  ApiMessage.prototype.send = function(host) {
-    $log.info('[client] REQUEST  ' + this.header.sequence + ': ' + angular.toJson(transport()));
-    host.postMessage(angular.toJson(transport()), '*');
-  };
+  /**
+   * Public methods
+   */
 
-  ApiMessage.prototype.serialize = function() {
-    return angular.toJson(transport());
-  };
-
-  return ApiMessage;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.impl').service('pluginClientService', function ($log, $rootScope, $injector, $timeout, lodash, ApiMessage, CError, CSession) {
-
-  var root = {};
-  var host = window.parent;
-  var REQUEST_TIMEOUT = 3000; // milliseconds
-
-  var START_URL = '/start';
-  var SCOPE_URL = '/scope';
-
-  var clientServiceState = {
-    statusCode: -1,
-    statusText: ''
-  };
-
-  var sequence = 0;
-  var promises = [];
-
-  // Public functions
-  //
-  root.sendMessage = function(request) {
+  ApiMessage.prototype.send = function() {
     return new Promise(function(resolve, reject) {
 
       var onComplete = function(message) {
@@ -57789,123 +57796,43 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         }
       };
 
-      // Create a new request message.
-      var message = new ApiMessage(request, sequence++);
-
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
-//      if (clientServiceIsOK() || isStartMessage(message)) {
-      if (CSession.getInstance().isValid()) {
+      if (messageServiceIsOK() || isStartMessage()) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
-          timeout(message);
+          timeout(this);
         }, REQUEST_TIMEOUT);
 
         // Store the promise callback for execution when a message is received.
         promises.push({
-          id: message.header.id,
+          id: this.header.id,
           onComplete: onComplete,
           timer: timeoutTimer
         });
 
-        message.send(host);
+        // Post the message to the host.
+        $log.info('[client] REQUEST  ' + this.header.sequence + ': ' + angular.toJson(transport()));
+        host.postMessage(angular.toJson(transport()), '*');
 
       } else {
 
         // The client service is not ready. Short circuit the communication and immediatley respond.
-        message.response = {
+        this.response = {
           statusCode: 503,
           statusText: 'Client service not ready.',
           data: {}
         };
-        onComplete(message);
+        onComplete(this);
 
       }
     });
   };
 
-  root.refreshScope = function(callback) {
-    var request = {
-     method: 'GET',
-     url: SCOPE_URL
-    }
-
-    root.sendMessage(request).then(function(response) {
-      $log.info('[client] SCOPE: ' + response.statusText + ' (' + response.statusCode + ')');
-
-      // Apply the response to the clients root scope.
-      $rootScope.env = response.data.env;
-      $rootScope.applet = response.data.applet;
-
-      $timeout(function() {
-        $rootScope.$apply();
-      });
-
-      if (callback) {
-        callback();
-      }
-      
-    }, function(error) {
-      $log.error('[client] SCOPE ERROR: ' + error.message + ' (' + error.statusCode + ')');
-      callback(error);
-    });
-  };
-
-  // Private functions
-  //
-  function init() {
-    window.addEventListener('message', receiveMessage.bind(this));
-//    start();
-    CSession.getInstance();
-    return this;
-  };
-/*
-  function start() {
-    var request = {
-     method: 'POST',
-     url: START_URL,
-     data: {}
-    }
-
-    root.sendMessage(request).then(function(response) {
-      $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: 200,
-        statusText: response.statusText
-      };
-
-      CContext.getSession().then(function(session) {
-
-        root.refreshScope(function(error) {
-          if (!error) {
-            $rootScope.$emit('$pre.ready', session);
-          }
-        });
-
-      }).catch(function(error) {
-        throw error;
-      });
-
-    }, function(error) {
-      $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
-
-      clientServiceState = {
-        statusCode: error.statusCode,
-        statusText: error.message
-      };
-
-    });
-  };
-
-  function clientServiceIsOK() {
-    return clientServiceState.statusCode >= 200 && clientServiceState.statusCode <= 299;
-  };
-*/
-  function isStartMessage(message) {
-    return message.request.url == START_URL;
-  };
+  /**
+   * Private static methods
+   */
 
   function receiveMessage(event) {
     var message;
@@ -57913,7 +57840,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
     try {
       message = new ApiMessage(event);
 
-      // $log.info('[client] receive  ' + message.header.sequence + ': ' + message.serialize() + ' (from ' + message.event.source.location.toString() + ')');
+      // $log.info('[client] receive  ' + message.header.sequence + ': ' + serialize() + ' (from ' + message.event.source.location.toString() + ')');
 
       var promiseIndex = lodash.findIndex(promises, function(promise) {
         return promise.id == message.header.id;
@@ -57928,7 +57855,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
         promise[0].onComplete(message);
 
       } else {
-        $log.debug('Message received but there is no promise to fulfill: ' + message.serialize());
+        $log.debug('Message received but there is no promise to fulfill: ' + serialize());
       }      
 
     } catch (ex) {
@@ -57956,18 +57883,28 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
       }
       promise[0].onComplete(message);
     } else {
-      $log.debug('Message request timed out but there is no promise to fulfill: ' + message.serialize());
+      $log.debug('Message request timed out but there is no promise to fulfill: ' + serialize());
     }
   };
 
-  init();
+  return ApiMessage;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.impl').service('pluginClientService', function (CSession) {
+
+  var root = {};
+
+  // Initialize the plugin session.
+  CSession.getInstance();
 
   return root;
 });
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, CScope) {
 
   /**
    * CApplet
@@ -58018,7 +57955,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    */
 
   /**
-   * Constructor.  An instance of this class must be obtained from CContext.
+   * Constructor.  An instance of this class must be obtained from CSession.
    * @param {Applet} applet - An internal Applet object.
    * @return {Object} An instance of CApplet.
    * @constructor
@@ -58040,7 +57977,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       data: {}
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58056,7 +57993,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58080,8 +58017,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
 
-    pluginClientService.sendMessage(request).then(function(value) {
-      pluginClientService.refreshScope();
+    return new ApiMessage(request).send().then(function(value) {
+      CScope.refresh();
       return value;
     });
   };
@@ -58105,8 +58042,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
     
-    pluginClientService.sendMessage(request).then(function(response) {
-      pluginClientService.refreshScope();
+    return new ApiMessage(request).send().then(function(response) {
+      CScope.refresh();
     });
   };
 
@@ -58115,7 +58052,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentService', function (pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CBitPayInvoicePaymentService', function () {
 
   /**
    * Service identification
@@ -58338,56 +58275,6 @@ angular.module('owsWalletPluginClient.api').factory('CConst', function () {
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CContext', function (pluginClientService) {
-
-  /**
-   * CContext
-   *
-   * This class provides the base context for bootstrapping an applet by retrieving and creating 
-   * the session object.
-   */
-
-  /**
-   * Constructor.
-   * @return {CContext} An instance of CContext.
-   * @constructor
-   */
-  function CContext() {
-    throw new Error('CContext is a static class');
-  };
-
-  /**
-   * Return the applet session.
-   * @return {Promise<CSession>} A promise to the session.
-   * @static
-   */
-  CContext.getSession = function() {
-    var request = {
-     method: 'GET',
-     url: '/session/' + sessionId(),
-     responseObj: 'CSession'
-    }
-    return pluginClientService.sendMessage(request);
-  };
-
-  /**
-   * Get the sessionId from the URL.
-   * @return {string} The seesion id.
-   * @private
-   */
-  function sessionId() {
-    var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
-    if (sessionId.indexOf('&') >= 0) {
-      sessionId = sessionId.substring(0, sessionId.indexOf('&'));
-    }
-    return sessionId;
-  };
-
-  return CContext;
-});
-
-'use strict';
-
 angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) {
 
   /**
@@ -58415,7 +58302,7 @@ angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) 
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem) {
+angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, ApiMessage) {
 
   /**
    * CPlugin
@@ -58451,7 +58338,6 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
 
   /**
    * Constructor.
-   * @return {Object} An instance of CPlugin.
    * @constructor
    */
   function CPlugin() {
@@ -58470,7 +58356,8 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
      method: 'GET',
      url: '/plugin-catalog?id=' + id
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58496,22 +58383,75 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CScope', function (lodash, ApiMessage) {
+
+  /**
+   * CScope
+   *
+   * A static class to manage applet scope.
+   */
+
+  var SCOPE_URL = '/scope';
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function CScope() {
+    throw new Error('CScope is a static class');
+  };
+
+  /**
+   * Get the single session object or create the session.
+   * @return {Promise} A promise to refresh scope from the host.
+   */
+  CScope.refresh = function() {
+    return new Promise(function(resolve, reject) {
+      var request = {
+       method: 'GET',
+       url: SCOPE_URL
+      }
+
+      return new ApiMessage(request).send().then(function(response) {
+        $log.info('[client] SCOPE: ' + response.statusText + ' (' + response.statusCode + ')');
+
+        // Apply the response to the clients root scope.
+        $rootScope.env = response.data.env;
+        $rootScope.applet = response.data.applet;
+
+        $timeout(function() {
+          $rootScope.$apply();
+        });
+
+        resolve();
+        
+      }, function(error) {
+        $log.error('[client] SCOPE ERROR: ' + error.message + ' (' + error.statusCode + ')');
+        reject(error);
+      });
+    });
+  };
+
+  return CScope;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, ApiMessage, CScope) {
 
   /**
    * CSession
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained from the '$pre.ready' event or the CContext class.
+   * this class should be obtained from the '$pre.ready' event or by calling CSession.getInstance().
    */
 
    var START_URL = '/start';
    var instance;
 
   /**
-   * Constructor.  An instance of this class must be obtained from CContext.
-   * @param {AppletSession} session - An internal Session object.
-   * @return {Object} An instance of CSession.
+   * Constructor.
+   * @return {Object} The single instance of CSession.
    * @constructor
    */
   function CSession() {
@@ -58533,8 +58473,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      * Priviledged methods
      */
 
-    this.isValid = function() {
-      return state.statusCode >= 200 && state.statusCode <= 299 || state.statusCode == 100;
+    this.isOK = function() {
+      return state.statusCode >= 200 && state.statusCode <= 299;
     };
 
     /**
@@ -58548,7 +58488,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
        data: {}
       }
 
-      pluginClientService.sendMessage(request).then(function(response) {
+      return new ApiMessage(request).send().then(function(response) {
         $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
 
         state = {
@@ -58556,9 +58496,11 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
           statusText: response.statusText
         };
 
+        $rootScope.$emit('$pre.start', state);
+
         getSession().then(function(session) {
 
-          pluginClientService.refreshScope(function(error) {
+          CScope.refresh(function(error) {
             if (!error) {
               $rootScope.$emit('$pre.ready', self);
             }
@@ -58576,6 +58518,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
           statusText: error.message
         };
 
+        $rootScope.$emit('$pre.start', state);
+
       });
     };
 
@@ -58585,7 +58529,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
        url: '/session/' + sessionId(),
        responseObj: 'CSession'
       }
-      return pluginClientService.sendMessage(request);
+
+      return new ApiMessage(request).send();
     };
 
     /**
@@ -58621,7 +58566,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      method: 'POST',
      url: '/session/flush'
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58634,7 +58580,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      method: 'GET',
      url: '/session/' + this.id + '/var/' + name
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58643,14 +58590,6 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    */
   CSession.prototype.getApplet = function () {
     return this.applet;
-/*
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/applet',
-      responseObj: 'CApplet'
-    }
-    return pluginClientService.sendMessage(request);
-*/
   };
 
   /**
@@ -58664,7 +58603,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
       data: {}
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -58683,11 +58622,12 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
       }
     }
 
-    pluginClientService.sendMessage(request).then(function(response) {
+    return new ApiMessage(request).send().then(function(response) {
       if (publish) {
-        pluginClientService.refreshScope();
+        CScope.refresh();
       }
     });
+
   };
 
   return CSession;

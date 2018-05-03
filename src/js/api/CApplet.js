@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, pluginClientService) {
+angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, CScope) {
 
   /**
    * CApplet
@@ -51,7 +51,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    */
 
   /**
-   * Constructor.  An instance of this class must be obtained from CContext.
+   * Constructor.  An instance of this class must be obtained from CSession.
    * @param {Applet} applet - An internal Applet object.
    * @return {Object} An instance of CApplet.
    * @constructor
@@ -73,7 +73,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       data: {}
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -89,7 +89,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
 
-    pluginClientService.sendMessage(request);
+    return new ApiMessage(request).send();
   };
 
   /**
@@ -113,8 +113,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
 
-    pluginClientService.sendMessage(request).then(function(value) {
-      pluginClientService.refreshScope();
+    return new ApiMessage(request).send().then(function(value) {
+      CScope.refresh();
       return value;
     });
   };
@@ -138,8 +138,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
       }
     }
     
-    pluginClientService.sendMessage(request).then(function(response) {
-      pluginClientService.refreshScope();
+    return new ApiMessage(request).send().then(function(response) {
+      CScope.refresh();
     });
   };
 

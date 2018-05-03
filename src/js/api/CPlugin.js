@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, CSystem) {
+angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, ApiMessage) {
 
   /**
    * CPlugin
@@ -36,7 +36,6 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
 
   /**
    * Constructor.
-   * @return {Object} An instance of CPlugin.
    * @constructor
    */
   function CPlugin() {
@@ -55,7 +54,8 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
      method: 'GET',
      url: '/plugin-catalog?id=' + id
     }
-    return pluginClientService.sendMessage(request);
+
+    return new ApiMessage(request).send();
   };
 
   /**
