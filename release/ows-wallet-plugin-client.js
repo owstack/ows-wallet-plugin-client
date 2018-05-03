@@ -916,7 +916,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * Get the single session object or create the session.
    * @return {CSession} The single session object.
    */
-  Csession.getInstance = function() {
+  CSession.getInstance = function() {
     return instance || new CSession();
   };
 
