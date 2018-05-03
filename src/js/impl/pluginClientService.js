@@ -50,7 +50,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
 
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
-      if (clientServiceIsOK() || isStartMessage(message)) {
+//      if (clientServiceIsOK() || isStartMessage(message)) {
+      if (CSession.getInstance().isValid() || isStartMessage(message)) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
@@ -111,10 +112,11 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   //
   function init() {
     window.addEventListener('message', receiveMessage.bind(this));
-    start();
+//    start();
+    CSession.getInstance();
     return this;
   };
-
+/*
   function start() {
     var request = {
      method: 'POST',
@@ -156,7 +158,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   function clientServiceIsOK() {
     return clientServiceState.statusCode >= 200 && clientServiceState.statusCode <= 299;
   };
-
+*/
   function isStartMessage(message) {
     return message.request.url == START_URL;
   };

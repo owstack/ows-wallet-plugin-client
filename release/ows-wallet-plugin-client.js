@@ -157,7 +157,8 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
 
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
-      if (clientServiceIsOK() || isStartMessage(message)) {
+//      if (clientServiceIsOK() || isStartMessage(message)) {
+      if (CSession.getInstance().isValid() || isStartMessage(message)) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
@@ -218,10 +219,11 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   //
   function init() {
     window.addEventListener('message', receiveMessage.bind(this));
-    start();
+//    start();
+    CSession.getInstance();
     return this;
   };
-
+/*
   function start() {
     var request = {
      method: 'POST',
@@ -263,7 +265,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
   function clientServiceIsOK() {
     return clientServiceState.statusCode >= 200 && clientServiceState.statusCode <= 299;
   };
-
+*/
   function isStartMessage(message) {
     return message.request.url == START_URL;
   };
@@ -857,7 +859,7 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, C
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService, CApplet) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, pluginClientService) {
 
   /**
    * CSession
@@ -866,15 +868,110 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * this class should be obtained from the '$pre.ready' event or the CContext class.
    */
 
+   var instance;
+
   /**
    * Constructor.  An instance of this class must be obtained from CContext.
    * @param {AppletSession} session - An internal Session object.
    * @return {Object} An instance of CSession.
    * @constructor
    */
-  function CSession(appletSession) {
-    lodash.assign(this, appletSession);
+  function CSession() {
+    var self = this;
+
+    if (instance) {
+      return instance;
+    }
+    instance = this;
+
+    var state = {
+      statusCode: -1,
+      statusText: ''
+    };
+
+    start();
+
+    /**
+     * Priviledged methods
+     */
+
+    this.isValid = function() {
+      return sessionState.statusCode >= 200 && sessionState.statusCode <= 299;
+    };
+
+    /**
+     * Private methods
+     */
+
+    function start() {
+      var request = {
+       method: 'POST',
+       url: START_URL,
+       data: {}
+      }
+
+      pluginClientService.sendMessage(request).then(function(response) {
+        $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
+
+        state = {
+          statusCode: 200,
+          statusText: response.statusText
+        };
+
+        getSession().then(function(session) {
+
+          pluginClientService.refreshScope(function(error) {
+            if (!error) {
+              $rootScope.$emit('$pre.ready', self);
+            }
+          });
+
+        }).catch(function(error) {
+          throw error;
+        });
+
+      }, function(error) {
+        $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
+
+        state = {
+          statusCode: error.statusCode,
+          statusText: error.message
+        };
+
+      });
+    };
+
+    function getSession() {
+      var request = {
+       method: 'GET',
+       url: '/session/' + sessionId(),
+       responseObj: 'CSession'
+      }
+      return pluginClientService.sendMessage(request);
+    };
+
+    /**
+     * Get the sessionId from the URL.
+     * @return {string} The seesion id.
+     * @private
+     */
+    function sessionId() {
+      var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
+      if (sessionId.indexOf('&') >= 0) {
+        sessionId = sessionId.substring(0, sessionId.indexOf('&'));
+      }
+      return sessionId;
+    };
+
     return this;
+  };
+
+  /**
+   * Get the single session object or create the session.
+   * @return {CSession} The single session object.
+   */
+  Csession.getInstance = function() {
+    return instance || new CSession();
   };
 
   /**
