@@ -107,7 +107,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($lo
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').service('pluginClientService', function ($log, $rootScope, $injector, $timeout, lodash, ApiMessage, CError) {
+angular.module('owsWalletPluginClient.impl').service('pluginClientService', function ($log, $rootScope, $injector, $timeout, lodash, ApiMessage, CError, CSession) {
 
   var root = {};
   var host = window.parent;
@@ -158,7 +158,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
 //      if (clientServiceIsOK() || isStartMessage(message)) {
-      if (CSession.getInstance().isValid() || isStartMessage(message)) {
+      if (CSession.getInstance().isValid()) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
@@ -868,6 +868,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * this class should be obtained from the '$pre.ready' event or the CContext class.
    */
 
+   var START_URL = '/start';
    var instance;
 
   /**
@@ -885,8 +886,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
     instance = this;
 
     var state = {
-      statusCode: -1,
-      statusText: ''
+      statusCode: 100,
+      statusText: 'Initializing'
     };
 
     start();
@@ -896,7 +897,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      */
 
     this.isValid = function() {
-      return sessionState.statusCode >= 200 && sessionState.statusCode <= 299;
+      return state.statusCode >= 200 && state.statusCode <= 299 || state.statusCode == 100;
     };
 
     /**

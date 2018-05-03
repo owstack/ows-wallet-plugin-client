@@ -9,6 +9,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
    * this class should be obtained from the '$pre.ready' event or the CContext class.
    */
 
+   var START_URL = '/start';
    var instance;
 
   /**
@@ -26,8 +27,8 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
     instance = this;
 
     var state = {
-      statusCode: -1,
-      statusText: ''
+      statusCode: 100,
+      statusText: 'Initializing'
     };
 
     start();
@@ -37,7 +38,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
      */
 
     this.isValid = function() {
-      return sessionState.statusCode >= 200 && sessionState.statusCode <= 299;
+      return state.statusCode >= 200 && state.statusCode <= 299 || state.statusCode == 100;
     };
 
     /**

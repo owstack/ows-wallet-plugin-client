@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').service('pluginClientService', function ($log, $rootScope, $injector, $timeout, lodash, ApiMessage, CError) {
+angular.module('owsWalletPluginClient.impl').service('pluginClientService', function ($log, $rootScope, $injector, $timeout, lodash, ApiMessage, CError, CSession) {
 
   var root = {};
   var host = window.parent;
@@ -51,7 +51,7 @@ angular.module('owsWalletPluginClient.impl').service('pluginClientService', func
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
 //      if (clientServiceIsOK() || isStartMessage(message)) {
-      if (CSession.getInstance().isValid() || isStartMessage(message)) {
+      if (CSession.getInstance().isValid()) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
