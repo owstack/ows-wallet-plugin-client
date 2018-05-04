@@ -967,7 +967,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
 
     return new ApiMessage(request).send().then(function(response) {
       if (typeof response != 'CError') {
-        self.applet = repsonse;
+        self.applet = response;
       }
       return response;
     });
