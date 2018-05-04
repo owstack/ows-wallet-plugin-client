@@ -58604,8 +58604,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
 
     return new ApiMessage(request).send().then(function(response) {
       if (typeof response != 'CError') {
-        self.applet = {};
-        lodash.assign(self.applet, response);
+        self.applet = repsonse;
       }
       return response;
     });
