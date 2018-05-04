@@ -133,6 +133,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @return {Promise<Object>} A promise for stored value.
    */
   CSession.prototype.get = function(name) {
+    var self = this;
     var request = {
      method: 'GET',
      url: '/session/' + this.id + '/var/' + name,
@@ -153,6 +154,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @return {Promise<CApplet>} A promise at completion with param 'applet' or an error.
    */
   CSession.prototype.getApplet = function () {
+    var self = this;
     var request = {
      method: 'GET',
      url: '/session/' + this.id + '/applet',
@@ -173,6 +175,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @return {Promise} A promise at completion with param 'data' or an error.
    */
   CSession.prototype.restore = function() {
+    var self = this;
     var request = {
       method: 'POST',
       url: '/session/' + this.id + '/restore',
@@ -195,6 +198,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @return {Promise} A promise at completion with param 'value' or an error.
    */
   CSession.prototype.set = function(name, value) {
+    var self = this;
     var request = {
       method: 'POST',
       url: '/session/' + this.id + '/var/' + name,
