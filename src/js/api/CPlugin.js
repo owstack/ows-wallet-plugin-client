@@ -5,7 +5,7 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, A
   /**
    * CPlugin
    *
-   * This class provides access to plugin information.
+   * Provides access to plugin information.
    */
 
   /**
@@ -52,7 +52,8 @@ angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, A
   CPlugin.getCatalogEntry = function(id) {
     var request = {
      method: 'GET',
-     url: '/plugin-catalog?id=' + id
+     url: '/plugin-catalog?id=' + id,
+     responseObj: {}
     }
 
     return new ApiMessage(request).send();

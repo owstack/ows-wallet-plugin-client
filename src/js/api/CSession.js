@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash, ApiMessage, CScope) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError) {
 
   /**
    * CSession
@@ -33,14 +33,6 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
     start();
 
     /**
-     * Priviledged methods
-     */
-
-    this.isOK = function() {
-      return state.statusCode >= 200 && state.statusCode <= 299;
-    };
-
-    /**
      * Private methods
      */
 
@@ -55,42 +47,44 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
         $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
 
         state = {
-          statusCode: 200,
+          statusCode: response.statusCode,
           statusText: response.statusText
         };
 
         $rootScope.$emit('$pre.start', state);
 
-        getSession().then(function(session) {
-
-          CScope.refresh(function(error) {
-            if (!error) {
-              $rootScope.$emit('$pre.ready', self);
-            }
-          });
-
         }).catch(function(error) {
-          throw error;
+          $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
+
+          state = {
+            statusCode: error.statusCode,
+            statusText: error.message
+          };
+
+          $rootScope.$emit('$pre.start', state);
+
+        }).then(function() {
+          return getSession();
+
+        }).then(function(sessionObj) {
+          // Assign the session data to ourself.
+          lodash.assign(self, sessionObj);
+
+          if (!self.id) {
+            $log.error('[client] ERROR: unexpected response while retrieving session');
+          }
+
+          // Notify plugin that we're ready to run.
+          $rootScope.$emit('$pre.ready', self);
+
         });
-
-      }, function(error) {
-        $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
-
-        state = {
-          statusCode: error.statusCode,
-          statusText: error.message
-        };
-
-        $rootScope.$emit('$pre.start', state);
-
-      });
     };
 
     function getSession() {
       var request = {
        method: 'GET',
        url: '/session/' + sessionId(),
-       responseObj: 'CSession'
+       responseObj: {}
       }
 
       return new ApiMessage(request).send();
@@ -141,23 +135,42 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
   CSession.prototype.get = function(name) {
     var request = {
      method: 'GET',
-     url: '/session/' + this.id + '/var/' + name
+     url: '/session/' + this.id + '/var/' + name,
+     responseObj: {}
     }
 
-    return new ApiMessage(request).send();
+    return new ApiMessage(request).send().then(function(response) {
+      if (typeof response != 'CError') {
+        self[name] = {};
+        lodash.assign(self[name], response);
+      }
+      return repsonse;
+    });
   };
 
   /**
-   * Return the applet for this session.
-   * @return {Promise<CApplet>} A promise for the applet.
+   * Return the applet for this session. An 'applet' property is created on the session.
+   * @return {Promise<CApplet>} A promise at completion with param 'applet' or an error.
    */
   CSession.prototype.getApplet = function () {
-    return this.applet;
+    var request = {
+     method: 'GET',
+     url: '/session/' + this.id + '/applet',
+     responseObj: CApplet
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (typeof response != 'CError') {
+        self.applet = {};
+        lodash.assign(self.applet, response);
+      }
+      return response;
+    });
   };
 
   /**
-   * Restore all session data from persistent storage.
-   * @return {Promise} A promise at completion.
+   * Restore all session data from persistent storage. A 'data' property is created on the session.
+   * @return {Promise} A promise at completion with param 'data' or an error.
    */
   CSession.prototype.restore = function() {
     var request = {
@@ -166,29 +179,34 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function (lodash
       data: {}
     }
 
-    return new ApiMessage(request).send();
+    return new ApiMessage(request).send().then(function(response) {
+      if (typeof response != 'CError') {
+        self.data = {};
+        lodash.assign(self.data, response);
+      }
+      return response;
+    });
   };
 
   /**
-   * Set session data by name.
+   * Set session data by name. A 'data' property is created on the session.
    * @param {String} name - Location to store the specified value.
    * @param {Object} value - The data value to store.
-   * @param {Boolean} [publish] - Publish the specified session data to the view scope as 'applet.session.<name>'.
-   * @return {Promise} A promise at completion.
+   * @return {Promise} A promise at completion with param 'value' or an error.
    */
-  CSession.prototype.set = function(name, value, publish) {
+  CSession.prototype.set = function(name, value) {
     var request = {
       method: 'POST',
-      url: '/session/' + this.id + '/var/' + name + (publish ? '/publish' : ''),
-      data: {
-        value: value
-      }
+      url: '/session/' + this.id + '/var/' + name,
+      data: value
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      if (publish) {
-        CScope.refresh();
+      if (typeof response != 'CError') {
+        self.data = self.data || {};
+        lodash.merge(self.data, response);
       }
+      return response;
     });
 
   };

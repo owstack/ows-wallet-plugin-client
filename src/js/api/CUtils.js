@@ -5,12 +5,11 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
   /**
    * CUtils
    *
-   * This class provides business level utilities.
+   * Provides domain utilities.
    */
 
   /**
    * Constructor.
-   * @return {CUtils} An instance of CUtils.
    * @constructor
    */
   function CUtils() {

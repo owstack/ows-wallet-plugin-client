@@ -1,12 +1,12 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash, CScope) {
+angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash) {
 
   /**
    * CApplet
    *
-   * This class provides access to applet behavior. An instance of this class should be obtained
-   * from the CSession instance provided by the '$pre.ready' event.
+   * Provides access to applet behavior. An instance of this class should be obtained from the
+   * CSession instance provided by the '$pre.ready' event.
    */
 
   /**
@@ -41,7 +41,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    * -------------
    * 
    * Each of the following events provide the following arguments to the subscriber:
-   *   applet - the subject Applet object
+   *   appletObj - the subject Applet object
    *   walletId - the wallet identifier on which the applet is presented
    * 
    * '$pre.beforeEnter' - broadcast when opening an applet, before the applet is shown
@@ -56,8 +56,8 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    * @return {Object} An instance of CApplet.
    * @constructor
    */
-  function CApplet(applet) {
-    lodash.assign(this, applet);
+  function CApplet(appletObj) {
+    lodash.assign(this, appletObj);
     return this;
   };
 
@@ -102,25 +102,20 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
    * @param {String} name - The applet property name to set or get.
    * @param {String} [value] - The value to set.
    * @return {String} The value of the specified property.
-   * @return {Promise<Object>} A promise for the value of the specified property.
+   * @return {Promise<Object>} A promise at completion with param 'value' or an error.
    */
   CApplet.prototype.property = function(name, value) {
     var request = {
       method: 'POST',
       url: '/applet/' + this.header.id + '/property/' + name,
-      data: {
-        value: value
-      }
+      data: value
     }
 
-    return new ApiMessage(request).send().then(function(value) {
-      CScope.refresh();
-      return value;
-    });
+    return new ApiMessage(request).send();
   };
 
   /**
-   * Set or get a set of applet properties. Available property names are:
+   * Set or get a group of applet properties. Available property names are:
    *   'title' - set the applet header bar text.
    *
    * Set properties by providing an object of name-value pairs.
@@ -133,14 +128,10 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash,
     var request = {
       method: 'POST',
       url: '/applet/' + this.header.id + '/propertyset',
-      data: {
-        set: set
-      }
+      data: set
     }
     
-    return new ApiMessage(request).send().then(function(response) {
-      CScope.refresh();
-    });
+    return new ApiMessage(request).send();
   };
 
   return CApplet;

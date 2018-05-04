@@ -5,7 +5,7 @@ angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) 
   /**
    * CError
    *
-   * This class provides a wrapper for error messages coming from the host app.
+   * Provides a wrapper for API error response messages coming from the host app.
    */
 
   /**

@@ -3,8 +3,8 @@
 angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, $log, lodash,  $injector, $timeout, CError) {
 
   var host = window.parent;
-  var REQUEST_TIMEOUT = 3000; // milliseconds
 
+  var REQUEST_TIMEOUT = 3000; // milliseconds
   var START_URL = '/start';
 
   var state = {
@@ -15,12 +15,16 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
   var sequence = 0;
   var promises = [];
 
-  window.addEventListener('message', receiveMessage.bind(this));
 
   /**
    * Events
    */
 
+  // When a message is received from the host app this listener routes the payload to process the message.
+  window.addEventListener('message', receiveMessage.bind(this));
+
+  // This event is received when two way communication is established between the host app and this client. An error in the
+  // start handshake communiction is fatal and blocks further attempts to send messages.
   $rootScope.$on('$pre.start', function(event, stateObj) {
     state = stateObj;
   });
@@ -88,26 +92,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       }
     };
 
-    function isStartMessage() {
-      return this.request.url == START_URL;
-    };
-
-    function messageServiceIsOK() {
-      return state.statusCode >= 200 && state.statusCode <= 299;
-    };
-
-    function serialize() {
-      return angular.toJson(transport());
-    };
-
-    function transport() {
-      return {
-        header: this.header,
-        request: this.request,
-        response: this.response
-      }
-    };
-
     return this;
   };
 
@@ -116,16 +100,25 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
    */
 
   ApiMessage.prototype.send = function() {
+    var self = this;
     return new Promise(function(resolve, reject) {
 
       var onComplete = function(message) {
+        var responseObj;
         if (message.response.statusCode >= 200 &&
           message.response.statusCode <= 299) {
 
           if (!lodash.isUndefined(message.request.responseObj)) {
-            // Create an instance of the promised responseObj with the message data.
-            var responseObj = $injector.get(message.request.responseObj);
-            responseObj = eval(new responseObj(message.response.data.obj));
+
+            if (lodash.isEmpty(message.request.responseObj)) {
+              // An empty response object informs that we should pass back the raw response data without status.
+              responseObj = message.response.data || {};
+            } else {
+              // Create an instance of the promised responseObj with the message data.
+              responseObj = $injector.get(message.request.responseObj);
+              responseObj = eval(new responseObj(message.response.data));              
+            }
+
           } else {
             // Send the plain response object data if no responseObj set.
             // The receiver will have to know how to interpret the object.
@@ -136,40 +129,39 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
         } else {
 
-          var responseObj = new CError(message);
-          reject(responseObj);
+          reject(new CError(message));
         }
       };
 
       // Send the message only if the client is OK or if the purpose of the message is to
       // start the client.
-      if (messageServiceIsOK() || isStartMessage()) {
+      if (messageServiceIsOK() || isStartMessage(self)) {
 
         // Set a communication timeout timer.
         var timeoutTimer = $timeout(function() {
-          timeout(this);
+          timeout(self);
         }, REQUEST_TIMEOUT);
 
         // Store the promise callback for execution when a message is received.
         promises.push({
-          id: this.header.id,
+          id: self.header.id,
           onComplete: onComplete,
           timer: timeoutTimer
         });
 
         // Post the message to the host.
-        $log.info('[client] REQUEST  ' + this.header.sequence + ': ' + angular.toJson(transport()));
-        host.postMessage(angular.toJson(transport()), '*');
+        $log.info('[client] REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
+        host.postMessage(angular.toJson(transport(self)), '*');
 
       } else {
 
         // The client service is not ready. Short circuit the communication and immediatley respond.
-        this.response = {
+        self.response = {
           statusCode: 503,
           statusText: 'Client service not ready.',
           data: {}
         };
-        onComplete(this);
+        onComplete(self);
 
       }
     });
@@ -185,7 +177,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     try {
       message = new ApiMessage(event);
 
-      // $log.info('[client] receive  ' + message.header.sequence + ': ' + serialize() + ' (from ' + message.event.source.location.toString() + ')');
+      // $log.info('[client] receive  ' + message.header.sequence + ': ' + serialize(message) + ' (from ' + message.event.source.location.toString() + ')');
 
       var promiseIndex = lodash.findIndex(promises, function(promise) {
         return promise.id == message.header.id;
@@ -200,7 +192,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         promise[0].onComplete(message);
 
       } else {
-        $log.debug('Message received but there is no promise to fulfill: ' + serialize());
+        $log.warn('[client] WARNING: Message received but there is no promise to fulfill: ' + serialize(message));
       }      
 
     } catch (ex) {
@@ -211,8 +203,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     }
   };
 
+  // Timeout a message waiting for a reponse. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    $log.debug('Applet client request timeout: ' + message);
+    $log.debug('Plugin client request timeout: ' + message);
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;
@@ -228,7 +221,28 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       }
       promise[0].onComplete(message);
     } else {
-      $log.debug('Message request timed out but there is no promise to fulfill: ' + serialize());
+      $log.warn('[client] WARNING: Message request timed out but there is no promise to fulfill: ' + serialize(message));
+    }
+  };
+
+  function isStartMessage(message) {
+    return message.request.url == START_URL;
+  };
+
+  function messageServiceIsOK() {
+    return state.statusCode >= 200 && state.statusCode <= 299;
+  };
+
+  function serialize(message) {
+    return angular.toJson(transport(message));
+  };
+
+  // Only these properties of a message are sent and received.
+  function transport(message) {
+    return {
+      header: message.header,
+      request: message.request,
+      response: message.response
     }
   };
 

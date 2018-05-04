@@ -5,16 +5,15 @@ angular.module('owsWalletPluginClient.api').factory('CConst', function () {
   /**
    * CConstants
    *
-   * This class provides commonly used constant values.
+   * Provides commonly used constant values.
    */
 
   /**
    * Constructor.
-   * @return {CConst} An instance of CConst.
    * @constructor
    */
   function CConst() {
-    return this;
+    throw new Error('CConst is a static class');
   };
 
   CConst.BITS_PER_BTC = 1e6;
