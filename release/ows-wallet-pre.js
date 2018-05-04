@@ -57924,33 +57924,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
    * CSession instance provided by the '$pre.ready' event.
    */
 
-  /**
-   * Applet Properties
-   * -----------------
-   * 
-   * Root scope provides access to the folling applet functions and properties.
-   * 
-   * appletService.open - Open an applet.
-   *   <div ng-click="applet.open(applet)"></div>
-   *   
-   * appletService.close - Close an open applet
-   *   <div ng-click="applet.close()"></div>
-   *   
-   * applet.header - Applet header property.
-   *   <span>{{applet.header.name}}</span>
-   *   
-   * applet.path - Return the qualified path to the specified resource.
-   *   <img ng-src="{{applet.path+'img/my-image.png'}}">
-   *   
-   * applet.model - Applet model property.
-   *   <circular-slider
-   *     max="{{c.applet.model.csMaximum}}">
-   *   </circular-slider>
-   *   
-   * applet.view - Applet view property.
-   *   <div ng-style="{'background':applet.view.background}"></div>
-   */
-
    /**
    * Applet Events
    * -------------
@@ -58004,48 +57977,6 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
       }
     }
 
-    return new ApiMessage(request).send();
-  };
-
-  /**
-   * Set or get an applet property. Available property names are:
-   *   'title' - set the applet header bar text.
-   *
-   * Get a property by omitting the value.
-   * Set a property by specifying a name-value pair.
-   *
-   * @param {String} name - The applet property name to set or get.
-   * @param {String} [value] - The value to set.
-   * @return {String} The value of the specified property.
-   * @return {Promise<Object>} A promise at completion with param 'value' or an error.
-   */
-  CApplet.prototype.property = function(name, value) {
-    var request = {
-      method: 'POST',
-      url: '/applet/' + this.header.id + '/property/' + name,
-      data: value
-    }
-
-    return new ApiMessage(request).send();
-  };
-
-  /**
-   * Set or get a group of applet properties. Available property names are:
-   *   'title' - set the applet header bar text.
-   *
-   * Set properties by providing an object of name-value pairs.
-   * Get properties by providing an array of names, one for each property.
-   * 
-   * @param {String} set - The applet property set; either an array or an object of name-values.
-   * @return {Promise} A promise at completion.
-   */
-  CApplet.prototype.propertySet = function(set) {
-    var request = {
-      method: 'POST',
-      url: '/applet/' + this.header.id + '/propertyset',
-      data: set
-    }
-    
     return new ApiMessage(request).send();
   };
 
@@ -58355,88 +58286,6 @@ angular.module('owsWalletPluginClient.api').factory('CPlatform', function (lodas
   init();
 
   return CPlatform;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CPlugin', function ($log, ApiMessage) {
-
-  /**
-   * CPlugin
-   *
-   * Provides access to plugin information.
-   */
-
-  /**
-   * PluginObject
-   * ------------
-   * 
-   * Plugins are registered during the application build process.  Each plugin is represented as a
-   * plugin catalog entry and defines properties as follows.
-   *
-   * Properties shared by all plugins.
-   *
-   *   {String} kind - The type of plugin, 'applet' or 'service'.
-   *   {String} id - The unique plugin identifier.
-   *   {String} name - Human readable name of the plugin.
-   *   {String} description - A short description of the plugin.
-   *   {String} author - The author of the plugin.
-   *   {String} version - A version identfier for the plugin (typ. 'x.y.z').
-   * 
-   * Applet specific plugin properties.
-   * 
-   *   {String} mainView - The relative path to the applet main view.
-   *   {String} uri - The relative path to the applet root location.
-   *
-   * Service specific plugin properties.
-   * 
-   *   {String} serviceApi - The class name of the plugin API (use to create an instance of the plugin).
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function CPlugin() {
-    throw new Error('CPlugin is a static class');
-  };
-
-  /**
-   * Return the plugin catalog entry for the specified plugin id.
-   * @param {String} id - The plugin id that identifies a plugin.
-   * @return {PluginObject} An instance of a plugin object.
-   * @throws Will throw an error if no plugin entry was found.
-   * @static
-   */
-  CPlugin.getCatalogEntry = function(id) {
-    var request = {
-     method: 'GET',
-     url: '/plugin-catalog?id=' + id,
-     responseObj: {}
-    }
-
-    return new ApiMessage(request).send();
-  };
-
-  /**
-   * Validate that the specified service description object contains all required properties.
-   * @param {String} serviceDesc - A service description object specified in a skin.
-   * @param {Array} requiredProperties - An array of required properties; e.g., ['.a','.b','.b.c'].
-   * @param {String} id - The plugin id of the requestor.
-   * @throws Will throw an error if serviceDesc is missing any required properties.
-   * @static
-   */
-  CPlugin.validateServiceDesc = function(serviceDesc, requiredProperties, id) {
-    var result = CSystem.checkObject(serviceDesc, requiredProperties);
-    if (result.missing.length > 0) {
-      throw new Error('A skin with service plugin \'' + pluginId + '\' is missing required properties \'' + result.missing.toString() + '\'');
-    }
-    if (result.other.length > 0) {
-      $log.warn('A skin with service plugin \'' + pluginId + '\' has unrecognized properties \'' + result.other.toString() + '\'');
-    }
-  };
-
-  return CPlugin;
 });
 
 'use strict';
