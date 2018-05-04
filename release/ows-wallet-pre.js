@@ -58599,7 +58599,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
     var request = {
      method: 'GET',
      url: '/session/' + this.id + '/applet',
-     responseObj: CApplet
+     responseObj: 'CApplet'
     }
 
     return new ApiMessage(request).send().then(function(response) {
