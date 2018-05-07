@@ -1,6 +1,20 @@
 'use strict';
 
-angular.module('owsWalletPluginClient').run(function($rootScope, $log, ApiMessage, CSession) {
+angular.module('owsWalletPluginClient').config(function($ionicConfigProvider) {
+
+  // Ionic platform defaults. Plugin may override in their config block.
+  $ionicConfigProvider.tabs.position('bottom');
+
+  $ionicConfigProvider.navBar.alignTitle('center');
+  $ionicConfigProvider.navBar.positionPrimaryButtons('left');
+  $ionicConfigProvider.navBar.positionSecondaryButtons('right');
+
+  $ionicConfigProvider.backButton.icon('icon ion-ios-arrow-left').text('');
+  $ionicConfigProvider.backButton.previousTitleText(false);
+
+  $ionicConfigProvider.scrolling.jsScrolling(false);
+
+}).run(function($rootScope, $log, ApiMessage, CSession) {
 
 	var START_URL = '/start';
 
@@ -58,6 +72,7 @@ angular.module('owsWalletPluginClient').run(function($rootScope, $log, ApiMessag
 	// Tells ionic that we are running in a Cordova container. Ionic doesn't set this because we are not the root document.
   function setupForCordova() {
     angular.element(document.querySelector('body')).addClass('platform-cordova');
+    angular.element(document.querySelector('ion-nav-view')).css('width', window.innerWidth + 'px');
   };
 
 });

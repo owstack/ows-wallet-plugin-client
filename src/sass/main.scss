@@ -1,3 +1,9 @@
 /*
  * CSS for OWS Wallet applet plugin client.
  */
+
+// Prevent the header bar from hiding during view transition.
+// See https://github.com/ionic-team/ionic/issues/8581
+ion-nav-bar.hide {
+  display: block !important;
+}

@@ -1,3 +1,5 @@
 /*
  * CSS for OWS Wallet applet plugin client.
  */
+ion-nav-bar.hide {
+  display: block !important; }
