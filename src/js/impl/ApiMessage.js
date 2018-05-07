@@ -15,7 +15,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
   var sequence = 0;
   var promises = [];
 
-
   /**
    * Events
    */

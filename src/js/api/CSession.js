@@ -6,10 +6,9 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * CSession
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained from the '$pre.ready' event or by calling CSession.getInstance().
+   * this class should be obtained by calling CSession.getInstance().
    */
 
-   var START_URL = '/start';
    var instance;
 
   /**
@@ -25,61 +24,19 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
     }
     instance = this;
 
-    var state = {
-      statusCode: 100,
-      statusText: 'Initializing'
-    };
+    getSession().then(function(sessionObj) {
+      // Assign the session data to ourself.
+      lodash.assign(self, sessionObj);
 
-    start();
-
-    /**
-     * Private methods
-     */
-
-    function start() {
-      var request = {
-       method: 'POST',
-       url: START_URL,
-       data: {}
+      if (!self.id) {
+        $log.error('[client] ERROR: unexpected response while retrieving session');
       }
 
-      return new ApiMessage(request).send().then(function(response) {
-        $log.info('[client] START: ' + response.statusText + ' (' + response.statusCode + ')');
+      // Notify plugin that we're ready to run.
+      $rootScope.$emit('$pre.ready', self);
+    });
 
-        state = {
-          statusCode: response.statusCode,
-          statusText: response.statusText
-        };
-
-        $rootScope.$emit('$pre.start', state);
-
-        }).catch(function(error) {
-          $log.error('[client] START ERROR: ' + error.message + ' (' + error.statusCode + ')');
-
-          state = {
-            statusCode: error.statusCode,
-            statusText: error.message
-          };
-
-          $rootScope.$emit('$pre.start', state);
-
-        }).then(function() {
-          return getSession();
-
-        }).then(function(sessionObj) {
-          // Assign the session data to ourself.
-          lodash.assign(self, sessionObj);
-
-          if (!self.id) {
-            $log.error('[client] ERROR: unexpected response while retrieving session');
-          }
-
-          // Notify plugin that we're ready to run.
-          $rootScope.$emit('$pre.ready', self);
-
-        });
-    };
-
+    // Get our session data.
     function getSession() {
       var request = {
        method: 'GET',
@@ -90,11 +47,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return new ApiMessage(request).send();
     };
 
-    /**
-     * Get the sessionId from the URL.
-     * @return {string} The seesion id.
-     * @private
-     */
+    // Get the sessionId from the URL.
     function sessionId() {
       var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
       if (sessionId.indexOf('&') >= 0) {
