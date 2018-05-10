@@ -57770,7 +57770,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     var self = this;
     this.event = {};
 
-    // Sequence must not be provided with an event.
     if (eventOrRequest instanceof MessageEvent) {
       var event = eventOrRequest;
 
@@ -57786,6 +57785,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
     } else {
       var request = eventOrRequest;
+
+      // Set request options per caller or use defaults.
+      request.opts = request.opts || {};
+      request.opts.timeout = request.opts.timeout || REQUEST_TIMEOUT;
 
       // Construct a new message from the data and make alias assignments.
       var now = new Date();
@@ -57838,31 +57841,40 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
       var onComplete = function(message) {
         var responseObj;
-        if (message.response.statusCode >= 200 &&
-          message.response.statusCode <= 299) {
 
-          if (!lodash.isUndefined(message.request.responseObj)) {
-
-            if (lodash.isEmpty(message.request.responseObj)) {
-              // An empty response object informs that we should pass back the raw response data without status.
-              responseObj = message.response.data || {};
-            } else {
-              // Create an instance of the promised responseObj with the message data.
-              responseObj = $injector.get(message.request.responseObj);
-              responseObj = eval(new responseObj(message.response.data));              
-            }
-
-          } else {
-            // Send the plain response object data if no responseObj set.
-            // The receiver will have to know how to interpret the object.
-            responseObj = message.response;
-          }
-
-          resolve(responseObj);
+        if (message.response.statusCode < 200 && message.response.statusCode > 299) {
+          // Fail
+          reject(new CError(message));
 
         } else {
 
-          reject(new CError(message));
+          // Success
+          switch (message.response.statusCode) {
+            case 204: // No content
+              responseObj = undefined;
+              break;
+
+            default:
+              if (!lodash.isUndefined(message.request.responseObj)) {
+
+                if (lodash.isEmpty(message.request.responseObj)) {
+                  // An empty response object informs that we should pass back the raw response data without status.
+                  responseObj = message.response.data || {};
+                } else {
+                  // Create an instance of the promised responseObj with the message data.
+                  responseObj = $injector.get(message.request.responseObj);
+                  responseObj = eval(new responseObj(message.response.data));              
+                }
+
+              } else {
+                // Send the plain response object data if no responseObj set.
+                // The receiver will have to know how to interpret the object.
+                responseObj = message.response;
+              }
+              break;
+          }
+
+          resolve(responseObj);
         }
       };
 
@@ -57870,10 +57882,13 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       // start the client.
       if (messageServiceIsOK() || isStartMessage(self)) {
 
-        // Set a communication timeout timer.
-        var timeoutTimer = $timeout(function() {
-          timeout(self);
-        }, REQUEST_TIMEOUT);
+        // Set a communication timeout timer unless the caller overrides.
+        var timeoutTimer = {};
+        if (self.request.opts.timeout > 0) {
+          timeoutTimer = $timeout(function() {
+            timeout(self);
+          }, REQUEST_TIMEOUT);
+        }
 
         // Store the promise callback for execution when a message is received.
         promises.push({
@@ -57938,7 +57953,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
   // Timeout a message waiting for a reponse. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    $log.debug('Plugin client request timeout: ' + message);
+    $log.debug('Plugin client request timeout: ' + serialize(message));
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;
@@ -57990,7 +58005,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
    * CApplet
    *
    * Provides access to applet behavior. An instance of this class should be obtained from the
-   * CSession instance provided by the '$pre.ready' event.
+   * CSession instance.
    */
 
    /**
@@ -58359,7 +58374,7 @@ angular.module('owsWalletPluginClient.api').factory('CPlatform', function (lodas
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError, CWallet) {
 
   /**
    * CSession
@@ -58523,7 +58538,30 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       }
       return response;
     });
+  };
 
+  /**
+   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new CWallet instance.
+   * @return {CWallet} An instance of the chosen CWallet.
+   * @static
+   */
+  CSession.prototype.chooseWallet = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/choosewallet',
+      responseObj: 'CWallet',
+      opts: {
+        timeout: -1
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (typeof response != 'CError') {
+        return response;
+      }
+      return repsonse;
+    });
   };
 
   return CSession;
@@ -58622,118 +58660,22 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CWallet', function (configService, txFormatService, FocusedWallet) {
+angular.module('owsWalletPluginClient.api').factory('CWallet', function (lodash) {
 
   /**
    * CWallet
    *
-   * This class provides host app wallet access.
+   * Provides access to a wallet. An instance of this class should be obtained from the CSession instance.
    */
 
   /**
-   * Constructor.
+   * Constructor.  An instance of this class must be obtained from CSession.
+   * @param {Wallet} wallet - An internal Wallet object.
    * @return {Object} An instance of CWallet.
    * @constructor
    */
-  function CWallet() {
-    throw new Error('CWallet is a static class');
-  };
-
-  /**
-   * Return the current wallet currency unit name.
-   * @return {String} A currency unit name.
-   * @static
-   */
-  CWallet.getCurrencyName = function() {
-    return configService.getSync().wallet.settings.unitName;
-  };
-
-  /**
-   * Return the current wallet currency code.
-   * @return {String} A currency code.
-   * @static
-   */
-  CWallet.getCurrencyCode = function() {
-    return configService.getSync().wallet.settings.unitCode;
-  };
-
-  /**
-   * Return the current wallet alternative currency unit name.
-   * @return {String} A currency name.
-   * @static
-   */
-  CWallet.getAltCurrencyName = function() {
-    return configService.getSync().wallet.settings.alternativeName;
-  };
-
-  /**
-   * Return the current wallet alternative currency unit ISO code.
-   * @return {String} An ISO code.
-   * @static
-   */
-  CWallet.getAltCurrencyIsoCode = function() {
-    return configService.getSync().wallet.settings.alternativeIsoCode;
-  };
-
-  /**
-   * Return the current wallet conversion for unit to satoshi.
-   * @return {Number} A unit to satoshi conversion number.
-   * @static
-   */
-  CWallet.getUnitToSatoshi = function() {
-    return configService.getSync().wallet.settings.unitToSatoshi;
-  };
-
-  /**
-   * Return the current wallet unit number of decimal places.
-   * @return {Number} A number of decimal places.
-   * @static
-   */
-  CWallet.getUnitDecimals = function() {
-    return configService.getSync().wallet.settings.unitDecimals;
-  };
-
-  /**
-   * Return the formatted amount for display using the current wallet settings.
-   * @return {String} A formatted currency amount.
-   * @static
-   */
-  CWallet.formatAmount = function(amount) {
-    return txFormatService.formatAmount(amount);
-  };
-
-  /**
-   * Callback for sendPayment().
-   * @callback {sendPaymentCallback}
-   * @param {String|undefined} error - An error message or undefined.
-   */
-
-  /**
-   * Sends a bitcoin payment from the current wallet.
-   * This method presents a user interface confirmation prior to sending payment.
-   *
-   * {payproData} - For payment-protocol payments provide the following payment data object.
-   * 
-   * data: {
-   *   {String} payProUrl - The full payment protocol service URL.
-   *   {String} memo - A human readbale memo attached to the payment.
-   * }
-   * 
-   * {paymentData} - For all other payments provide the following payment data object.
-   *   
-   * data: {
-   *   {String} toAddress - A bitcoin destination address.
-   *   {Number} amount - The number of satoshi's to send.
-   *   {String} memo - A human readbale memo attached to the payment.
-   * }
-   *
-   * @param {payproData|paymentData} data - The payment data.
-   * @param {sendPaymentCallback} callback - A callback on completion.
-   * @static
-   */
-  CWallet.sendPayment = function(data, callback) {
-    var wallet = FocusedWallet.getInstance();
-    return wallet.sendPayment(data, callback);
+  function CWallet(walletObj) {
+    lodash.assign(this, walletObj);
   };
 
   return CWallet;

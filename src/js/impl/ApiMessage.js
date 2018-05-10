@@ -36,7 +36,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     var self = this;
     this.event = {};
 
-    // Sequence must not be provided with an event.
     if (eventOrRequest instanceof MessageEvent) {
       var event = eventOrRequest;
 
@@ -52,6 +51,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
     } else {
       var request = eventOrRequest;
+
+      // Set request options per caller or use defaults.
+      request.opts = request.opts || {};
+      request.opts.timeout = request.opts.timeout || REQUEST_TIMEOUT;
 
       // Construct a new message from the data and make alias assignments.
       var now = new Date();
@@ -104,31 +107,40 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
       var onComplete = function(message) {
         var responseObj;
-        if (message.response.statusCode >= 200 &&
-          message.response.statusCode <= 299) {
 
-          if (!lodash.isUndefined(message.request.responseObj)) {
-
-            if (lodash.isEmpty(message.request.responseObj)) {
-              // An empty response object informs that we should pass back the raw response data without status.
-              responseObj = message.response.data || {};
-            } else {
-              // Create an instance of the promised responseObj with the message data.
-              responseObj = $injector.get(message.request.responseObj);
-              responseObj = eval(new responseObj(message.response.data));              
-            }
-
-          } else {
-            // Send the plain response object data if no responseObj set.
-            // The receiver will have to know how to interpret the object.
-            responseObj = message.response;
-          }
-
-          resolve(responseObj);
+        if (message.response.statusCode < 200 && message.response.statusCode > 299) {
+          // Fail
+          reject(new CError(message));
 
         } else {
 
-          reject(new CError(message));
+          // Success
+          switch (message.response.statusCode) {
+            case 204: // No content
+              responseObj = undefined;
+              break;
+
+            default:
+              if (!lodash.isUndefined(message.request.responseObj)) {
+
+                if (lodash.isEmpty(message.request.responseObj)) {
+                  // An empty response object informs that we should pass back the raw response data without status.
+                  responseObj = message.response.data || {};
+                } else {
+                  // Create an instance of the promised responseObj with the message data.
+                  responseObj = $injector.get(message.request.responseObj);
+                  responseObj = eval(new responseObj(message.response.data));              
+                }
+
+              } else {
+                // Send the plain response object data if no responseObj set.
+                // The receiver will have to know how to interpret the object.
+                responseObj = message.response;
+              }
+              break;
+          }
+
+          resolve(responseObj);
         }
       };
 
@@ -136,10 +148,13 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       // start the client.
       if (messageServiceIsOK() || isStartMessage(self)) {
 
-        // Set a communication timeout timer.
-        var timeoutTimer = $timeout(function() {
-          timeout(self);
-        }, REQUEST_TIMEOUT);
+        // Set a communication timeout timer unless the caller overrides.
+        var timeoutTimer = {};
+        if (self.request.opts.timeout > 0) {
+          timeoutTimer = $timeout(function() {
+            timeout(self);
+          }, REQUEST_TIMEOUT);
+        }
 
         // Store the promise callback for execution when a message is received.
         promises.push({
@@ -204,7 +219,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
   // Timeout a message waiting for a reponse. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    $log.debug('Plugin client request timeout: ' + message);
+    $log.debug('Plugin client request timeout: ' + serialize(message));
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;

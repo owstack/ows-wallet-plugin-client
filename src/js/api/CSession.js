@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError, CWallet) {
 
   /**
    * CSession
@@ -164,7 +164,30 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       }
       return response;
     });
+  };
 
+  /**
+   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new CWallet instance.
+   * @return {CWallet} An instance of the chosen CWallet.
+   * @static
+   */
+  CSession.prototype.chooseWallet = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/choosewallet',
+      responseObj: 'CWallet',
+      opts: {
+        timeout: -1
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (typeof response != 'CError') {
+        return response;
+      }
+      return repsonse;
+    });
   };
 
   return CSession;

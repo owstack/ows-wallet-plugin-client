@@ -6,7 +6,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
    * CApplet
    *
    * Provides access to applet behavior. An instance of this class should be obtained from the
-   * CSession instance provided by the '$pre.ready' event.
+   * CSession instance.
    */
 
    /**
