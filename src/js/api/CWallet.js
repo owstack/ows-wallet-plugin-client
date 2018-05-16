@@ -10,7 +10,7 @@ angular.module('owsWalletPluginClient.api').factory('CWallet', function (lodash)
 
   /**
    * Constructor.  An instance of this class must be obtained from CSession.
-   * @param {Wallet} wallet - An internal Wallet object.
+   * @param {Object} wallet - An internal Wallet object.
    * @return {Object} An instance of CWallet.
    * @constructor
    */

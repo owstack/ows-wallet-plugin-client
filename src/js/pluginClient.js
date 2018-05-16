@@ -3,6 +3,7 @@
 var modules = [
   'gettext',
 	'ngLodash',
+  'pathToRegexpModule',
 	'owsWalletPluginClient.api',
 	'owsWalletPluginClient.impl'
 ];

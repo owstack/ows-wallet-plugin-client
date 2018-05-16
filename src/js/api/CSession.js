@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, $log, lodash, ApiMessage, CApplet, CError, CWallet) {
+angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, lodash, apiHelpers, apiLog, ApiMessage, CApplet, CServlet, CError, CWallet) {
 
   /**
    * CSession
@@ -28,32 +28,27 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       // Assign the session data to ourself.
       lodash.assign(self, sessionObj);
 
-      if (!self.id) {
-        $log.error('[client] ERROR: unexpected response while retrieving session');
-      }
+      switch (self.plugin.header.kind) {
+        case 'applet': self.plugin = new CApplet(self.plugin); break;
+        case 'servlet': self.plugin = new CServlet(self.plugin); break;
+      };
 
-      // Notify plugin that we're ready to run.
-      $rootScope.$emit('$pre.ready', self);
+      $rootScope.$emit('Local/Initialized', 'session');
+    
+    }).catch(function(error) {
+      apiLog.error('CSession(): ' + JSON.stringify(error));
+
     });
 
     // Get our session data.
     function getSession() {
       var request = {
        method: 'GET',
-       url: '/session/' + sessionId(),
+       url: '/session/' + apiHelpers.sessionId(),
        responseObj: {}
       }
 
       return new ApiMessage(request).send();
-    };
-
-    // Get the sessionId from the URL.
-    function sessionId() {
-      var sessionId = window.location.search.substring(window.location.search.indexOf('sessionId=') + 10);
-      if (sessionId.indexOf('&') >= 0) {
-        sessionId = sessionId.substring(0, sessionId.indexOf('&'));
-      }
-      return sessionId;
     };
 
     return this;
@@ -61,7 +56,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
 
   /**
    * Get the single session object or create the session.
-   * @return {CSession} The single session object.
+   * @return {Object} The single session object.
    */
   CSession.getInstance = function() {
     return instance || new CSession();
@@ -73,11 +68,18 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    */
   CSession.prototype.flush = function() {
     var request = {
-     method: 'POST',
-     url: '/session/flush'
+      method: 'POST',
+      url: '/session/flush',
+      data: {}
     }
 
-    return new ApiMessage(request).send();
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      apiLog.error('CSession.flush():' + JSON.stringify(error));
+      
+    });
   };
 
   /**
@@ -88,37 +90,19 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
   CSession.prototype.get = function(name) {
     var self = this;
     var request = {
-     method: 'GET',
-     url: '/session/' + this.id + '/var/' + name,
-     responseObj: {}
+      method: 'GET',
+      url: '/session/' + this.id + '/var/' + name,
+      responseObj: {}
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      if (typeof response != 'CError') {
-        self[name] = {};
-        lodash.assign(self[name], response);
-      }
+      self[name] = {};
+      lodash.assign(self[name], response);
       return repsonse;
-    });
-  };
 
-  /**
-   * Return the applet for this session. An 'applet' property is created on the session.
-   * @return {Promise<CApplet>} A promise at completion with param 'applet' or an error.
-   */
-  CSession.prototype.getApplet = function () {
-    var self = this;
-    var request = {
-     method: 'GET',
-     url: '/session/' + this.id + '/applet',
-     responseObj: 'CApplet'
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      if (typeof response != 'CError') {
-        self.applet = response;
-      }
-      return response;
+    }).catch(function(error) {
+      apiLog.error('CSession.get(): ' + JSON.stringify(error));
+      
     });
   };
 
@@ -135,11 +119,13 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      if (typeof response != 'CError') {
-        self.data = {};
-        lodash.assign(self.data, response);
-      }
+      self.data = {};
+      lodash.assign(self.data, response);
       return response;
+
+    }).catch(function(error) {
+      apiLog.error('CSession.restore(): ' + JSON.stringify(error));
+      
     });
   };
 
@@ -158,11 +144,13 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      if (typeof response != 'CError') {
-        self.data = self.data || {};
-        lodash.merge(self.data, response);
-      }
+      self.data = self.data || {};
+      lodash.merge(self.data, response);
       return response;
+
+    }).catch(function(error) {
+      apiLog.error('CSession.set(): ' + JSON.stringify(error));
+      
     });
   };
 
@@ -183,10 +171,11 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      if (typeof response != 'CError') {
-        return response;
-      }
-      return repsonse;
+      return response;
+
+    }).catch(function(error) {
+      apiLog.error('CSession.chooseWallet(): ' + JSON.stringify(error));
+      
     });
   };
 

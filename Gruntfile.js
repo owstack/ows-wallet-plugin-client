@@ -93,6 +93,8 @@ module.exports = function(grunt) {
           // Dynamic JSON validator
           'node_modules/djv/djv.js',
           'angular-djv/index.js',
+          // Used for plugin api router
+          'angular-path-to-regexp/angular-path-to-regexp.js',
           // OWS Wallet plugin API client
           'build/ows-wallet-plugin-client.js'
         ],
@@ -162,7 +164,8 @@ module.exports = function(grunt) {
     browserify: {
       dist: {
         files: {
-          'angular-bitauth/angular-bitauth.js': ['angular-bitauth/index.js']
+          'angular-bitauth/angular-bitauth.js': ['angular-bitauth/index.js'],
+          'angular-path-to-regexp/angular-path-to-regexp.js': ['angular-path-to-regexp/index.js']
         },
         options: {
           exclude: ['www/index.html']

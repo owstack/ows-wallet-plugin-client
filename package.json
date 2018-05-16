@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "bitauth": "^0.2.1",
-    "djv": "^2.0.0"
+    "djv": "^2.0.0",
+    "path-to-regexp": "^2.2.1"
   },
   "scripts": {
     "clean": "grunt clean"

@@ -25,28 +25,13 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
 
   /**
    * Constructor.  An instance of this class must be obtained from CSession.
-   * @param {Applet} applet - An internal Applet object.
+   * @param {Object} plugin - An internal Plugin object.
    * @return {Object} An instance of CApplet.
    * @constructor
    */
   function CApplet(appletObj) {
     lodash.assign(this, appletObj);
     return this;
-  };
-
-  /**
-   * Initialize a plugin service.
-   * @param {String} pluginId - The plugin ID that identifies a registered service.
-   * @return {Promise<Object>} A promise for the specified service object.
-   */
-  CApplet.prototype.initService = function(pluginId) {
-    var request = {
-      method: 'POST',
-      url: '/applet/' + this.header.id + '/service/' + pluginId + '/init',
-      data: {}
-    }
-
-    return new ApiMessage(request).send();
   };
 
   /**

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CPlatform', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('CPlatform', function ($rootScope, apiLog, lodash, ApiMessage) {
 
   /**
    * CPlatform
@@ -32,24 +32,26 @@ angular.module('owsWalletPluginClient.api').factory('CPlatform', function (lodas
   };
 
   /**
-   * Initialize a plugin service.
-   * @param {String} pluginId - The plugin ID that identifies a registered service.
+   * Get the platform information.
    * @return {Promise<Object>} A promise for the specified service object.
    */
-  function init() {
+  CPlatform.get = function() {
     var request = {
       method: 'GET',
-      url: '/info/platorm',
+      url: '/info/platform',
       responseObj: {}
     }
 
-    return new ApiMessage(request).send().then(function(info) {
-      lodash.assign(CPlatform, info);
+    return new ApiMessage(request).send().then(function(response) {
+      lodash.assign(CPlatform, response);
+      $rootScope.$emit('Local/Initialized', 'platformInfo');
+      return response;
+
+    }).catch(function(error) {
+      apiLog.error('CPlatform.get(): ' + JSON.stringify(error));
+      
     });
   };
-
-  // Retrieve info at startup.
-  init();
 
   return CPlatform;
 });
