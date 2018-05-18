@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').service('apiLog', function($log, apiHelpers) {
+angular.module('owsWalletPluginClient.services').service('pLog', function($log, apiHelpers) {
 
 	var root = {};
 

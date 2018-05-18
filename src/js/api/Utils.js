@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateService) {
+angular.module('owsWalletPluginClient.api').factory('Utils', function (rateService) {
 
   /**
-   * CUtils
+   * Utils
    *
    * Provides domain utilities.
    */
@@ -12,8 +12,8 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
    * Constructor.
    * @constructor
    */
-  function CUtils() {
-    throw new Error('CUtils is a static class');
+  function Utils() {
+    throw new Error('Utils is a static class');
   };
 
   /**
@@ -22,9 +22,9 @@ angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateServ
    * @return {Object} An instance of a service object.
    * @static
    */
-  CUtils.getRate = function(isoCode) {
+  Utils.getRate = function(isoCode) {
     return rateService.getRate(isoCode);
   };
 
-  return CUtils;
+  return Utils;
 });

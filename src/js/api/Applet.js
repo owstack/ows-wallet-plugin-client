@@ -1,12 +1,12 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) {
 
   /**
-   * CApplet
+   * Applet
    *
    * Provides access to applet behavior. An instance of this class should be obtained from the
-   * CSession instance.
+   * Session instance.
    */
 
    /**
@@ -24,12 +24,12 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
    */
 
   /**
-   * Constructor.  An instance of this class must be obtained from CSession.
+   * Constructor.  An instance of this class must be obtained from Session.
    * @param {Object} plugin - An internal Plugin object.
-   * @return {Object} An instance of CApplet.
+   * @return {Object} An instance of Applet.
    * @constructor
    */
-  function CApplet(appletObj) {
+  function Applet(appletObj) {
     lodash.assign(this, appletObj);
     return this;
   };
@@ -38,7 +38,7 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
    * Hides the splash image after starting.
    * @return {Promise} A promise at completion.
    */
-  CApplet.prototype.hideSplash = function() {
+  Applet.prototype.hideSplash = function() {
     var request = {
       method: 'POST',
       url: '/applet/' + this.header.id + '/config',
@@ -50,5 +50,5 @@ angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash)
     return new ApiMessage(request).send();
   };
 
-  return CApplet;
+  return Applet;
 });

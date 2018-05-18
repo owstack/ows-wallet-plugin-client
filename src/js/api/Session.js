@@ -1,22 +1,22 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, lodash, apiHelpers, apiLog, ApiMessage, CApplet, CServlet, CError, CWallet) {
+angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, pLog, ApiMessage, Applet, Servlet, Wallet) {
 
   /**
-   * CSession
+   * Session
    *
    * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained by calling CSession.getInstance().
+   * this class should be obtained by calling Session.getInstance().
    */
 
    var instance;
 
   /**
    * Constructor.
-   * @return {Object} The single instance of CSession.
+   * @return {Object} The single instance of Session.
    * @constructor
    */
-  function CSession() {
+  function Session() {
     var self = this;
 
     if (instance) {
@@ -29,14 +29,14 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       lodash.assign(self, sessionObj);
 
       switch (self.plugin.header.kind) {
-        case 'applet': self.plugin = new CApplet(self.plugin); break;
-        case 'servlet': self.plugin = new CServlet(self.plugin); break;
+        case 'applet': self.plugin = new Applet(self.plugin); break;
+        case 'servlet': self.plugin = new Servlet(self.plugin); break;
       };
 
       $rootScope.$emit('Local/Initialized', 'session');
     
     }).catch(function(error) {
-      apiLog.error('CSession(): ' + JSON.stringify(error));
+      pLog.error('Session(): ' + JSON.stringify(error));
 
     });
 
@@ -58,15 +58,15 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * Get the single session object or create the session.
    * @return {Object} The single session object.
    */
-  CSession.getInstance = function() {
-    return instance || new CSession();
+  Session.getInstance = function() {
+    return instance || new Session();
   };
 
   /**
    * Write all session data to persistent storage.
    * @return {Promise} A promise at completion.
    */
-  CSession.prototype.flush = function() {
+  Session.prototype.flush = function() {
     var request = {
       method: 'POST',
       url: '/session/flush',
@@ -77,7 +77,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return repsonse;
 
     }).catch(function(error) {
-      apiLog.error('CSession.flush():' + JSON.stringify(error));
+      pLog.error('Session.flush():' + JSON.stringify(error));
       
     });
   };
@@ -87,7 +87,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @param {String} name - User specified data name defined using set(name, value).
    * @return {Promise<Object>} A promise for stored value.
    */
-  CSession.prototype.get = function(name) {
+  Session.prototype.get = function(name) {
     var self = this;
     var request = {
       method: 'GET',
@@ -101,7 +101,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return repsonse;
 
     }).catch(function(error) {
-      apiLog.error('CSession.get(): ' + JSON.stringify(error));
+      pLog.error('Session.get(): ' + JSON.stringify(error));
       
     });
   };
@@ -110,7 +110,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * Restore all session data from persistent storage. A 'data' property is created on the session.
    * @return {Promise} A promise at completion with param 'data' or an error.
    */
-  CSession.prototype.restore = function() {
+  Session.prototype.restore = function() {
     var self = this;
     var request = {
       method: 'POST',
@@ -124,7 +124,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return response;
 
     }).catch(function(error) {
-      apiLog.error('CSession.restore(): ' + JSON.stringify(error));
+      pLog.error('Session.restore(): ' + JSON.stringify(error));
       
     });
   };
@@ -135,7 +135,7 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
    * @param {Object} value - The data value to store.
    * @return {Promise} A promise at completion with param 'value' or an error.
    */
-  CSession.prototype.set = function(name, value) {
+  Session.prototype.set = function(name, value) {
     var self = this;
     var request = {
       method: 'POST',
@@ -149,22 +149,21 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return response;
 
     }).catch(function(error) {
-      apiLog.error('CSession.set(): ' + JSON.stringify(error));
+      pLog.error('Session.set(): ' + JSON.stringify(error));
       
     });
   };
 
   /**
-   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new CWallet instance.
-   * @return {CWallet} An instance of the chosen CWallet.
-   * @static
+   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
+   * @return {Wallet} An instance of the chosen Wallet.
    */
-  CSession.prototype.chooseWallet = function() {
+  Session.prototype.chooseWallet = function() {
     var self = this;
     var request = {
       method: 'GET',
       url: '/session/' + this.id + '/choosewallet',
-      responseObj: 'CWallet',
+      responseObj: 'Wallet',
       opts: {
         timeout: -1
       }
@@ -174,10 +173,10 @@ angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootS
       return response;
 
     }).catch(function(error) {
-      apiLog.error('CSession.chooseWallet(): ' + JSON.stringify(error));
+      pLog.error('Session.chooseWallet(): ' + JSON.stringify(error));
       
     });
   };
 
-  return CSession;
+  return Session;
 });

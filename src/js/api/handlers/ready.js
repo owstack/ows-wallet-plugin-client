@@ -21,7 +21,7 @@ angular.module('owsWalletPluginClient.api').service('ready', function($rootScope
     // A properly received message does not send a response back to the host app.
     // We just broadcast an event for the client with the plugin id of the plugin
     // that has become ready.
-    $rootScope.$emit('$pre.openForBusiness', pluginId);
+    owswallet.Plugin.setOpen(pluginId);
 
     return;
   };

@@ -57659,136 +57659,570 @@ pathToRegexpModule.provider("pathToRegexpService", function() {
 
 },{"../node_modules/path-to-regexp":2}],2:[function(require,module,exports){
 /**
- * Expose `pathtoRegexp`.
+ * Expose `pathToRegexp`.
  */
-
-module.exports = pathtoRegexp;
+module.exports = pathToRegexp
+module.exports.parse = parse
+module.exports.compile = compile
+module.exports.tokensToFunction = tokensToFunction
+module.exports.tokensToRegExp = tokensToRegExp
 
 /**
- * Match matching groups in a regular expression.
+ * Default configs.
  */
-var MATCHING_GROUP_REGEXP = /\((?!\?)/g;
+var DEFAULT_DELIMITER = '/'
+var DEFAULT_DELIMITERS = './'
 
 /**
- * Normalize the given path string,
- * returning a regular expression.
+ * The main path matching regexp utility.
  *
- * An empty array should be passed,
- * which will contain the placeholder
- * key names. For example "/user/:id" will
- * then contain ["id"].
- *
- * @param  {String|RegExp|Array} path
- * @param  {Array} keys
- * @param  {Object} options
- * @return {RegExp}
- * @api private
+ * @type {RegExp}
  */
+var PATH_REGEXP = new RegExp([
+  // Match escaped characters that would otherwise appear in future matches.
+  // This allows the user to escape special characters that won't transform.
+  '(\\\\.)',
+  // Match Express-style parameters and un-named parameters with a prefix
+  // and optional suffixes. Matches appear as:
+  //
+  // "/:test(\\d+)?" => ["/", "test", "\d+", undefined, "?"]
+  // "/route(\\d+)"  => [undefined, undefined, undefined, "\d+", undefined]
+  '(?:\\:(\\w+)(?:\\(((?:\\\\.|[^\\\\()])+)\\))?|\\(((?:\\\\.|[^\\\\()])+)\\))([+*?])?'
+].join('|'), 'g')
 
-function pathtoRegexp(path, keys, options) {
-  options = options || {};
-  keys = keys || [];
-  var strict = options.strict;
-  var end = options.end !== false;
-  var flags = options.sensitive ? '' : 'i';
-  var extraOffset = 0;
-  var keysOffset = keys.length;
-  var i = 0;
-  var name = 0;
-  var m;
+/**
+ * Parse a string for the raw tokens.
+ *
+ * @param  {string}  str
+ * @param  {Object=} options
+ * @return {!Array}
+ */
+function parse (str, options) {
+  var tokens = []
+  var key = 0
+  var index = 0
+  var path = ''
+  var defaultDelimiter = (options && options.delimiter) || DEFAULT_DELIMITER
+  var delimiters = (options && options.delimiters) || DEFAULT_DELIMITERS
+  var pathEscaped = false
+  var res
 
-  if (path instanceof RegExp) {
-    while (m = MATCHING_GROUP_REGEXP.exec(path.source)) {
-      keys.push({
-        name: name++,
-        optional: false,
-        offset: m.index
-      });
+  while ((res = PATH_REGEXP.exec(str)) !== null) {
+    var m = res[0]
+    var escaped = res[1]
+    var offset = res.index
+    path += str.slice(index, offset)
+    index = offset + m.length
+
+    // Ignore already escaped sequences.
+    if (escaped) {
+      path += escaped[1]
+      pathEscaped = true
+      continue
     }
 
-    return path;
+    var prev = ''
+    var next = str[index]
+    var name = res[2]
+    var capture = res[3]
+    var group = res[4]
+    var modifier = res[5]
+
+    if (!pathEscaped && path.length) {
+      var k = path.length - 1
+
+      if (delimiters.indexOf(path[k]) > -1) {
+        prev = path[k]
+        path = path.slice(0, k)
+      }
+    }
+
+    // Push the current path onto the tokens.
+    if (path) {
+      tokens.push(path)
+      path = ''
+      pathEscaped = false
+    }
+
+    var partial = prev !== '' && next !== undefined && next !== prev
+    var repeat = modifier === '+' || modifier === '*'
+    var optional = modifier === '?' || modifier === '*'
+    var delimiter = prev || defaultDelimiter
+    var pattern = capture || group
+
+    tokens.push({
+      name: name || key++,
+      prefix: prev,
+      delimiter: delimiter,
+      optional: optional,
+      repeat: repeat,
+      partial: partial,
+      pattern: pattern ? escapeGroup(pattern) : '[^' + escapeString(delimiter) + ']+?'
+    })
+  }
+
+  // Push any remaining characters.
+  if (path || index < str.length) {
+    tokens.push(path + str.substr(index))
+  }
+
+  return tokens
+}
+
+/**
+ * Compile a string to a template function for the path.
+ *
+ * @param  {string}             str
+ * @param  {Object=}            options
+ * @return {!function(Object=, Object=)}
+ */
+function compile (str, options) {
+  return tokensToFunction(parse(str, options))
+}
+
+/**
+ * Expose a method for transforming tokens into the path function.
+ */
+function tokensToFunction (tokens) {
+  // Compile all the tokens into regexps.
+  var matches = new Array(tokens.length)
+
+  // Compile all the patterns before compilation.
+  for (var i = 0; i < tokens.length; i++) {
+    if (typeof tokens[i] === 'object') {
+      matches[i] = new RegExp('^(?:' + tokens[i].pattern + ')$')
+    }
+  }
+
+  return function (data, options) {
+    var path = ''
+    var encode = (options && options.encode) || encodeURIComponent
+
+    for (var i = 0; i < tokens.length; i++) {
+      var token = tokens[i]
+
+      if (typeof token === 'string') {
+        path += token
+        continue
+      }
+
+      var value = data ? data[token.name] : undefined
+      var segment
+
+      if (Array.isArray(value)) {
+        if (!token.repeat) {
+          throw new TypeError('Expected "' + token.name + '" to not repeat, but got array')
+        }
+
+        if (value.length === 0) {
+          if (token.optional) continue
+
+          throw new TypeError('Expected "' + token.name + '" to not be empty')
+        }
+
+        for (var j = 0; j < value.length; j++) {
+          segment = encode(value[j], token)
+
+          if (!matches[i].test(segment)) {
+            throw new TypeError('Expected all "' + token.name + '" to match "' + token.pattern + '"')
+          }
+
+          path += (j === 0 ? token.prefix : token.delimiter) + segment
+        }
+
+        continue
+      }
+
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        segment = encode(String(value), token)
+
+        if (!matches[i].test(segment)) {
+          throw new TypeError('Expected "' + token.name + '" to match "' + token.pattern + '", but got "' + segment + '"')
+        }
+
+        path += token.prefix + segment
+        continue
+      }
+
+      if (token.optional) {
+        // Prepend partial segment prefixes.
+        if (token.partial) path += token.prefix
+
+        continue
+      }
+
+      throw new TypeError('Expected "' + token.name + '" to be ' + (token.repeat ? 'an array' : 'a string'))
+    }
+
+    return path
+  }
+}
+
+/**
+ * Escape a regular expression string.
+ *
+ * @param  {string} str
+ * @return {string}
+ */
+function escapeString (str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1')
+}
+
+/**
+ * Escape the capturing group by escaping special characters and meaning.
+ *
+ * @param  {string} group
+ * @return {string}
+ */
+function escapeGroup (group) {
+  return group.replace(/([=!:$/()])/g, '\\$1')
+}
+
+/**
+ * Get the flags for a regexp from the options.
+ *
+ * @param  {Object} options
+ * @return {string}
+ */
+function flags (options) {
+  return options && options.sensitive ? '' : 'i'
+}
+
+/**
+ * Pull out keys from a regexp.
+ *
+ * @param  {!RegExp} path
+ * @param  {Array=}  keys
+ * @return {!RegExp}
+ */
+function regexpToRegexp (path, keys) {
+  if (!keys) return path
+
+  // Use a negative lookahead to match only capturing groups.
+  var groups = path.source.match(/\((?!\?)/g)
+
+  if (groups) {
+    for (var i = 0; i < groups.length; i++) {
+      keys.push({
+        name: i,
+        prefix: null,
+        delimiter: null,
+        optional: false,
+        repeat: false,
+        partial: false,
+        pattern: null
+      })
+    }
+  }
+
+  return path
+}
+
+/**
+ * Transform an array into a regexp.
+ *
+ * @param  {!Array}  path
+ * @param  {Array=}  keys
+ * @param  {Object=} options
+ * @return {!RegExp}
+ */
+function arrayToRegexp (path, keys, options) {
+  var parts = []
+
+  for (var i = 0; i < path.length; i++) {
+    parts.push(pathToRegexp(path[i], keys, options).source)
+  }
+
+  return new RegExp('(?:' + parts.join('|') + ')', flags(options))
+}
+
+/**
+ * Create a path regexp from string input.
+ *
+ * @param  {string}  path
+ * @param  {Array=}  keys
+ * @param  {Object=} options
+ * @return {!RegExp}
+ */
+function stringToRegexp (path, keys, options) {
+  return tokensToRegExp(parse(path, options), keys, options)
+}
+
+/**
+ * Expose a function for taking tokens and returning a RegExp.
+ *
+ * @param  {!Array}  tokens
+ * @param  {Array=}  keys
+ * @param  {Object=} options
+ * @return {!RegExp}
+ */
+function tokensToRegExp (tokens, keys, options) {
+  options = options || {}
+
+  var strict = options.strict
+  var end = options.end !== false
+  var delimiter = escapeString(options.delimiter || DEFAULT_DELIMITER)
+  var delimiters = options.delimiters || DEFAULT_DELIMITERS
+  var endsWith = [].concat(options.endsWith || []).map(escapeString).concat('$').join('|')
+  var route = ''
+  var isEndDelimited = tokens.length === 0
+
+  // Iterate over the tokens and create our regexp string.
+  for (var i = 0; i < tokens.length; i++) {
+    var token = tokens[i]
+
+    if (typeof token === 'string') {
+      route += escapeString(token)
+      isEndDelimited = i === tokens.length - 1 && delimiters.indexOf(token[token.length - 1]) > -1
+    } else {
+      var prefix = escapeString(token.prefix)
+      var capture = token.repeat
+        ? '(?:' + token.pattern + ')(?:' + prefix + '(?:' + token.pattern + '))*'
+        : token.pattern
+
+      if (keys) keys.push(token)
+
+      if (token.optional) {
+        if (token.partial) {
+          route += prefix + '(' + capture + ')?'
+        } else {
+          route += '(?:' + prefix + '(' + capture + '))?'
+        }
+      } else {
+        route += prefix + '(' + capture + ')'
+      }
+    }
+  }
+
+  if (end) {
+    if (!strict) route += '(?:' + delimiter + ')?'
+
+    route += endsWith === '$' ? '$' : '(?=' + endsWith + ')'
+  } else {
+    if (!strict) route += '(?:' + delimiter + '(?=' + endsWith + '))?'
+    if (!isEndDelimited) route += '(?=' + delimiter + '|' + endsWith + ')'
+  }
+
+  return new RegExp('^' + route, flags(options))
+}
+
+/**
+ * Normalize the given path string, returning a regular expression.
+ *
+ * An empty array can be passed in for the keys, which will hold the
+ * placeholder key descriptions. For example, using `/user/:id`, `keys` will
+ * contain `[{ name: 'id', delimiter: '/', optional: false, repeat: false }]`.
+ *
+ * @param  {(string|RegExp|Array)} path
+ * @param  {Array=}                keys
+ * @param  {Object=}               options
+ * @return {!RegExp}
+ */
+function pathToRegexp (path, keys, options) {
+  if (path instanceof RegExp) {
+    return regexpToRegexp(path, keys)
   }
 
   if (Array.isArray(path)) {
-    // Map array parts into regexps and return their source. We also pass
-    // the same keys and options instance into every generation to get
-    // consistent matching groups before we join the sources together.
-    path = path.map(function (value) {
-      return pathtoRegexp(value, keys, options).source;
-    });
-
-    return new RegExp('(?:' + path.join('|') + ')', flags);
+    return arrayToRegexp(/** @type {!Array} */ (path), keys, options)
   }
 
-  path = ('^' + path + (strict ? '' : path[path.length - 1] === '/' ? '?' : '/?'))
-    .replace(/\/\(/g, '/(?:')
-    .replace(/([\/\.])/g, '\\$1')
-    .replace(/(\\\/)?(\\\.)?:(\w+)(\(.*?\))?(\*)?(\?)?/g, function (match, slash, format, key, capture, star, optional, offset) {
-      slash = slash || '';
-      format = format || '';
-      capture = capture || '([^\\/' + format + ']+?)';
-      optional = optional || '';
-
-      keys.push({
-        name: key,
-        optional: !!optional,
-        offset: offset + extraOffset
-      });
-
-      var result = ''
-        + (optional ? '' : slash)
-        + '(?:'
-        + format + (optional ? slash : '') + capture
-        + (star ? '((?:[\\/' + format + '].+?)?)' : '')
-        + ')'
-        + optional;
-
-      extraOffset += result.length - match.length;
-
-      return result;
-    })
-    .replace(/\*/g, function (star, index) {
-      var len = keys.length
-
-      while (len-- > keysOffset && keys[len].offset > index) {
-        keys[len].offset += 3; // Replacement length minus asterisk length.
-      }
-
-      return '(.*)';
-    });
-
-  // This is a workaround for handling unnamed matching groups.
-  while (m = MATCHING_GROUP_REGEXP.exec(path)) {
-    var escapeCount = 0;
-    var index = m.index;
-
-    while (path.charAt(--index) === '\\') {
-      escapeCount++;
-    }
-
-    // It's possible to escape the bracket.
-    if (escapeCount % 2 === 1) {
-      continue;
-    }
-
-    if (keysOffset + i === keys.length || keys[keysOffset + i].offset > m.index) {
-      keys.splice(keysOffset + i, 0, {
-        name: name++, // Unnamed matching groups must be consistently linear.
-        optional: false,
-        offset: m.index
-      });
-    }
-
-    i++;
-  }
-
-  // If the path is non-ending, match until the end or a slash.
-  path += (end ? '$' : (path[path.length - 1] === '/' ? '' : '(?=\\/|$)'));
-
-  return new RegExp(path, flags);
-};
+  return stringToRegexp(/** @type {string} */ (path), keys, options)
+}
 
 },{}]},{},[1]);
+
+'use strict';
+
+/**
+ * Setup the owswallet global and execute a controlled load sequence.
+ *
+ * Usage:
+ *
+ * owswallet.Plugin.start(function() {
+ *   // Will execute when plugin is loaded, or immediately if the plugin is already loaded.
+ * });
+ * 
+ * owswallet.Plugin.ready(function() {
+ *   // Will execute when plugin is ready, or immediately if the plugin is already ready.
+ * });
+ *
+ * owswallet.Plugin.openForBusiness(pluginId, function() {
+ *   // Will execute when the specified pluginId is ready, or immediately if the plugin is already ready.
+ * });
+ *
+ * var isCordova = owswallet.Plugin.isCordova();
+ * var isNodeWebkit = owswallet.Plugin.isNodeWebKit();
+ * var isSafari = owswallet.Plugin.isSafari();
+ *
+ * var isMobile = owswallet.Plugin.isMobile();
+ * var isAndroid = owswallet.Plugin.isAndroid();
+ * var isIOS = owswallet.Plugin.isIOS();
+ * var isIPhoneX = owswallet.Plugin.isIPhoneX();
+ *
+ * var userAgent = owswallet.Plugin.userAgent();
+ */
+
+var owswallet = {};
+
+(function(window, document, owswallet) {
+
+  var IOS = 'ios';
+  var ANDROID = 'android';
+  var NODEWEBKIT = 'nodewebkit';
+
+  var platformName = null;
+  var startCallback;
+  var readyCallbacks = [];
+  var openCallbacks = [];
+  var windowLoadListenderAttached;
+
+  var self = owswallet.Plugin = {
+
+    isLoaded: false,
+    isReady: false,
+    isOpen: {},
+
+    start: function(cb) {
+      if (self.isLoaded) {
+        cb();
+      } else {
+        startCallback = cb;
+      }
+    },
+
+    ready: function(cb) {
+      if (self.isReady) {
+        cb();
+      } else {
+        // The plugin isn't ready yet, add it to this array which will be called once the plugin is ready.
+        readyCallbacks.push(cb);
+      }
+    },
+
+    openForBusiness: function(pluginId, cb) {
+      if (self.isReady && self.isOpen[pluginId]) {
+        cb();
+      } else {
+        // The plugin isn't ready yet, add it to this array which will be called once the plugin is ready.
+        openCallbacks.push({
+          pluginId: pluginId,
+          callback: cb
+        });
+      }
+    },
+
+    setOpen: function(pluginId) {
+      isOpen[pluginId] = true;
+
+      var indexes = [];
+      for (var x = 0; x < openCallbacks.length; x++) {
+        // Fire off all the callbacks that were added before the plugin was ready.
+        if (openCallback[x] && openCallbacks[x].pluginId == pluginId) {
+          openCallbacks[x].callback();
+        }
+        run.push(x);
+      }
+
+      // Remove executed callbacks.
+      for (var i = indexes.length -1; i >= 0; i--) {
+         openCallbacks.splice(indexes[i], 1);
+      }
+    },
+
+    platform: function() {
+      return platformName;
+    },
+
+    setPlatform: function(p) {
+      platform = p;
+
+      if (p.isMobile.iOS) {
+        platformName = IOS;
+
+      } else if (p.isMobile.Android) {
+        platformName = ANDROID;
+
+      } else if (p.isNodeWebkit) {
+        platformName = NODEWEBKIT;
+      }
+    },
+
+    isIOS: function() {
+      return self.platform.isMobile.iOS;
+    },
+
+    isAndroid: function() {
+      return self.platform.isMobile.Android;
+    },
+
+    isCordova: function() {
+      return self.platform.isCordova;
+    },
+
+    isNodeWebKit: function() {
+      return self.platform.isNodeWebkit;
+    },
+
+    isSafari: function() {
+      return self.platform.isSafari;
+    },
+
+    isMobile: function() {
+      return self.platform.isMobile;
+    },
+
+    isIPhoneX: function() {
+      return self.platform.isIPhoneX;
+    },
+
+    userAgent: function() {
+      return self.platform.userAgent;
+    }
+
+  };
+
+  if (document.readyState === 'complete') {
+    onWindowLoad();
+  } else {
+    windowLoadListenderAttached = true;
+    window.addEventListener('load', onWindowLoad, false);
+  }
+
+  // Setup listeners to know when we're ready to go.
+  function onWindowLoad() {
+    self.isLoaded = true;
+
+    onPluginStart();
+
+    if (windowLoadListenderAttached) {
+      window.removeEventListener('load', onWindowLoad, false);
+    }
+  };
+
+  function onPluginStart() {
+    // The plugin is loaded, init our own stuff then fire off our event.
+    window.addEventListener('plugin.ready', onPluginReady, false);
+
+    if (startCallback) {
+      startCallback();      
+    }
+    startCallback = undefined;
+  };
+
+  function onPluginReady() {
+    // The plugin is all set to go.
+    self.isReady = true;
+
+    for (var x = 0; x < readyCallbacks.length; x++) {
+      // Fire off all the callbacks that were added before the plugin was ready.
+      readyCallbacks[x]();
+    }
+
+    readyCallbacks = [];
+  };
+
+})(window, document, owswallet);
 
 'use strict';
 
@@ -57797,13 +58231,164 @@ var modules = [
 	'ngLodash',
   'pathToRegexpModule',
 	'owsWalletPluginClient.api',
-	'owsWalletPluginClient.impl'
+	'owsWalletPluginClient.impl',
+	'owsWalletPluginClient.services'
 ];
 
 var owsWalletPluginClient = angular.module('owsWalletPluginClient', modules);
 
 angular.module('owsWalletPluginClient.api', []);
 angular.module('owsWalletPluginClient.impl', []);
+angular.module('owsWalletPluginClient.services', []);
+
+'use strict';
+
+angular.module('owsWalletPluginClient').provider('$pluginConfig', function(lodash) {
+
+  var provider = this;
+  provider.platform = {};
+  var PLATFORM = 'platform';
+
+  var configProperties = {
+    router: {
+      routes: PLATFORM
+    },
+    platform: {}
+  };
+
+  createConfig(configProperties, provider, '');
+
+  // Default configuration
+  setPlatformConfig('default', {
+    router: {
+      routes: []
+    }
+  });
+
+  // iOS (it is the default already)
+  setPlatformConfig('ios', {
+    router: {
+      routes: []
+    }
+  });
+
+  // Android
+  setPlatformConfig('android', {
+    router: {
+      routes: []
+    }
+  });
+
+  // NodeWebKit
+  setPlatformConfig('nodewebkit', {
+    router: {
+      routes: []
+    }
+  });
+
+  // Create methods for each config to get/set
+  function createConfig(configObj, providerObj) {
+    lodash.forEach(configObj, function(value) {
+      // Create a method for the provider/config methods that will be exposed
+      providerObj = function(newValue) {
+        if (arguments.length) {
+          configObj = newValue;
+          return providerObj;
+        }
+        return configObj;
+      };
+    });
+  }
+
+  // Used to set configs
+  function setConfig(configs) {
+    configProperties = platformConfigs;
+    provider.platform[platformName] = {};
+
+    addConfig(configProperties, configProperties.platform[platformName]);
+
+    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
+  }
+
+  // Used to set platform configuration.
+  function setPlatformConfig(platformName, platformConfigs) {
+    configProperties.platform[platformName] = platformConfigs;
+    provider.platform[platformName] = {};
+
+    addConfig(configProperties, configProperties.platform[platformName]);
+
+    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
+  }
+
+  // Used to recursively add new platform configuration.
+  function addConfig(configObj, platformObj) {
+    for (var n in configObj) {
+      if (n != PLATFORM && configObj.hasOwnProperty(n)) {
+        if (angular.isObject(configObj[n])) {
+          if (lodash.isUndefined(platformObj[n])) {
+            platformObj[n] = {};
+          }
+          addConfig(configObj[n], platformObj[n]);
+
+        } else if (lodash.isUndefined(platformObj[n])) {
+          platformObj[n] = null;
+        }
+      }
+    }
+  }
+
+  // Create methods for each configuration to get/set.
+  function createConfig(configObj, providerObj, platformPath) {
+    lodash.forEach(configObj, function(value, namespace) {
+
+      if (angular.isObject(configObj[namespace])) {
+        // Recursively drill down the config object so we can create a method for each one.
+        providerObj[namespace] = {};
+        createConfig(configObj[namespace], providerObj[namespace], platformPath + '.' + namespace);
+
+      } else {
+        // Create a method for the provider/config methods that will be exposed.
+        providerObj[namespace] = function(newValue) {
+          if (arguments.length) {
+            configObj[namespace] = newValue;
+            return providerObj;
+          }
+          if (configObj[namespace] == PLATFORM) {
+            // If the config is set to 'platform', then get this config's platform value.
+            var platformConfig = stringObj(configProperties.platform, owswallet.Plugin.platform() + platformPath + '.' + namespace);
+            if (platformConfig || platformConfig === false) {
+              return platformConfig;
+            }
+            // Didn't find a specific platform config, now try the default.
+            return stringObj(configProperties.platform, 'default' + platformPath + '.' + namespace);
+          }
+          return configObj[namespace];
+        };
+      }
+
+    });
+  }
+
+  function stringObj(obj, str) {
+    str = str.split(".");
+    for (var i = 0; i < str.length; i++) {
+      if (obj && !lodash.isUndefined(obj[str[i]])) {
+        obj = obj[str[i]];
+      } else {
+        return null;
+      }
+    }
+    return obj;
+  }
+
+  provider.setPlatformConfig = setPlatformConfig;
+
+  // Service definition for internal use
+  provider.$get = function() {
+    return provider;
+  };
+
+});
 
 'use strict';
 
@@ -57811,164 +58396,9 @@ angular.module('owsWalletPluginClient').config(function() {
 
   // Nothing to do.
 
-}).run(function($rootScope, $injector, lodash, apiHelpers, apiLog, ApiMessage, ApiRouter, CPlatform, CSession) {
+}).run(function(launchService) {
 
-  // Setup based on the declared plugin kind.
-  var pluginKind = document.getElementsByName("ows-wallet-plugin-kind")[0].content;
-  var isApplet = (pluginKind == 'applet');
-  var isServlet = (pluginKind == 'servlet');
-
-  validateStartup();
-
-  // Initialization depends on asynchronous messaging with the host app. The 'initialized' object is used to keep track of
-  // all items to be initialized.  When all items become true (initialized) the we notify the host and then the local client that
-  // we're ready.
-  var initializers = {
-    platformInfo: { fn: CPlatform.get,        state: false },
-    session:      { fn: CSession.getInstance, state: false }
-  };
-
-  /**
-   * Applet specific initialization
-   */
-
-  if (isApplet) {
-    // Ionic platform defaults. Plugin may override in their own config block.
-    var ionicConfig = $injector.get('$ionicConfig');
-    ionicConfig.tabs.position('bottom');
-    ionicConfig.navBar.alignTitle('center');
-    ionicConfig.navBar.positionPrimaryButtons('left');
-    ionicConfig.navBar.positionSecondaryButtons('right');
-    ionicConfig.backButton.icon('icon ion-ios-arrow-left').text('');
-    ionicConfig.backButton.previousTitleText(false);
-    ionicConfig.scrolling.jsScrolling(false);
-  }
-
-  /**
-   * Servlet specific initialization
-   */
-
-  if (isServlet) {
-
-    // Nothing to do.
-
-  }
-
-  /**
-   * Start the plugin and initialize ourself.
-   */
-
-  start().then(function() {
-    Object.keys(initializers).forEach(function(i) {
-      initializers[i].fn();
-    })
-
-  });
-
-  function validateStartup(session) {
-    // The build process should prevent this, but just in case.
-    if (lodash.isEmpty(pluginKind) || !(isApplet || isServlet)) {
-      throw new Error('PLUGIN NOT VALID - the pluginKind <meta> in index.html is missing or invalid');
-    }
-
-    if (session && pluginKind != session.plugin.header.kind) {
-      throw new Error('PLUGIN NOT VALID - the pluginKind <meta> in index.html does not match the configuration in plugin.json');
-    }
-  };
-
-  // Start communicating with the host app.
-  function start() {
-    var request = {
-      method: 'POST',
-      url: '/start',
-      data: {
-        sessionId: apiHelpers.sessionId()
-      }
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      apiLog.info('START: ' + response.statusText + ' (' + response.statusCode + ')');
-
-      if (response.data.isCordova) {
-      	setupForCordova();
-      }
-
-      $rootScope.$emit('$pre.start');
-
-      return;
-
-    }).catch(function(error) {
-      apiLog.error('START ERROR: ' + JSON.stringify(error));
-
-    });
-  };
-
-  function setupForCordova() {
-    if (isApplet) {
-      // Tells ionic that we are running in a Cordova container. Ionic doesn't add this class because we are not the root document.
-      angular.element(document.querySelector('body')).addClass('platform-cordova');
-      angular.element(document.querySelector('ion-nav-view')).css('width', window.innerWidth + 'px');
-    }
-  };
-
-  $rootScope.$on('Local/Initialized', function(event, what) {
-    initializers[what].state = true;
-
-    apiLog.debug(what + ' initialized');
-
-    // Check if all items are initialized.
-    var done = true;
-    lodash.forEach(Object.keys(initializers), function(i) {
-      done = done && initializers[i].state;
-    });
-
-    if (done) {
-      var session = CSession.getInstance();
-
-      // Set our client name.
-      apiHelpers.clientName(session.plugin.header.name);
-
-      // Will throw error if not valid.
-      validateStartup(session);
-
-      // Tell the host app that we're ready.
-      var request = {
-        method: 'POST',
-        url: '/ready',
-        data: {
-          sessionId: session.id
-        }
-      }
-
-      return new ApiMessage(request).send().then(function(response) {
-        // We're ready to run!
-        $rootScope.$emit('$pre.ready', session);
-
-        apiLog.info('Open for business!');
-
-      }).catch(function(error) {
-        apiLog.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
-
-      });
-    }
-  });
-
-  // The client may updated its host app routes at any time.  When routes are changed this handler updates the host app.
-  $rootScope.$on('Local/RoutesChanged', function(event, routes, target) {
-    var request = {
-      method: 'POST',
-      url: '/session/' + CSession.getInstance().id + '/routes',
-      data: {
-        routes: routes,
-        target: target
-      }
-    };
-
-    return new ApiMessage(request).send().then(function(response) {
-    }).catch(function(error) {
-      apiLog.error('ROUTES ERROR: ' + JSON.stringify(error));
-    });
-  });
+  // Just bump the launchService.
 
 });
 
@@ -57976,6 +58406,520 @@ angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettext
 /* jshint -W100 */
 /* jshint +W100 */
 }]);
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('ApiError', function (lodash) {
+
+  /**
+   * ApiError
+   *
+   * Provides a wrapper for messages coming from the host app.
+   */
+
+  /**
+   * Constructor.
+   * @return {ApiError} An instance of ApiError.
+   * @constructor
+   *
+   * errorObj: {
+   *   code: <number>
+   *   source: <string>
+   *   message: <string>
+   *   detail: <string>
+   * }
+   */
+  function ApiError(errorObj) {
+    lodash.assign(this, errorObj);
+    return this;
+  };
+
+  return ApiError;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) {
+
+  /**
+   * Applet
+   *
+   * Provides access to applet behavior. An instance of this class should be obtained from the
+   * Session instance.
+   */
+
+   /**
+   * Applet Events
+   * -------------
+   * 
+   * Each of the following events provide the following arguments to the subscriber:
+   *   appletObj - the subject Applet object
+   *   walletId - the wallet identifier on which the applet is presented
+   * 
+   * '$pre.beforeEnter' - broadcast when opening an applet, before the applet is shown
+   * '$pre.afterEnter' - broadcast when opening an applet, after the applet is shown
+   * '$pre.beforeLeave' - broadcast when closing an applet, before before the applet is hidden
+   * '$pre.afterLeave' - broadcast when closing an applet, after the applet is hidden
+   */
+
+  /**
+   * Constructor.  An instance of this class must be obtained from Session.
+   * @param {Object} plugin - An internal Plugin object.
+   * @return {Object} An instance of Applet.
+   * @constructor
+   */
+  function Applet(appletObj) {
+    lodash.assign(this, appletObj);
+    return this;
+  };
+
+  /**
+   * Hides the splash image after starting.
+   * @return {Promise} A promise at completion.
+   */
+  Applet.prototype.hideSplash = function() {
+    var request = {
+      method: 'POST',
+      url: '/applet/' + this.header.id + '/config',
+      data: {
+        showSplash: false
+      }
+    }
+
+    return new ApiMessage(request).send();
+  };
+
+  return Applet;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Contants', function () {
+
+  /**
+   * Contantsants
+   *
+   * Provides commonly used constant values.
+   */
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function Contants() {
+    throw new Error('Contants is a static class');
+  };
+
+  Contants.BITS_PER_BTC = 1e6;
+  Contants.SATOSHI_PER_BTC = 1e8;
+
+  return Contants;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, lodash, $http, System) {
+
+  /**
+   * Http
+   *
+   * Provides a wrapper for $http.
+   */
+
+  /**
+   * Constructor.
+   * @return {Http} An instance of Http.
+   * @constructor
+   */
+  function Http(url, config) {
+    var self = this;
+    this.url = url.toLowerCase();
+    this.config = config;
+
+    validate();
+
+    // Private functions
+    //
+    function validate() {
+    	// Check format for url.
+      // Matches http(s)://<domain>.<tld>:<port>
+      //
+      // where,
+      //   domain - 2+ character string up to last '.', can include '-'
+      //   tld - matches 2-63 character string after last '.'
+      //   port - matches 1-5 numerals
+      //   Does not match query params
+	    if (!self.url.match(/(http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,63}(:[0-9]{1,5})?(\/[a-z0-9\/]*)?/g)) {
+	    	throw new Error('Invalid URL for Http() \'' + self.url + '\'');
+	    }
+
+	    // Append a '/' is not present.
+	    if (self.url.slice(-1) != '/') {
+	    	self.url += '/';
+	    }
+    };
+
+    return this;
+  };
+
+  /**
+   * Create a GUID.
+   * @return {String} A GUID string value.
+   */
+  Http.guid = function() {
+    return Date.now().toString();
+  };
+
+  /**
+   * Make an HTTP GET request.
+   * @param {String} endpoint - The URI to the resource.
+   * @return {Promise<Object>} A promise for the response.
+   */
+  Http.prototype.get = function(endpoint) {
+    var self = this;
+  	return new Promise(function(resolve, reject) {
+      var url = encodeURI(self.url + endpoint);
+
+	    plog.debug('GET ' + url);
+
+	    $http.get(data, self.config).then(function(response) {
+	      pLog.debug('GET SUCCESS: ' + JSON.stringify(response));
+	      resolve(response);
+
+	    }).catch(function(error) {
+	      pLog.error('GET ERROR: ' + url + ', ' + error.statusText);
+	      reject(error.statusText);
+
+	    });
+	  });
+  };
+
+  /**
+   * Make an HTTP POST.
+   * @param {String} endpoint - The URI to the resource.
+   * @param {Object} data - The data object to post.
+   * @return {Promise<Object>} A promise for the response.
+   */
+  Http.prototype.post = function(endpoint, data) {
+    var self = this;
+  	return new Promise(function(resolve, reject) {
+      var url = encodeURI(self.url + endpoint);
+
+	    pLog.debug('POST ' + url + ' data = ' + JSON.stringify(data));
+
+	    $http.post(url, data, self.config).then(function(response) {
+	      pLog.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
+	      resolve(response);
+
+	    }).catch(function(error) {
+	      pLog.error('POST ERROR: ' + url + ', ' + error.statusText);
+	      reject(error.statusText);
+
+	    });
+    });
+  };
+
+  return Http;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash) {
+
+  /**
+   * Servlet
+   *
+   * Provides access to servlet behavior. An instance of this class should be obtained from the
+   * Session instance.
+   */
+
+  /**
+   * Constructor.  An instance of this class must be obtained from Session.
+   * @param {Object} plugin - An internal plugin object.
+   * @return {Object} An instance of Servlet.
+   * @constructor
+   */
+  function Servlet(servletObj) {
+    lodash.assign(this, servletObj);
+    return this;
+  };
+
+  return Servlet;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, pLog, ApiMessage, Applet, Servlet, Wallet) {
+
+  /**
+   * Session
+   *
+   * This class provides session functionality including reading and writing persistent data. An instance of
+   * this class should be obtained by calling Session.getInstance().
+   */
+
+   var instance;
+
+  /**
+   * Constructor.
+   * @return {Object} The single instance of Session.
+   * @constructor
+   */
+  function Session() {
+    var self = this;
+
+    if (instance) {
+      return instance;
+    }
+    instance = this;
+
+    getSession().then(function(sessionObj) {
+      // Assign the session data to ourself.
+      lodash.assign(self, sessionObj);
+
+      switch (self.plugin.header.kind) {
+        case 'applet': self.plugin = new Applet(self.plugin); break;
+        case 'servlet': self.plugin = new Servlet(self.plugin); break;
+      };
+
+      $rootScope.$emit('Local/Initialized', 'session');
+    
+    }).catch(function(error) {
+      pLog.error('Session(): ' + JSON.stringify(error));
+
+    });
+
+    // Get our session data.
+    function getSession() {
+      var request = {
+       method: 'GET',
+       url: '/session/' + apiHelpers.sessionId(),
+       responseObj: {}
+      }
+
+      return new ApiMessage(request).send();
+    };
+
+    return this;
+  };
+
+  /**
+   * Get the single session object or create the session.
+   * @return {Object} The single session object.
+   */
+  Session.getInstance = function() {
+    return instance || new Session();
+  };
+
+  /**
+   * Write all session data to persistent storage.
+   * @return {Promise} A promise at completion.
+   */
+  Session.prototype.flush = function() {
+    var request = {
+      method: 'POST',
+      url: '/session/flush',
+      data: {}
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Session.flush():' + JSON.stringify(error));
+      
+    });
+  };
+
+  /**
+   * Retrieve session data by name.
+   * @param {String} name - User specified data name defined using set(name, value).
+   * @return {Promise<Object>} A promise for stored value.
+   */
+  Session.prototype.get = function(name) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/var/' + name,
+      responseObj: {}
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      self[name] = {};
+      lodash.assign(self[name], response);
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Session.get(): ' + JSON.stringify(error));
+      
+    });
+  };
+
+  /**
+   * Restore all session data from persistent storage. A 'data' property is created on the session.
+   * @return {Promise} A promise at completion with param 'data' or an error.
+   */
+  Session.prototype.restore = function() {
+    var self = this;
+    var request = {
+      method: 'POST',
+      url: '/session/' + this.id + '/restore',
+      data: {}
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      self.data = {};
+      lodash.assign(self.data, response);
+      return response;
+
+    }).catch(function(error) {
+      pLog.error('Session.restore(): ' + JSON.stringify(error));
+      
+    });
+  };
+
+  /**
+   * Set session data by name. A 'data' property is created on the session.
+   * @param {String} name - Location to store the specified value.
+   * @param {Object} value - The data value to store.
+   * @return {Promise} A promise at completion with param 'value' or an error.
+   */
+  Session.prototype.set = function(name, value) {
+    var self = this;
+    var request = {
+      method: 'POST',
+      url: '/session/' + this.id + '/var/' + name,
+      data: value
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      self.data = self.data || {};
+      lodash.merge(self.data, response);
+      return response;
+
+    }).catch(function(error) {
+      pLog.error('Session.set(): ' + JSON.stringify(error));
+      
+    });
+  };
+
+  /**
+   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
+   * @return {Wallet} An instance of the chosen Wallet.
+   * @static
+   */
+  Session.prototype.chooseWallet = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/choosewallet',
+      responseObj: 'Wallet',
+      opts: {
+        timeout: -1
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response;
+
+    }).catch(function(error) {
+      pLog.error('Session.chooseWallet(): ' + JSON.stringify(error));
+      
+    });
+  };
+
+  return Session;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('System', function (lodash) {
+
+  /**
+   * System
+   *
+   * Provides general purpose system utilities.
+   */
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function System() {
+    throw new Error('System is a static class');
+  };
+
+  /**
+   * Return whether or not the specified object has all required properties.
+   * @return {Object} An array of missing properties.
+   * @static
+   */
+  System.checkRequired = function(required, obj) {
+    var missing = [];
+    lodash.forEach(required, function(param) {
+      if (lodash.get(obj, param, undefined) == undefined) {
+        missing.push(param);
+      }
+    });
+    return missing;
+  };
+
+  return System;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Utils', function (rateService) {
+
+  /**
+   * Utils
+   *
+   * Provides domain utilities.
+   */
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function Utils() {
+    throw new Error('Utils is a static class');
+  };
+
+  /**
+   * Retrieve a currency exchange rate (vs. bitcoin price).
+   * @param {String} code - The ISO currency code for exchange.
+   * @return {Object} An instance of a service object.
+   * @static
+   */
+  Utils.getRate = function(isoCode) {
+    return rateService.getRate(isoCode);
+  };
+
+  return Utils;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash) {
+
+  /**
+   * Wallet
+   *
+   * Provides access to a wallet. An instance of this class should be obtained from the Session instance.
+   */
+
+  /**
+   * Constructor.  An instance of this class must be obtained from Session.
+   * @param {Object} wallet - An internal Wallet object.
+   * @return {Object} An instance of Wallet.
+   * @constructor
+   */
+  function Wallet(walletObj) {
+    lodash.assign(this, walletObj);
+  };
+
+  return Wallet;
+});
+
 'use strict';
 
 angular.module('owsWalletPluginClient.impl').service('apiHelpers', function() {
@@ -58003,48 +58947,13 @@ angular.module('owsWalletPluginClient.impl').service('apiHelpers', function() {
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').service('apiLog', function($log, apiHelpers) {
-
-	var root = {};
-
-  root.debug = function(message) {
-    doLog('debug', message);
-  };
-
-  root.error = function(message) {
-    doLog('error', message);
-  };
-
-  root.info = function(message) {
-    doLog('info', message);
-  };
-
-  root.warn = function(message) {
-    doLog('warn', message);
-  };
-
-  function doLog(level, message) {
-    var lead = '[' + apiHelpers.clientName() + '] ';
-    switch (level) {
-      case 'error': $log.error(lead + message); break;
-      case 'wanr':  $log.warn(lead + message); break;
-      case 'info':  $log.info(lead + message); break;
-      default:      $log.debug(lead + message); break;
-    }
-  };
-
-  return root;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, apiLog, ApiRouter, CError) {
+angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, pLog, ApiRouter, ApiError) {
 
   var host = window.parent;
 
   var REQUEST_TIMEOUT = 3000; // milliseconds
 
-  var messageServiceIsOK = false;
+  var ready = false;
   var sequence = 0;
   var promises = [];
 
@@ -58054,12 +58963,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
   // When a message is received this listener routes the payload to process the message.
   window.addEventListener('message', receiveMessage.bind(this));
-
-  // This event is received when two way communication is established between the host app and this client. An error in the
-  // start handshake communication is fatal and blocks further attempts to send messages.
-  $rootScope.$on('$pre.start', function(event) {
-    messageServiceIsOK = true;
-  });
 
   /**
    * Constructor
@@ -58200,7 +59103,15 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
   };
 
   /**
-   * Public methods
+   * Static functions
+   */
+
+  ApiMessage.ready = function() {
+    ready = true;
+  };
+
+  /**
+   * Public functions
    */
 
   ApiMessage.prototype.send = function() {
@@ -58212,7 +59123,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
           // Fail
-          reject(new CError({
+          reject(new ApiError({
             code: message.response.statusCode,
             source: message.request.url,
             message: message.response.statusText,
@@ -58251,9 +59162,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         }
       };
 
-      // Send the message only if the client is OK or if the purpose of the message is to
+      // Send the message only if the client is ready or if the purpose of the message is to
       // start the client.
-      if (messageServiceIsOK || isStartMessage(self)) {
+      if (ready || isStartMessage(self)) {
 
         if (isRequest(self)) {
           // Set a communication timeout timer unless the caller overrides.
@@ -58271,9 +59182,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
             timer: timeoutTimer
           });
 
-          apiLog.info('REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
+          pLog.info('REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
         } else {
-          apiLog.info('RESPONSE  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
+          pLog.info('RESPONSE  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
         }
 
         // Post the message to the host.
@@ -58318,7 +59229,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
       // Not possible to notify client since the message is invalid.
       // The client will timeout if a valid response is not received.
-      apiLog.error('Invalid message received, ' + ex.message + ' - '+ angular.toJson(event));
+      pLog.error('Could not process message, ' + ex.message + ' - '+ angular.toJson(event));
     }
   };
 
@@ -58350,9 +59261,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     });
   };
 
-  // Timeout a message waiting for a reponse. Enables the client app to process a message delivery failure.
+  // Timeout a message waiting for a response. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    apiLog.debug('Plugin client request timeout: ' + serialize(message));
+    pLog.debug('Plugin client request timeout: ' + serialize(message));
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;
@@ -58368,7 +59279,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       }
       promise[0].onComplete(message);
     } else {
-      apiLog.warn('Message request timed out but there is no promise to fulfill: ' + serialize(message));
+      pLog.warn('Message request timed out but there is no promise to fulfill: ' + serialize(message));
     }
   };
 
@@ -58394,7 +59305,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, apiLog, lodash, pathToRegexpService) {
+angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, $pluginConfig, pLog, lodash, pathToRegexpService) {
 
   /**
    * API routes.
@@ -58453,17 +59364,19 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
    *   
    *   callback - a function to be called when the handler wants to sent the message; fn(message)
    */
-  ApiRouter.addRoutes = function(session, routes) {
+  ApiRouter.applyRoutes = function(session) {
+    var routes = $pluginConfig.router.routes();
+
     var targetId = session.plugin.uri;
     if (!targetId) {
-      apiLog.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
+      pLog.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
       return;
     }
 
     var errors = false;
     var hostRoutes = lodash.map(routes, function(r) {
       if (!r.path || !r.method || !r.handler) {
-        apiLog.error('Invalid route: ' + JSON.stringify(r));
+        pLog.error('Invalid route: ' + JSON.stringify(r));
         errors = true;
       }
 
@@ -58559,613 +59472,224 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CApplet', function (lodash) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, pLog, ApiMessage, ApiRouter, Session) {
 
-  /**
-   * CApplet
-   *
-   * Provides access to applet behavior. An instance of this class should be obtained from the
-   * CSession instance.
-   */
+  owswallet.Plugin.start(function() {
 
-   /**
-   * Applet Events
-   * -------------
-   * 
-   * Each of the following events provide the following arguments to the subscriber:
-   *   appletObj - the subject Applet object
-   *   walletId - the wallet identifier on which the applet is presented
-   * 
-   * '$pre.beforeEnter' - broadcast when opening an applet, before the applet is shown
-   * '$pre.afterEnter' - broadcast when opening an applet, after the applet is shown
-   * '$pre.beforeLeave' - broadcast when closing an applet, before before the applet is hidden
-   * '$pre.afterLeave' - broadcast when closing an applet, after the applet is hidden
-   */
+    // Setup based on the declared plugin kind.
+    var pluginKind = document.getElementsByName("ows-wallet-plugin-kind")[0].content;
+    var isApplet = (pluginKind == 'applet');
+    var isServlet = (pluginKind == 'servlet');
 
-  /**
-   * Constructor.  An instance of this class must be obtained from CSession.
-   * @param {Object} plugin - An internal Plugin object.
-   * @return {Object} An instance of CApplet.
-   * @constructor
-   */
-  function CApplet(appletObj) {
-    lodash.assign(this, appletObj);
-    return this;
-  };
+    validateStartup();
 
-  /**
-   * Hides the splash image after starting.
-   * @return {Promise} A promise at completion.
-   */
-  CApplet.prototype.hideSplash = function() {
-    var request = {
-      method: 'POST',
-      url: '/applet/' + this.header.id + '/config',
-      data: {
-        showSplash: false
-      }
-    }
-
-    return new ApiMessage(request).send();
-  };
-
-  return CApplet;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CConst', function () {
-
-  /**
-   * CConstants
-   *
-   * Provides commonly used constant values.
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function CConst() {
-    throw new Error('CConst is a static class');
-  };
-
-  CConst.BITS_PER_BTC = 1e6;
-  CConst.SATOSHI_PER_BTC = 1e8;
-
-  return CConst;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) {
-
-  /**
-   * CError
-   *
-   * Provides a wrapper for messages coming from the host app.
-   */
-
-  /**
-   * Constructor.
-   * @return {CError} An instance of CError.
-   * @constructor
-   *
-   * errorObj: {
-   *   code: <number>
-   *   source: <string>
-   *   message: <string>
-   *   detail: <string>
-   * }
-   */
-  function CError(errorObj) {
-    lodash.assign(this, errorObj);
-    return this;
-  };
-
-  return CError;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CHttp', function (apiLog, lodash, $http) {
-
-  /**
-   * CHttp
-   *
-   * Provides a wrapper for $http.
-   */
-
-	var REQUIRED_CONFIG = [
-		'url'
-	];
-
-  /**
-   * Constructor.
-   * @return {CHttp} An instance of CHttp.
-   * @constructor
-   */
-  function CHttp(config) {
-  	checkRequiredConfig();
-  	validateConfig();
-
-    lodash.assign(this, config);
-
-    // Private functions
-    //
-    function checkRequiredConfig() {
-	    var validRequest = Object.keys(lodash.pick(data, REQUIRED_CONFIG)).length == REQUIRED_CONFIG.length;
-
-	    if (!validRequest) {
-	  		throw new Error('Missing required arguments for CHttp, you must include \'' + REQUIRED_PARAMS.toString() + '\'');
-	  	}
-	  };
-
-    function validateConfig() {
-    	// Check format for url.
-	    if (!this.url.match(/^((http[s]?):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/g)) {
-	    	throw new Error('Invalid URL for CHttp \'' + this.url + '\'');
-	    }
-
-	    // Append a '/' is not present.
-	    if (this.url.slice(-1) != '/') {
-	    	this.url += '/';
-	    }
+    // Initialization depends on asynchronous messaging with the host app. The 'initialized' object is used to keep track of
+    // all items to be initialized.  When all items become true (initialized) the we notify the host and then the local client that
+    // we're ready.
+    var initializers = {
+      platformInfo: { fn: getPlatformInfo,      done: false },
+      session:      { fn: Session.getInstance, done: false }
     };
 
-    return this;
-  };
+    /**
+     * Applet specific initialization
+     */
 
-  /**
-   * Create a GUID.
-   * @return {String} A GUID string value.
-   */
-  CHttp.prototype.guid = function() {
-    return Date.now().toString();
-  };
-
-  /**
-   * Make an HTTP GET request.
-   * @param {String} endpoint - The URI to the resource.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  CHttp.prototype.get = function(endpoint) {
-  	return new Promise(function(resolve, reject) {
-	    apilog.debug('GET ' + encodeURI(this.url + endpoint));
-
-	    var getData = {
-	      method: 'GET',
-	      url: encodeURI(this.url + endpoint),
-	      headers: {
-	        'Content-Type': 'application/json',
-	        'Accept': 'application/json'
-	      }
-	    };
-
-	    $http(getData).then(function(response) {
-	      apiLog.debug('GET SUCCESS: ' + endpoint);
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      apiLog.error('GET ERROR: ' + endpoint + ', ' + error.statusText);
-	      reject(error.statusText);
-
-	    });
-	  });
-  };
-
-  /**
-   * Make an HTTP POST.
-   * @param {String} endpoint - The URI to the resource.
-   * @param {Object} data - The data object to post.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  CHttp.prototype.post = function(endpoint, data) {
-  	return new Promise(function(resolve, reject) {
-	    apiLog.debug('POST ' + encodeURI(this.url + endpoint) + ' data = ' + JSON.stringify(data));
-
-	    var postData = {
-	      method: 'POST',
-	      url: encodeURI(this.url + endpoint),
-	      headers: {
-	        'Content-Type': 'application/json',
-	        'Accept': 'application/json'
-	      },
-	      data: data
-	    };
-
-	    $http(postData).then(function(response) {
-	      apiLog.deebug('POST SUCCESS: ' + endpoint);
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      apiLog.error('POST ERROR: ' + endpoint + ', ' + error.statusText);
-	      reject(error.statusText);
-
-	    });
-    });
-  };
-
-  return CHttp;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CPlatform', function ($rootScope, apiLog, lodash, ApiMessage) {
-
-  /**
-   * CPlatform
-   *
-   * Provides access to host platform information.
-   */
-
-  /**
-   * Properties
-   * ----------
-   *
-   * isCordova - True if running in a Cordova environment, false otherwise.
-   * isNodeWebkit - True if running in a Node Webkit environment, false otherwise.
-   * isSafari - True if running in a Safari browser, false otherwise.
-   * userAgent - The browser user agent string.
-   *
-   * isMobile.any - True if running in a mobile device, false otherwise.
-   * isMobile.Android - True if running on Android, false otherwise.
-   * isMobile.iOS - True if running on iOS, false otherwise.
-   * isMobile.iPhoneX - True if running on iPhoneX, false otherwise.
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function CPlatform() {
-    throw new Error('CPlatform is a static class');
-  };
-
-  /**
-   * Get the platform information.
-   * @return {Promise<Object>} A promise for the specified service object.
-   */
-  CPlatform.get = function() {
-    var request = {
-      method: 'GET',
-      url: '/info/platform',
-      responseObj: {}
+    if (isApplet) {
+      // Ionic platform defaults. Plugin may override in their own config block.
+      var ionicConfig = $injector.get('$ionicConfig');
+      ionicConfig.tabs.position('bottom');
+      ionicConfig.navBar.alignTitle('center');
+      ionicConfig.navBar.positionPrimaryButtons('left');
+      ionicConfig.navBar.positionSecondaryButtons('right');
+      ionicConfig.backButton.icon('icon ion-ios-arrow-left').text('');
+      ionicConfig.backButton.previousTitleText(false);
+      ionicConfig.scrolling.jsScrolling(false);
     }
 
-    return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(CPlatform, response);
-      $rootScope.$emit('Local/Initialized', 'platformInfo');
-      return response;
+    /**
+     * Servlet specific initialization
+     */
 
-    }).catch(function(error) {
-      apiLog.error('CPlatform.get(): ' + JSON.stringify(error));
-      
-    });
-  };
+    if (isServlet) {
 
-  return CPlatform;
-});
+      // Nothing to do.
 
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CServlet', function (lodash) {
-
-  /**
-   * CServlet
-   *
-   * Provides access to servlet behavior. An instance of this class should be obtained from the
-   * CSession instance.
-   */
-
-  /**
-   * Constructor.  An instance of this class must be obtained from CSession.
-   * @param {Object} plugin - An internal plugin object.
-   * @return {Object} An instance of CServlet.
-   * @constructor
-   */
-  function CServlet(servletObj) {
-    lodash.assign(this, servletObj);
-    return this;
-  };
-
-  return CServlet;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CSession', function ($rootScope, lodash, apiHelpers, apiLog, ApiMessage, CApplet, CServlet, CError, CWallet) {
-
-  /**
-   * CSession
-   *
-   * This class provides session functionality including reading and writing persistent data. An instance of
-   * this class should be obtained by calling CSession.getInstance().
-   */
-
-   var instance;
-
-  /**
-   * Constructor.
-   * @return {Object} The single instance of CSession.
-   * @constructor
-   */
-  function CSession() {
-    var self = this;
-
-    if (instance) {
-      return instance;
     }
-    instance = this;
 
-    getSession().then(function(sessionObj) {
-      // Assign the session data to ourself.
-      lodash.assign(self, sessionObj);
+    /**
+     * Start the plugin and initialize ourself.
+     */
 
-      switch (self.plugin.header.kind) {
-        case 'applet': self.plugin = new CApplet(self.plugin); break;
-        case 'servlet': self.plugin = new CServlet(self.plugin); break;
-      };
-
-      $rootScope.$emit('Local/Initialized', 'session');
-    
-    }).catch(function(error) {
-      apiLog.error('CSession(): ' + JSON.stringify(error));
+    start().then(function() {
+      Object.keys(initializers).forEach(function(i) {
+        initializers[i].fn();
+      })
 
     });
 
-    // Get our session data.
-    function getSession() {
+    function validateStartup(session) {
+      // The build process should prevent this, but just in case.
+      if (lodash.isEmpty(pluginKind) || !(isApplet || isServlet)) {
+        throw new Error('PLUGIN NOT VALID - the pluginKind <meta> in index.html is missing or invalid');
+      }
+
+      if (session && pluginKind != session.plugin.header.kind) {
+        throw new Error('PLUGIN NOT VALID - the pluginKind <meta> in index.html does not match the configuration in plugin.json');
+      }
+    };
+
+    // Start communicating with the host app.
+    function start() {
       var request = {
-       method: 'GET',
-       url: '/session/' + apiHelpers.sessionId(),
-       responseObj: {}
-      }
-
-      return new ApiMessage(request).send();
-    };
-
-    return this;
-  };
-
-  /**
-   * Get the single session object or create the session.
-   * @return {Object} The single session object.
-   */
-  CSession.getInstance = function() {
-    return instance || new CSession();
-  };
-
-  /**
-   * Write all session data to persistent storage.
-   * @return {Promise} A promise at completion.
-   */
-  CSession.prototype.flush = function() {
-    var request = {
-      method: 'POST',
-      url: '/session/flush',
-      data: {}
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
-
-    }).catch(function(error) {
-      apiLog.error('CSession.flush():' + JSON.stringify(error));
-      
-    });
-  };
-
-  /**
-   * Retrieve session data by name.
-   * @param {String} name - User specified data name defined using set(name, value).
-   * @return {Promise<Object>} A promise for stored value.
-   */
-  CSession.prototype.get = function(name) {
-    var self = this;
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/var/' + name,
-      responseObj: {}
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      self[name] = {};
-      lodash.assign(self[name], response);
-      return repsonse;
-
-    }).catch(function(error) {
-      apiLog.error('CSession.get(): ' + JSON.stringify(error));
-      
-    });
-  };
-
-  /**
-   * Restore all session data from persistent storage. A 'data' property is created on the session.
-   * @return {Promise} A promise at completion with param 'data' or an error.
-   */
-  CSession.prototype.restore = function() {
-    var self = this;
-    var request = {
-      method: 'POST',
-      url: '/session/' + this.id + '/restore',
-      data: {}
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      self.data = {};
-      lodash.assign(self.data, response);
-      return response;
-
-    }).catch(function(error) {
-      apiLog.error('CSession.restore(): ' + JSON.stringify(error));
-      
-    });
-  };
-
-  /**
-   * Set session data by name. A 'data' property is created on the session.
-   * @param {String} name - Location to store the specified value.
-   * @param {Object} value - The data value to store.
-   * @return {Promise} A promise at completion with param 'value' or an error.
-   */
-  CSession.prototype.set = function(name, value) {
-    var self = this;
-    var request = {
-      method: 'POST',
-      url: '/session/' + this.id + '/var/' + name,
-      data: value
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      self.data = self.data || {};
-      lodash.merge(self.data, response);
-      return response;
-
-    }).catch(function(error) {
-      apiLog.error('CSession.set(): ' + JSON.stringify(error));
-      
-    });
-  };
-
-  /**
-   * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new CWallet instance.
-   * @return {CWallet} An instance of the chosen CWallet.
-   * @static
-   */
-  CSession.prototype.chooseWallet = function() {
-    var self = this;
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/choosewallet',
-      responseObj: 'CWallet',
-      opts: {
-        timeout: -1
-      }
-    }
-
-    return new ApiMessage(request).send().then(function(response) {
-      return response;
-
-    }).catch(function(error) {
-      apiLog.error('CSession.chooseWallet(): ' + JSON.stringify(error));
-      
-    });
-  };
-
-  return CSession;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CSystem', function () {
-
-  /**
-   * CSystem
-   *
-   * Provides general purpose system utilities.
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function CSystem() {
-    throw new Error('CSystem is a static class');
-  };
-
-  /**
-   * Return whether or not the specified object has all required properties.
-   * @return {Object} An object of two arrays; 'missing' and 'other' properties.
-   * @static
-   */
-  CSystem.checkObject = function(obj, requiredProperties) {
-    var properties = iterateObj(obj, '');
-
-    var missing = [];
-    var other = [];
-    for (var i = 0; i < requiredProperties.length; i++) {
-      if (properties.indexOf(requiredProperties[i]) < 0) {
-        missing.push(requiredProperties[i]);
-      }
-    }
-    for (var i = 0; i < properties.length; i++) {
-      if (requiredProperties.indexOf(properties[i]) < 0) {
-        other.push(properties[i]);
-      }
-    }
-    return { missing: missing, other: other };
-  };
-
-  // Recursively iterate over the objects properties and return an array of properties.
-  function iterateObj(obj, stack) {
-    var properties = [];
-    for (var property in obj) {
-      if (obj.hasOwnProperty(property)) {
-        if (typeof obj[property] == "object") {
-          properties.push(stack + '.' + property);
-          properties = properties.concat(iterateObj(obj[property], stack + '.' + property));
-        } else {
-          properties.push(stack + '.' + property);
+        method: 'POST',
+        url: '/start',
+        data: {
+          sessionId: apiHelpers.sessionId()
         }
       }
+
+      return new ApiMessage(request).send().then(function(response) {
+        pLog.info('START: ' + response.statusText + ' (' + response.statusCode + ')');
+
+        if (response.data.isCordova) {
+        	setupForCordova();
+        }
+
+        // Allow messages to be sent.
+        ApiMessage.ready();
+
+        return;
+
+      }).catch(function(error) {
+        pLog.error('START ERROR: ' + JSON.stringify(error));
+
+      });
+    };
+
+    function setupForCordova() {
+      if (isApplet) {
+        // Tells ionic that we are running in a Cordova container. Ionic doesn't add this class because we are not the root document.
+        angular.element(document.querySelector('body')).addClass('platform-cordova');
+        angular.element(document.querySelector('ion-nav-view')).css('width', window.innerWidth + 'px');
+      }
+    };
+
+    function getPlatformInfo() {
+      var request = {
+        method: 'GET',
+        url: '/info/platform',
+        responseObj: {}
+      }
+
+      return new ApiMessage(request).send().then(function(response) {
+        owswallet.Plugin.setPlatform(response);
+        $rootScope.$emit('Local/Initialized', 'platformInfo');
+
+      }).catch(function(error) {
+        pLog.error('getPlatform(): ' + JSON.stringify(error));
+        
+      });
+    };
+
+    $rootScope.$on('Local/Initialized', function(event, what) {
+      initializers[what].state = true;
+
+      pLog.debug(what + ' initialized');
+
+      // Check if all items are initialized.
+      var done = true;
+      lodash.forEach(Object.keys(initializers), function(i) {
+        done = done && initializers[i].state;
+      });
+
+      if (done) {
+        var session = Session.getInstance();
+
+        // Set our client name.
+        apiHelpers.clientName(session.plugin.header.name);
+
+        // Will throw error if not valid.
+        validateStartup(session);
+
+        // 
+        ApiRouter.applyRoutes(session);
+
+        // Tell the host app that we're ready.
+        var request = {
+          method: 'POST',
+          url: '/ready',
+          data: {
+            sessionId: session.id
+          }
+        }
+
+        return new ApiMessage(request).send().then(function(response) {
+          // We're ready to run!
+          var event = new Event('plugin.ready');
+          window.dispatchEvent(event);
+
+          pLog.info('Open for business!');
+
+        }).catch(function(error) {
+          pLog.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
+
+        });
+      }
+    });
+
+    // The client may updated its host app routes at any time.  When routes are changed this handler updates the host app.
+    $rootScope.$on('Local/RoutesChanged', function(event, routes, target) {
+      var request = {
+        method: 'POST',
+        url: '/session/' + Session.getInstance().id + '/routes',
+        data: {
+          routes: routes,
+          target: target
+        }
+      };
+
+      return new ApiMessage(request).send().then(function(response) {
+      }).catch(function(error) {
+        pLog.error('ROUTES ERROR: ' + JSON.stringify(error));
+      });
+    });
+
+  });
+
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.services').service('pLog', function($log, apiHelpers) {
+
+	var root = {};
+
+  root.debug = function(message) {
+    doLog('debug', message);
+  };
+
+  root.error = function(message) {
+    doLog('error', message);
+  };
+
+  root.info = function(message) {
+    doLog('info', message);
+  };
+
+  root.warn = function(message) {
+    doLog('warn', message);
+  };
+
+  function doLog(level, message) {
+    var lead = '[' + apiHelpers.clientName() + '] ';
+    switch (level) {
+      case 'error': $log.error(lead + message); break;
+      case 'wanr':  $log.warn(lead + message); break;
+      case 'info':  $log.info(lead + message); break;
+      default:      $log.debug(lead + message); break;
     }
-    return properties;
   };
 
-  return CSystem;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CUtils', function (rateService) {
-
-  /**
-   * CUtils
-   *
-   * Provides domain utilities.
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function CUtils() {
-    throw new Error('CUtils is a static class');
-  };
-
-  /**
-   * Retrieve a currency exchange rate (vs. bitcoin price).
-   * @param {String} code - The ISO currency code for exchange.
-   * @return {Object} An instance of a service object.
-   * @static
-   */
-  CUtils.getRate = function(isoCode) {
-    return rateService.getRate(isoCode);
-  };
-
-  return CUtils;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('CWallet', function (lodash) {
-
-  /**
-   * CWallet
-   *
-   * Provides access to a wallet. An instance of this class should be obtained from the CSession instance.
-   */
-
-  /**
-   * Constructor.  An instance of this class must be obtained from CSession.
-   * @param {Object} wallet - An internal Wallet object.
-   * @return {Object} An instance of CWallet.
-   * @constructor
-   */
-  function CWallet(walletObj) {
-    lodash.assign(this, walletObj);
-  };
-
-  return CWallet;
+  return root;
 });

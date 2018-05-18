@@ -1,16 +1,16 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('ApiError', function (lodash) {
 
   /**
-   * CError
+   * ApiError
    *
    * Provides a wrapper for messages coming from the host app.
    */
 
   /**
    * Constructor.
-   * @return {CError} An instance of CError.
+   * @return {ApiError} An instance of ApiError.
    * @constructor
    *
    * errorObj: {
@@ -20,10 +20,10 @@ angular.module('owsWalletPluginClient.api').factory('CError', function (lodash) 
    *   detail: <string>
    * }
    */
-  function CError(errorObj) {
+  function ApiError(errorObj) {
     lodash.assign(this, errorObj);
     return this;
   };
 
-  return CError;
+  return ApiError;
 });

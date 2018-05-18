@@ -53,11 +53,14 @@ module.exports = function(grunt) {
       },
       js_client: {
         src: [
+          'src/js/owswallet.plugin.js',
           'src/js/pluginClient.js',
+          'src/js/pluginClient.config.js',
           'src/js/pluginClient.init.js',
           'src/js/translations.js',
+          'src/js/api/*.js',
           'src/js/impl/**/*.js',
-          'src/js/api/*.js'
+          'src/js/services/**/*.js'
         ],
         dest: 'build/ows-wallet-plugin-client.js'
       },
