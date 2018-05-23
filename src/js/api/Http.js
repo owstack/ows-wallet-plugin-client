@@ -69,8 +69,8 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('GET ERROR: ' + url + ', ' + error.statusText);
-	      reject(error.statusText);
+	      pLog.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
+	      reject(error);
 
 	    });
 	  });
@@ -94,8 +94,8 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('POST ERROR: ' + url + ', ' + error.statusText);
-	      reject(error.statusText);
+	      pLog.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
+	      reject(error);
 
 	    });
     });

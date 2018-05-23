@@ -58586,8 +58586,8 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('GET ERROR: ' + url + ', ' + error.statusText);
-	      reject(error.statusText);
+	      pLog.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
+	      reject(error);
 
 	    });
 	  });
@@ -58604,15 +58604,15 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
   	return new Promise(function(resolve, reject) {
       var url = encodeURI(self.url + endpoint);
 
-	    pLog.debug('POST ' + url + ' data = ' + JSON.stringify(data));
+	    pLog.debug('POST ' + url + ' ' + JSON.stringify(data));
 
 	    $http.post(url, data, self.config).then(function(response) {
 	      pLog.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('POST ERROR: ' + url + ', ' + error.statusText);
-	      reject(error.statusText);
+	      pLog.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
+	      reject(error);
 
 	    });
     });
@@ -58684,7 +58684,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       $rootScope.$emit('Local/Initialized', 'session');
     
     }).catch(function(error) {
-      pLog.error('Session(): ' + JSON.stringify(error));
+      pLog.error('Session(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
 
     });
 
@@ -58725,7 +58726,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Session.flush():' + JSON.stringify(error));
+      pLog.error('Session.flush():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
       
     });
   };
@@ -58749,7 +58751,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Session.get(): ' + JSON.stringify(error));
+      pLog.error('Session.get(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
       
     });
   };
@@ -58761,7 +58764,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
   Session.prototype.restore = function() {
     var self = this;
     var request = {
-      method: 'POST',
+      method: 'GET',
       url: '/session/' + this.id + '/restore',
       data: {}
     }
@@ -58772,7 +58775,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.restore(): ' + JSON.stringify(error));
+      pLog.error('Session.restore(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
       
     });
   };
@@ -58797,7 +58801,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.set(): ' + JSON.stringify(error));
+      pLog.error('Session.set(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
       
     });
   };
@@ -58805,7 +58810,6 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
   /**
    * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
    * @return {Wallet} An instance of the chosen Wallet.
-   * @static
    */
   Session.prototype.chooseWallet = function() {
     var self = this;
@@ -58822,7 +58826,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.chooseWallet(): ' + JSON.stringify(error));
+      pLog.error('Session.chooseWallet(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
       
     });
   };
@@ -58868,6 +58873,176 @@ angular.module('owsWalletPluginClient.api').factory('System', function (lodash) 
 
 'use strict';
 
+angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, pLog, ApiMessage) {
+
+  /**
+   * Transaction
+   *
+   * Provides the interface to a host created wallet transaction.
+   */
+
+  /**
+   * Constructor.
+   * @return {Transaction} An instance of Transaction.
+   * @constructor
+   *
+   * To create a Transaction requires the following.
+   *
+   *   - (A) walletId & urlOrAddress OR
+   *   - (B) walletId & urlOrAddress & amount OR
+   *   - (C) walletId & urlOrAddress & userSendMax
+   *
+   * (A) Pay to a network payment request URL from the wallet. The urlOrAddress must resolve to an address and amount.
+   *
+   * txObj = {
+   *   walletId: <String>,
+   *   urlOrAddress: <String>
+   * };
+   *
+   * (B) Pay the amount to the address from the wallet.
+   *
+   * txObj = {
+   *   walletId: <String>,
+   *   urlOrAddress: <String>,
+   *   amount: <Number>
+   * };
+   *
+   * (C) Pay the wallet's whole balance to the address from the wallet.
+   *
+   * txObj = {
+   *   walletId: <String>,
+   *   urlOrAddress: <String>,
+   *   useSendMax: <boolean>
+   * };
+   *
+   */
+  function Transaction(txObj) {
+    lodash.assign(this, txObj);
+
+    var request = {
+      method: 'POST',
+      url: '/transactions',
+      data: {
+        walletId: this.walletId,
+        urlOrAddress: this.urlOrAddress,
+        amount: this.amount,
+        useSendMax: this.useSendMax
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Transaction.create():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+
+    return this;
+  };
+
+  /**
+   * Set the wallet for the transaction.
+   * @return {Promise} A promise at completion.
+   */
+  Transaction.prototype.setFee = function(level, rate, isCustomRate) {
+    var request = {
+      method: 'PUT',
+      url: '/transactions/' + this.guid + '/wallet/' + this.walletId,
+      data: {
+        fee: {
+          level: level,
+          rate: rate,
+          isCustomRate: isCustomRate
+        }
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  /**
+   * Set the wallet for the transaction.
+   * @return {Promise} A promise at completion.
+   */
+  Transaction.prototype.setWallet = function(walletId) {
+    var request = {
+      method: 'PUT',
+      url: '/transactions/' + this.guid + '/wallet/' + this.walletId,
+      data: {
+        walletId: walletId
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  /**
+   * Send a transaction.
+   * @return {Promise} A promise at completion.
+   */
+  Transaction.prototype.send = function() {
+    var request = {
+      method: 'PUT',
+      url: '/transactions/' + this.guid,
+      data: {
+        status: 'approve'
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Transaction.send():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  /**
+   * Cancel a transaction.
+   * @return {Promise} A promise at completion.
+   */
+  Transaction.prototype.cancel = function() {
+    var request = {
+      method: 'PUT',
+      url: '/transactions/' + this.guid,
+      data: {
+        status: 'denied'
+      }
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      return repsonse;
+
+    }).catch(function(error) {
+      pLog.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  return Transaction;
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.api').factory('Utils', function (rateService) {
 
   /**
@@ -58905,16 +59080,45 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash) 
    * Wallet
    *
    * Provides access to a wallet. An instance of this class should be obtained from the Session instance.
+   *
+   * Attributes with sample values.
+   *
+   * {
+   *   id: 'c2976ddc-2baf-4bba-b42a-4160957e6cdb',
+   *   network: 'livenet',
+   *   currency: 'btc',
+   *   m: 1,
+   *   n: 1,
+   *   name: 'Personal Wallet',
+   *   needsBackup: true,
+   *   balanceHidden: false,
+   *   error: null,
+   *   cachedBalance: '0.00 BTC',
+   *   cachedBalanceUpdatedOn: 1526591574,
+   *   cachedActivity: {
+   *     n: [{
+   *       version: '1.0.0',
+   *       createdOn: 1526571580,
+   *       id: '015265715808920000',
+   *       type: 'NewBlock',
+   *       data: {
+   *         hash: '00000000000000000036818a14759da02bf3e59e8173cbc21ab3e9848ac89490',
+   *         network: 'livenet'
+   *       }
+   *     }]
+   *   }
+   * }
    */
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
-   * @param {Object} wallet - An internal Wallet object.
+   * @param {Object} walletObj - An internal Wallet object.
    * @return {Object} An instance of Wallet.
    * @constructor
    */
   function Wallet(walletObj) {
     lodash.assign(this, walletObj);
+    return this;
   };
 
   return Wallet;
@@ -59031,8 +59235,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // Invalid event.
         self.response = {
           statusCode: 500,
-          statusText: 'Invalid message event, no \'data\' found.',
-          data: {}
+          statusText: 'MESSAGE_NOT_VALID',
+          data: {
+            message: 'Invalid message event, no \'data\' found.'
+          }
         };
 
       } else if (!lodash.isString(self.event.data)) {
@@ -59040,8 +59246,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // Event data not a string.
         self.response = {
           statusCode: 500,
-          statusText: 'Invalid message event data, expected string argument but received object.',
-          data: {}
+          statusText: 'MESSAGE_NOT_VALID',
+          data: {
+            message: 'Invalid message event data, expected string argument but received object.'
+          }
         };
       }
     };
@@ -59052,8 +59260,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // No request.
         self.response  = {
           statusCode: 400,
-          statusText: 'No request provided.',
-          data: {}
+          statusText: 'NO_REQUEST',
+          data: {
+            message: 'No request provided.'
+          }
         };
         
       } else if (lodash.isUndefined(self.request.method)) {
@@ -59061,8 +59271,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // No request method.
         self.response  = {
           statusCode: 400,
-          statusText: 'No request method specified.',
-          data: {}
+          statusText: 'NO_METHOD',
+          data: {
+            message: 'No request method specified.'
+          }
         };
       }
 
@@ -59071,6 +59283,8 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         case 'GET':
           break;
         case 'POST': validatePOST();
+          break;
+        case 'PUT': validatePUT();
           break;
       }
     };
@@ -59081,8 +59295,24 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // Invalid request; does not match specification.
         self.response  = {
           statusCode: 400,
-          statusText: 'Invalid request, POST data not present in request.',
-          data: {}
+          statusText: 'REQUEST_NOT_VALID',
+          data: {
+            message: 'Invalid request, POST data not present in request.'
+          }
+        };
+      }
+    };
+
+    function validatePUT() {
+      // Check for required PUT data.
+      if (lodash.isUndefined(self.request.data)) {
+        // Invalid request; does not match specification.
+        self.response  = {
+          statusCode: 400,
+          statusText: 'REQUEST_NOT_VALID',
+          data: {
+            message: 'Invalid request, PUT data not present in request.'
+          }
         };
       }
     };
@@ -59093,8 +59323,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // No route.
         self.response  = {
           statusCode: 404,
-          statusText: 'Route not found.',
-          data: {}
+          statusText: 'ROUTE_NOT_FOUND',
+          data: {
+            message: 'Route not found.'
+          }
         };
       }
     };
@@ -59127,7 +59359,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
             code: message.response.statusCode,
             source: message.request.url,
             message: message.response.statusText,
-            detail: ''
+            detail: JSON.stringify(message.response.data)
           }));
 
         } else {
@@ -59182,9 +59414,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
             timer: timeoutTimer
           });
 
-          pLog.info('REQUEST  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
+          pLog.info('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
         } else {
-          pLog.info('RESPONSE  ' + self.header.sequence + ': ' + angular.toJson(transport(self)));
+          pLog.info('RESPONSE  ' + self.header.sequence + ': ' + responseToJson(self));
         }
 
         // Post the message to the host.
@@ -59195,8 +59427,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         // The client service is not ready. Short circuit the communication and immediatley respond.
         self.response = {
           statusCode: 503,
-          statusText: 'Client service not ready.',
-          data: {}
+          statusText: 'NOT_READY',
+          data: {
+            message: 'Client service not ready.'
+          }
         };
         onComplete(self);
 
@@ -59274,8 +59508,10 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
       message.response = {
         statusCode: 408,
-        statusText: 'Request timed out.',
-        data: {}
+        statusText: 'REQUEST_TIMED_OUT',
+        data: {
+          message: 'Request timed out.'
+        }
       }
       promise[0].onComplete(message);
     } else {
@@ -59298,6 +59534,22 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       request: message.request,
       response: message.response
     }
+  };
+
+  function requestToJson(message) {
+    var r = {
+      header: message.header,
+      request: message.request
+    };
+    return angular.toJson(r);
+  };
+
+  function responseToJson(message) {
+    var r = {
+      header: message.header,
+      response: message.response
+    };
+    return angular.toJson(r);
   };
 
   return ApiMessage;
