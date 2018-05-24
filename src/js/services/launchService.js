@@ -15,7 +15,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     // all items to be initialized.  When all items become true (initialized) the we notify the host and then the local client that
     // we're ready.
     var initializers = {
-      platformInfo: { fn: getPlatformInfo,      done: false },
+      platformInfo: { fn: getPlatformInfo,     done: false },
       session:      { fn: Session.getInstance, done: false }
     };
 
@@ -135,7 +135,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         var session = Session.getInstance();
 
         // Set our client name.
-        apiHelpers.clientName(session.plugin.header.name);
+        apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
 
         // Will throw error if not valid.
         validateStartup(session);
