@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, $pluginConfig, pLog, lodash, pathToRegexpService) {
+angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, $pluginConfig, $log, lodash, pathToRegexpService) {
 
   /**
    * API routes.
@@ -64,14 +64,14 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
 
     var targetId = session.plugin.uri;
     if (!targetId) {
-      pLog.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
+      $log.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
       return;
     }
 
     var errors = false;
     var hostRoutes = lodash.map(routes, function(r) {
       if (!r.path || !r.method || !r.handler) {
-        pLog.error('Invalid route: ' + JSON.stringify(r));
+        $log.error('Invalid route: ' + JSON.stringify(r));
         errors = true;
       }
 

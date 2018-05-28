@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, pLog, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, $log, ApiMessage) {
 
   /**
    * Transaction
@@ -61,7 +61,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Transaction.create():' + error.message + ', detail:' + error.detail);
+      $log.error('Transaction.create():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -90,7 +90,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
+      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -113,7 +113,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
+      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -136,7 +136,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Transaction.send():' + error.message + ', detail:' + error.detail);
+      $log.error('Transaction.send():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -159,7 +159,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
+      $log.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });

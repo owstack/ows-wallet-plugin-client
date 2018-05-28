@@ -21,7 +21,6 @@ coverage
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
 node_modules
 bower_components
-angular-bitauth/angular-bitauth.js
 angular-path-to-regexp/angular-path-to-regexp.js
 
 # Users Environment Variables

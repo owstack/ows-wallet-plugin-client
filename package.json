@@ -19,8 +19,6 @@
     "url": "https://github.com/owstack/ows-wallet-plugin-client/issues"
   },
   "dependencies": {
-    "bitauth": "^0.2.1",
-    "djv": "^2.0.0",
     "path-to-regexp": "^2.2.1"
   },
   "scripts": {
@@ -31,7 +29,6 @@
     "grunt-angular-gettext": "^2.2.3",
     "grunt-browserify": "^5.0.0",
     "grunt-cli": "^1.2.0",
-    "grunt-babel": "^7.0.0",
     "grunt-contrib-clean": "^1.1.0",
     "grunt-contrib-compress": "^1.4.3",
     "grunt-contrib-concat": "^1.0.1",

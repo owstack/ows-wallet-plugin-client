@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, lodash, $http, System) {
+angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, System) {
 
   /**
    * Http
@@ -62,14 +62,14 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
   	return new Promise(function(resolve, reject) {
       var url = encodeURI(self.url + endpoint);
 
-	    plog.debug('GET ' + url);
+	    $log.debug('GET ' + url);
 
 	    $http.get(data, self.config).then(function(response) {
-	      pLog.debug('GET SUCCESS: ' + JSON.stringify(response));
+	      $log.debug('GET SUCCESS: ' + JSON.stringify(response));
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
+	      $log.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
 	      reject(error);
 
 	    });
@@ -87,14 +87,14 @@ angular.module('owsWalletPluginClient.api').factory('Http', function (pLog, loda
   	return new Promise(function(resolve, reject) {
       var url = encodeURI(self.url + endpoint);
 
-	    pLog.debug('POST ' + url + ' ' + JSON.stringify(data));
+	    $log.debug('POST ' + url + ' ' + JSON.stringify(data));
 
 	    $http.post(url, data, self.config).then(function(response) {
-	      pLog.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
+	      $log.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
 	      resolve(response);
 
 	    }).catch(function(error) {
-	      pLog.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
+	      $log.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
 	      reject(error);
 
 	    });

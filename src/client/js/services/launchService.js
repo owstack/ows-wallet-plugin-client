@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, pLog, ApiMessage, ApiRouter, Session) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session) {
 
   owswallet.Plugin.start(function() {
 
@@ -78,7 +78,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       }
 
       return new ApiMessage(request).send().then(function(response) {
-        pLog.info('START: ' + response.statusText + ' (' + response.statusCode + ')');
+        $log.info('START: ' + response.statusText + ' (' + response.statusCode + ')');
 
         if (response.data.isCordova) {
         	setupForCordova();
@@ -90,7 +90,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         return;
 
       }).catch(function(error) {
-        pLog.error('START ERROR: ' + JSON.stringify(error));
+        $log.error('START ERROR: ' + JSON.stringify(error));
 
       });
     };
@@ -115,7 +115,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         $rootScope.$emit('Local/Initialized', 'platformInfo');
 
       }).catch(function(error) {
-        pLog.error('getPlatform(): ' + JSON.stringify(error));
+        $log.error('getPlatform(): ' + JSON.stringify(error));
         
       });
     };
@@ -123,7 +123,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     $rootScope.$on('Local/Initialized', function(event, what) {
       initializers[what].state = true;
 
-      pLog.debug(what + ' initialized');
+      $log.debug(what + ' initialized');
 
       // Check if all items are initialized.
       var done = true;
@@ -157,10 +157,10 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
           var event = new Event('plugin.ready');
           window.dispatchEvent(event);
 
-          pLog.info('Open for business!');
+          $log.info('Open for business!');
 
         }).catch(function(error) {
-          pLog.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
+          $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
 
         });
       }
@@ -179,7 +179,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
 
       return new ApiMessage(request).send().then(function(response) {
       }).catch(function(error) {
-        pLog.error('ROUTES ERROR: ' + JSON.stringify(error));
+        $log.error('ROUTES ERROR: ' + JSON.stringify(error));
       });
     });
 

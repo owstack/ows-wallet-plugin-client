@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, pLog, ApiRouter, ApiError) {
+angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter, ApiError) {
 
   var host = window.parent;
 
@@ -263,9 +263,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
             timer: timeoutTimer
           });
 
-          pLog.info('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
+          $log.info('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
         } else {
-          pLog.info('RESPONSE  ' + self.header.sequence + ': ' + responseToJson(self));
+          $log.info('RESPONSE  ' + self.header.sequence + ': ' + responseToJson(self));
         }
 
         // Post the message to the host.
@@ -312,7 +312,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
       // Not possible to notify client since the message is invalid.
       // The client will timeout if a valid response is not received.
-      pLog.error('Could not process message, ' + ex.message + ' - '+ angular.toJson(event));
+      $log.error('Could not process message, ' + ex.message + ' - '+ angular.toJson(event));
     }
   };
 
@@ -346,7 +346,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
   // Timeout a message waiting for a response. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    pLog.debug('Plugin client request timeout: ' + serialize(message));
+    $log.debug('Plugin client request timeout: ' + serialize(message));
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;
@@ -364,7 +364,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       }
       promise[0].onComplete(message);
     } else {
-      pLog.warn('Message request timed out but there is no promise to fulfill: ' + serialize(message));
+      $log.warn('Message request timed out but there is no promise to fulfill: ' + serialize(message));
     }
   };
 

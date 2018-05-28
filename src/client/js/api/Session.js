@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, pLog, ApiMessage, Applet, Servlet, Wallet) {
+angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, $log, ApiMessage, Applet, Servlet, Wallet) {
 
   /**
    * Session
@@ -36,7 +36,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       $rootScope.$emit('Local/Initialized', 'session');
     
     }).catch(function(error) {
-      pLog.error('Session(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
 
     });
@@ -78,7 +78,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Session.flush():' + error.message + ', detail:' + error.detail);
+      $log.error('Session.flush():' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -103,7 +103,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return repsonse;
 
     }).catch(function(error) {
-      pLog.error('Session.get(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.get(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -127,7 +127,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.restore(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.restore(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -153,7 +153,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.set(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.set(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
@@ -178,7 +178,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      pLog.error('Session.chooseWallet(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.chooseWallet(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
