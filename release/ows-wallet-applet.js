@@ -3,7 +3,7 @@
 angular.module('owsWalletPluginClient.services').service('externalLinkService', function(nodeWebkitService, popupService, gettextCatalog, $window, $log, $timeout) {
 
 	var root = {};
-	var isNW = owswallet.Plugin.isNW();
+	var isNodeWebKit = owswallet.Plugin.isNodeWebKit();
 
   root.open = function(url, optIn, title, message, okText, cancelText) {
     var old = $window.handleOpenURL;
@@ -13,7 +13,7 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
       $log.debug('Skip: ' + url);
     };
 
-    if (isNW) {
+    if (isNodeWebKit) {
       nodeWebkitService.openExternalLink(url);
       restoreHandleOpenURL(old);
     } else {

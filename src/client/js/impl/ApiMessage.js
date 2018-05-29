@@ -202,6 +202,8 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       var onComplete = function(message) {
         var responseObj;
 
+        $log.info('RESPONSE  ' + message.header.sequence + ': ' + responseToJson(message));
+
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
           // Fail
           reject(new ApiError({
