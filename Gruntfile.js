@@ -36,7 +36,7 @@ module.exports = function(grunt) {
         files: [{
           expand: true,
           flatten: true,
-          src: ['src/applet/sass/**/*.scss'],
+          src: ['src/applet/sass/main.scss'],
           dest: 'build/applet/css/',
           ext: '.css'
         }]

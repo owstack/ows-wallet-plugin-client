@@ -8,6 +8,10 @@
   ],
   "dependencies": {
     "angular-gettext": "2.2.1",
+    "ionic": "https://github.com/owstack/ionic-v1.git#ows-release",
     "ng-lodash": "0.5.0"
+  },
+  "resolutions": {
+    "angular": "^1.5.3"
   }
 }

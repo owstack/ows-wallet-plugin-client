@@ -79,7 +79,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
     $ionicPopup.alert({
       title: title,
       subTitle: message,
-      okType: 'button-clear button-positive',
+      okType: 'button-clear button-primary',
       okText: okText || gettextCatalog.getString('OK'),
     }).then(cb);
   };
@@ -92,7 +92,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
       cancelText: cancelText,
       cancelType: 'button-clear button-secondary',
       okText: okText,
-      okType: 'button-clear button-positive'
+      okType: 'button-clear button-primary'
     }).then(function(res) {
       return cb(res);
     });
