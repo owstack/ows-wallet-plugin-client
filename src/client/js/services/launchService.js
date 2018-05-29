@@ -157,7 +157,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
           var event = new Event('plugin.ready');
           window.dispatchEvent(event);
 
-          $log.info('Open for business!');
+          $log.info(session.plugin.header.name + ' ' + session.plugin.header.kind + ' is ready!');
 
         }).catch(function(error) {
           $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
