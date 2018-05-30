@@ -14685,6 +14685,7 @@ var owswallet = {};
   var startCallback;
   var readyCallbacks = [];
   var openCallbacks = [];
+  var eventCallbacks = [];
   var windowLoadListenderAttached;
 
   var self = owswallet.Plugin = {
@@ -14723,20 +14724,33 @@ var owswallet = {};
     },
 
     setOpen: function(pluginId) {
-      isOpen[pluginId] = true;
+      self.isOpen[pluginId] = true;
 
       var indexes = [];
       for (var x = 0; x < openCallbacks.length; x++) {
         // Fire off all the callbacks that were added before the plugin was ready.
-        if (openCallback[x] && openCallbacks[x].pluginId == pluginId) {
+        if (openCallbacks[x] && openCallbacks[x].pluginId == pluginId) {
           openCallbacks[x].callback();
         }
-        run.push(x);
       }
 
       // Remove executed callbacks.
       for (var i = indexes.length -1; i >= 0; i--) {
          openCallbacks.splice(indexes[i], 1);
+      }
+    },
+
+    onEvent: function(cb) {
+      eventCallbacks.push({
+        callback: cb
+      });
+    },
+
+    notify: function(event) {
+      var indexes = [];
+      for (var x = 0; x < eventCallbacks.length; x++) {
+        // Fire off all the event callbacks.
+        eventCallbacks[x].callback();
       }
     },
 
@@ -15194,6 +15208,38 @@ angular.module('owsWalletPluginClient.api').factory('Contants', function () {
   Contants.SATOSHI_PER_BTC = 1e8;
 
   return Contants;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, lodash) {
+
+	var root = {};
+
+  root.respond = function(message, callback) {
+	  // Request parameters.
+    var event = message.request.data;
+
+  	if (lodash.isEmpty(event)) {
+      $log.error('Received a host event message with no event data.');
+      return;
+  	}
+
+    // A properly received message does not send a response back to the host app.
+    // Send the event to the client if not processed here.
+    switch (event.type) {
+      case 'ready': 
+        owswallet.Plugin.setOpen(event.pluginId);
+        break;
+
+      default:
+        owswallet.Plugin.onEvent(event);
+        break;
+    }
+
+  };
+
+  return root;
 });
 
 'use strict';
@@ -15896,6 +15942,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       // Note: During startup and until the client is ready this class does not have the session object.
       var now = new Date();
       this.header = {
+        type: 'message',
         sequence: sequence++,
         id: '' + now.getTime(),
         timestamp: now,
@@ -16251,9 +16298,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
    * The local routes here direct incoming messages for this plugin to handle.
    */
 
-  var routeMap = [
-    { path: '/ready', method: 'POST', handler: 'ready' } // Handle 'ready' messages from other plugins.
-  ];
+  var routeMap = [];
 
   /**
    * Constructor
@@ -16300,14 +16345,16 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
    *   callback - a function to be called when the handler wants to sent the message; fn(message)
    */
   ApiRouter.applyRoutes = function(session) {
-    var routes = $pluginConfig.router.routes();
-
     var targetId = session.plugin.uri;
     if (!targetId) {
       $log.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
       return;
     }
 
+    // Get the client configured routes.
+    var routes = $pluginConfig.router.routes();
+
+    // Build a valid host routes list (we don't just pass whatever the user configured in the routes array).
     var errors = false;
     var hostRoutes = lodash.map(routes, function(r) {
       if (!r.path || !r.method || !r.handler) {
@@ -16324,10 +16371,14 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
 
     if (!errors) {
       // Add routes to our local map and broadcast and event to notify the host app to add routes.
-      routeMap = routeMap.concat(routeMap, routes);
+      routeMap = routeMap.concat(routes);
       $rootScope.$emit('Local/RoutesChanged', hostRoutes, targetId);
-      return;
     }
+
+    // Add a route for this client to receive event messages from the host app.
+    // The route name uses our session id; e.g., "/1234567890". This guarantees a unique entry in the host app routing map.
+    var eventRoute = [{ path: '/' + session.id , method: 'POST', handler: 'hostEvent' }];
+    routeMap = routeMap.concat(eventRoute);
   };
 
   /**
@@ -16609,7 +16660,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         // Will throw error if not valid.
         validateStartup(session);
 
-        // 
+        // Add client configured routes to our routing map.
         ApiRouter.applyRoutes(session);
 
         // Tell the host app that we're ready.
@@ -16635,7 +16686,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       }
     });
 
-    // The client may updated its host app routes at any time.  When routes are changed this handler updates the host app.
+    // The client may update its host app routes at any time.  When routes are changed this handler updates the host app.
     $rootScope.$on('Local/RoutesChanged', function(event, routes, target) {
       var request = {
         method: 'POST',

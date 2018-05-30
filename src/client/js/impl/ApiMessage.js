@@ -64,6 +64,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       // Note: During startup and until the client is ready this class does not have the session object.
       var now = new Date();
       this.header = {
+        type: 'message',
         sequence: sequence++,
         id: '' + now.getTime(),
         timestamp: now,

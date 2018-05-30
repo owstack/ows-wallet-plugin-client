@@ -18,8 +18,8 @@ module.exports = function(grunt) {
       },
       main: {
         files: [
-          'src/js/api/*.js',
-          'src/js/impl/*.js'
+          'src/js/api/**/*.js',
+          'src/js/impl/**/*.js'
         ],
         tasks: ['concat:js']
       }
@@ -57,7 +57,7 @@ module.exports = function(grunt) {
           'src/client/js/pluginClient.config.js',
           'src/client/js/pluginClient.init.js',
           'src/client/js/translations.js',
-          'src/client/js/api/*.js',
+          'src/client/js/api/**/*.js',
           'src/client/js/impl/**/*.js',
           'src/client/js/services/**/*.js'
         ],

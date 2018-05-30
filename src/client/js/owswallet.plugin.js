@@ -41,6 +41,7 @@ var owswallet = {};
   var startCallback;
   var readyCallbacks = [];
   var openCallbacks = [];
+  var eventCallbacks = [];
   var windowLoadListenderAttached;
 
   var self = owswallet.Plugin = {
@@ -79,20 +80,33 @@ var owswallet = {};
     },
 
     setOpen: function(pluginId) {
-      isOpen[pluginId] = true;
+      self.isOpen[pluginId] = true;
 
       var indexes = [];
       for (var x = 0; x < openCallbacks.length; x++) {
         // Fire off all the callbacks that were added before the plugin was ready.
-        if (openCallback[x] && openCallbacks[x].pluginId == pluginId) {
+        if (openCallbacks[x] && openCallbacks[x].pluginId == pluginId) {
           openCallbacks[x].callback();
         }
-        run.push(x);
       }
 
       // Remove executed callbacks.
       for (var i = indexes.length -1; i >= 0; i--) {
          openCallbacks.splice(indexes[i], 1);
+      }
+    },
+
+    onEvent: function(cb) {
+      eventCallbacks.push({
+        callback: cb
+      });
+    },
+
+    notify: function(event) {
+      var indexes = [];
+      for (var x = 0; x < eventCallbacks.length; x++) {
+        // Fire off all the event callbacks.
+        eventCallbacks[x].callback();
       }
     },
 

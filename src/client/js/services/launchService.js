@@ -140,7 +140,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         // Will throw error if not valid.
         validateStartup(session);
 
-        // 
+        // Add client configured routes to our routing map.
         ApiRouter.applyRoutes(session);
 
         // Tell the host app that we're ready.
@@ -166,7 +166,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       }
     });
 
-    // The client may updated its host app routes at any time.  When routes are changed this handler updates the host app.
+    // The client may update its host app routes at any time.  When routes are changed this handler updates the host app.
     $rootScope.$on('Local/RoutesChanged', function(event, routes, target) {
       var request = {
         method: 'POST',
