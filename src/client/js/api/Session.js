@@ -75,7 +75,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Session.flush():' + error.message + ', detail:' + error.detail);
@@ -100,7 +100,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     return new ApiMessage(request).send().then(function(response) {
       self[name] = {};
       lodash.assign(self[name], response);
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Session.get(): ' + error.message + ', detail:' + error.detail);
@@ -157,6 +157,26 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       throw new Error(error.message);
       
     });
+  };
+
+  /**
+   * Broadcast an event to any interesteed listener; either the host app or another plugin. For routingm this event is
+   * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
+   * feedback about delivery.
+   * @param {String} eventType - The type of event being sent, should be listened for by receivers wanting to receove this event.
+   * @param {Object} value - The event data payload.
+   */
+  Session.prototype.broadcastEvent = function(eventType, eventData) {
+    var request = {
+      method: 'POST',
+      url: '/event',
+      data: {
+        type: eventType,
+        data: eventData
+      }
+    };
+
+    return new ApiMessage(request).send();
   };
 
   /**

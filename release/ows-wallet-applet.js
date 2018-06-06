@@ -1,5 +1,26 @@
 'use strict';
 
+angular.module('owsWalletPluginClient.filters', []).filter('orderObjectBy', function() {
+  return function(items, field, reverse) {
+    var filtered = [];
+
+    angular.forEach(items, function(item) {
+      filtered.push(item);
+    });
+
+    filtered.sort(function(a, b) {
+      return (a[field] > b[field] ? 1 : -1);
+    });
+
+    if (reverse) {
+      filtered.reverse();
+    }
+    return filtered;
+  };
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.services').service('externalLinkService', function(nodeWebkitService, popupService, gettextCatalog, $window, $log, $timeout) {
 
 	var root = {};

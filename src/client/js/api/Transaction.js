@@ -58,7 +58,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.create():' + error.message + ', detail:' + error.detail);
@@ -87,7 +87,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
@@ -110,7 +110,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
@@ -133,7 +133,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.send():' + error.message + ', detail:' + error.detail);
@@ -156,7 +156,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);

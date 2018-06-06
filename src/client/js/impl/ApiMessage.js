@@ -227,7 +227,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
                 if (lodash.isEmpty(message.request.responseObj)) {
                   // An empty response object informs that we should pass back the raw response data without status.
-                  responseObj = message.response.data || {};
+                  responseObj = message.response.data;
                 } else {
                   // Create an instance of the promised responseObj with the message data.
                   responseObj = $injector.get(message.request.responseObj);

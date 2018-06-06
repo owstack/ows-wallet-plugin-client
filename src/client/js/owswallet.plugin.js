@@ -106,7 +106,7 @@ var owswallet = {};
       var indexes = [];
       for (var x = 0; x < eventCallbacks.length; x++) {
         // Fire off all the event callbacks.
-        eventCallbacks[x].callback();
+        eventCallbacks[x].callback(event);
       }
     },
 

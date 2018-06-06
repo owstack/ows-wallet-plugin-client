@@ -14750,7 +14750,7 @@ var owswallet = {};
       var indexes = [];
       for (var x = 0; x < eventCallbacks.length; x++) {
         // Fire off all the event callbacks.
-        eventCallbacks[x].callback();
+        eventCallbacks[x].callback(event);
       }
     },
 
@@ -14856,6 +14856,7 @@ var modules = [
   'pathToRegexpModule',
 	'owsWalletPluginClient.api',
 	'owsWalletPluginClient.impl',
+	'owsWalletPluginClient.filters',
 	'owsWalletPluginClient.services'
 ];
 
@@ -14863,6 +14864,7 @@ var owsWalletPluginClient = angular.module('owsWalletPluginClient', modules);
 
 angular.module('owsWalletPluginClient.api', []);
 angular.module('owsWalletPluginClient.impl', []);
+angular.module('owsWalletPluginClient.filters', []);
 angular.module('owsWalletPluginClient.services', []);
 
 'use strict';
@@ -15133,6 +15135,67 @@ angular.module('owsWalletPluginClient.api').factory('ApiError', function (lodash
 
 'use strict';
 
+angular.module('owsWalletPluginClient.api').factory('App', function ($log, lodash, ApiMessage) {
+
+  /**
+   * App
+   *
+   * Provides information about the host app.
+   *
+   * {
+   *   version: {string} The app version.
+   *   nameCase: {string} The name.
+   *   description: {string} A description.
+   *   author: {string} The author.
+   *   url: {string} The marketing URL.
+   *   downloadUrl: {string} The URL where the app can be downloaded.
+   *   appleStoreUrl: {string} The URL for the app in the Apple App Store.
+   *   googleStoreUrl: {string} The URL for the app in the Google Play Store.
+   *   supportEmail: {string} The support URL.
+   *   disclaimerUrl: {string} The disclaimer URL.
+   *   gitHubRepoUrl: {string} The GitHub repository URL.
+   *   gitHubRepoBugs: {string} The GitHub issues URL.
+   *   gitHubRepoApiLatestReleases: {string} The GitHub URL where latest app releases are found.
+   * }
+   */
+
+  /**
+   * Constructor.
+   * @return {Object} An instance of App.
+   * @constructor
+   */
+  function App() {
+    return this;
+  };
+
+  /**
+   * Retrieve app information.
+   * @return {Object} The app information.
+   */
+  App.prototype.get = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/app',
+      responseObj: {}
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      lodash.assign(self, response);
+      return self;
+
+    }).catch(function(error) {
+      $log.error('App.get(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  return App;
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) {
 
   /**
@@ -15226,13 +15289,14 @@ angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, 
   	}
 
     // A properly received message does not send a response back to the host app.
-    // Send the event to the client if not processed here.
     switch (event.type) {
-      case 'ready': 
+      case 'ready':
+        // We're being told another plugin is ready.
         owswallet.Plugin.setOpen(event.pluginId);
         break;
 
       default:
+        // We're receiving an event.
         owswallet.Plugin.onEvent(event);
         break;
     }
@@ -15308,7 +15372,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
 
 	    $log.debug('GET ' + url);
 
-	    $http.get(data, self.config).then(function(response) {
+	    $http.get(url, self.config).then(function(response) {
 	      $log.debug('GET SUCCESS: ' + JSON.stringify(response));
 	      resolve(response);
 
@@ -15450,7 +15514,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Session.flush():' + error.message + ', detail:' + error.detail);
@@ -15475,7 +15539,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     return new ApiMessage(request).send().then(function(response) {
       self[name] = {};
       lodash.assign(self[name], response);
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Session.get(): ' + error.message + ', detail:' + error.detail);
@@ -15535,6 +15599,26 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
   };
 
   /**
+   * Broadcast an event to any interesteed listener; either the host app or another plugin. For routingm this event is
+   * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
+   * feedback about delivery.
+   * @param {String} eventType - The type of event being sent, should be listened for by receivers wanting to receove this event.
+   * @param {Object} value - The event data payload.
+   */
+  Session.prototype.broadcastEvent = function(eventType, eventData) {
+    var request = {
+      method: 'POST',
+      url: '/event',
+      data: {
+        type: eventType,
+        data: eventData
+      }
+    };
+
+    return new ApiMessage(request).send();
+  };
+
+  /**
    * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
    * @return {Wallet} An instance of the chosen Wallet.
    */
@@ -15560,6 +15644,196 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
   };
 
   return Session;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, lodash, ApiMessage) {
+
+  /**
+   * Settings
+   *
+   * Provides app settings selected by the user.
+   *
+   * {
+   *   language: {String} The two digit language code (e.g., 'en').
+   *   defaultNetwork: {String} Key into networks specifying the default network (e.g., 'livenet/btc').
+   *   networks: {
+   *     alternativeIsoCode: {String} The three digit ISO currency code for this network (e.g., 'USD').
+   *     alternativeIsoName: {String} The long form name of the alternative currency for this network (e.g., 'US Dollar').
+   *     atomicUnitCode: {String} The unit code (name) for this networks smallest unit (e.g., 'satoshi').
+   *     feeLevel: {String} The user selected fee level for this network (e.g., 'normal').
+   *     unitCode: {String} The unit code identifying this networks standard currency; always lowercase (e.g., 'btc').
+   *     unitName: {String} The displayable name of the currency unit associated with balance, etc.
+   *     unitDecimals: {Number} The number of places to the right of the standard unit (e.g. USD=2, BTC=8).
+   *     unitToAtomicUnit: {Number} The multilier for converting this networks standard unit to this networks atomic unit (e.g. USD=100, BTC=10000000).
+   *   }
+   * }
+   *
+   * The networks are identified using a 'network URI' object key with the form <network-type>/<unit-currency-code>.
+   * The network-type is discernable from the key.
+   *
+   * Examples:
+   *
+   *   'livenet/btc' - The Bitcoin livenet
+   *   'testnet/btc' - The Bitcoin testnet
+   *   'livenet/bch' - The Bitcoin Cash livenet
+   *   'livenet/ltc' - The Litecoin livenet
+   */
+
+  /**
+   * Constructor.
+   * @return {Object} An instance of Settings.
+   * @constructor
+   */
+  function Settings() {
+    return this;
+  };
+
+  /**
+   * Retrieve settings.
+   * @return {Object} The app settings.
+   */
+  Settings.prototype.get = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/settings',
+      responseObj: {}
+    }
+
+    return new ApiMessage(request).send().then(function(response) {
+      lodash.assign(self, response);
+      return self;
+
+    }).catch(function(error) {
+      $log.error('Settings.get(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  return Settings;
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash, Session) {
+
+  /**
+   * Storage
+   *
+   * During instance construction the following accessors for each key are created.
+   *
+   *   get..(key) - Retrieve a previously stored value.
+   *   set..(value) - Set the value at the specifed key.
+   *   remove..(key) - Remove the value from storage.
+   *
+   * Each accessor is named for the specified key. The name is formed by removing dashes ('-') and camel casing the result.
+   *
+   *   Examples:
+   *
+   *   If key is 'value' then accessors are 'getValue(key)', 'setValue()', 'removeValue()'
+   *   If key is 'myvalue' then accessors are 'getMyvalue(key)', 'setMyvalue(value)', 'removeMyvalue(key)'
+   *   If key is 'my-value' then accessors are 'getMyValue(key)', 'setMyValue(value)', 'removeMyValue(key)'
+   *   If key is 'my_value' then accessors are 'getMyValue(key)', 'setMyValue(value)', 'removeMyValue(key)'
+   *   If key is 'my value' then accessors are 'getMyValue(key)', 'setMyValue(value)', 'removeMyValue(key)'
+   *   If key is '--my-value--' then accessors are 'getMyValue(key)', 'setMyValue(value)', 'removeMyValue(key)'
+   *
+   * Namespace.
+   *
+   * Using a namespace is helpful when storing the same data (using the same keys) for multiple 'environments' (e.g., network types, or wallets).
+   * A namespace can effectively create an abstraction for the storage user.
+   *
+   * Each key may be associated with a namespace provided to the contructor. The namespace applies to all accessors created for
+   * the instance. The presence or absence of a namespace does not affect accessor naming. The namespace is prepended to the key name
+   * (as specified, before camel casing) and is separated from the key name by a '.' (dot).  Internally, the final storage key is
+   * 'namespace.key' (or simply 'key' if no namespace is specified).
+   *
+   * 'key' and 'namespace' are sanitized by removing all characters except a-z, A-Z, 0-9, '-'.
+   */
+
+  /**
+   * Constructor.
+   * @param {String} keys - A collection of keys each referencing an item stored using the returned instance.
+   * @param {String} namespace [optional] - A named area of storage where values are stored. The namespace configures
+   * the instance but does not affect the accessor names.
+   * @constructor
+   */
+  function Storage(keys, namespace) {
+    var self = this;
+    var session = Session.getInstance();
+
+    var ns = namespace || '';
+    ns = ns.replace(/[^\w\d-]/g, '');
+    if (ns.length > 0) {
+      ns += '.';
+    }
+
+    /**
+     * Public functions
+     */
+
+    // Create initial storage accessors.
+    createAccessors(keys);
+
+    // Add new storage accessors.
+    this.addStorage = function(keys) {
+      createAccessors(keys);
+    };
+
+    /**
+     * Private functions
+     */
+
+    // Create accessor functions for each key.
+    function createAccessors(keys) {
+      var fname;
+      lodash.forEach(keys, function(key) {
+
+        key.replace(/[^\w\d-]/g, '');
+
+        // get<key>
+        fname = createFnName('get', key);
+        self[fname] = function() {
+          return getKey(ns + key);
+        };
+
+        // set<key>
+        fname = createFnName('set', key);
+        self[fname] = function(value) {
+          return setKey(ns + key, value);
+        };
+
+        // remove<key>
+        fname = createFnName('remove', key);
+        self[fname] = function() {
+          return removeKey(ns + key);
+        };
+
+      });
+    };
+
+    function createFnName(prefix, str) {
+      return lodash.camelCase(prefix + '-' + str);
+    };
+
+    function getKey(key) {
+      return session.get(key);
+    };
+
+    function setKey(key, value) {
+      return session.set(key, value);
+    };
+
+    function removeKey(key) {
+      return session.remove(key);
+    };
+
+    return this;
+  };
+ 
+  return Storage;
 });
 
 'use strict';
@@ -15593,6 +15867,27 @@ angular.module('owsWalletPluginClient.api').factory('System', function (lodash) 
       }
     });
     return missing;
+  };
+
+  /**
+   * Return the value of a URL parameter by name.
+   * @return {string | undefined} The value of the parameter, null if parameter not found in URL.
+   * @static
+   */
+  System.getUrlParameterByName = function(name, url) {
+    if (!url) {
+      return undefined;
+    }
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    var results = regex.exec(url);
+    if (!results) {
+      return undefined;
+    }
+    if (!results[2]) {
+      return '';
+    }
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
   };
 
   return System;
@@ -15658,7 +15953,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.create():' + error.message + ', detail:' + error.detail);
@@ -15687,7 +15982,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
@@ -15710,7 +16005,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
@@ -15733,7 +16028,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.send():' + error.message + ', detail:' + error.detail);
@@ -15756,7 +16051,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
     }
 
     return new ApiMessage(request).send().then(function(response) {
-      return repsonse;
+      return response;
 
     }).catch(function(error) {
       $log.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
@@ -16105,7 +16400,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
                 if (lodash.isEmpty(message.request.responseObj)) {
                   // An empty response object informs that we should pass back the raw response data without status.
-                  responseObj = message.response.data || {};
+                  responseObj = message.response.data;
                 } else {
                   // Create an instance of the promised responseObj with the message data.
                   responseObj = $injector.get(message.request.responseObj);

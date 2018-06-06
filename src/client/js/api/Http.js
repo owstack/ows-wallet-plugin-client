@@ -64,7 +64,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
 
 	    $log.debug('GET ' + url);
 
-	    $http.get(data, self.config).then(function(response) {
+	    $http.get(url, self.config).then(function(response) {
 	      $log.debug('GET SUCCESS: ' + JSON.stringify(response));
 	      resolve(response);
 
