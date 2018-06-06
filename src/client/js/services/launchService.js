@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, historicLogService) {
 
   owswallet.Plugin.start(function() {
 
@@ -136,6 +136,9 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
 
         // Set our client name.
         apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
+
+        // Add a prefix to identify our log entries.
+        historicLogService.prefix(apiHelpers.clientName() + '/' + pluginKind + ' ');
 
         // Will throw error if not valid.
         validateStartup(session);

@@ -15074,6 +15074,7 @@ angular.module('owsWalletPluginClient').config(function($provide, $logProvider, 
           }
 
           historicLogService.add(level, args.join(' '));
+          args[0] = historicLogService.prefix() + args[0];
           orig.apply(null, args);
         } catch (e) {
           console.log('ERROR (at log decorator):', e, args[0]);
@@ -16376,7 +16377,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       var onComplete = function(message) {
         var responseObj;
 
-        $log.debug('RESPONSE  ' + message.header.sequence + ': ' + responseToJson(message));
+        $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
           // Fail
@@ -16441,7 +16442,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
           $log.debug('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
         } else {
-          $log.debug('RESPONSE  ' + self.header.sequence + ': ' + responseToJson(self));
+          $log.debug('RESPONSE  ' + self.header.sequence + ': ' + messageToJson(self));
         }
 
         // Post the message to the host.
@@ -16559,6 +16560,15 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       request: message.request,
       response: message.response
     }
+  };
+
+  function messageToJson(message) {
+    var m = {
+      header: message.header,
+      request: message.request,
+      response: message.response
+    };
+    return angular.toJson(m);
   };
 
   function requestToJson(message) {
@@ -16754,6 +16764,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
 'use strict';
 
 var logs = [];
+var logEntryPrefix = '';
 
 angular.module('owsWalletPluginClient.services').factory('historicLogService', function historicLogService(lodash) {
   var root = {};
@@ -16810,12 +16821,19 @@ angular.module('owsWalletPluginClient.services').factory('historicLogService', f
     return filteredLogs;
   };
 
+  root.prefix = function(str) {
+    if (str) {
+      logEntryPrefix = str;
+    }
+    return logEntryPrefix;
+  };
+
   return root;
 });
 
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, historicLogService) {
 
   owswallet.Plugin.start(function() {
 
@@ -16951,6 +16969,9 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
 
         // Set our client name.
         apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
+
+        // Add a prefix to identify our log entries.
+        historicLogService.prefix(apiHelpers.clientName() + '/' + pluginKind + ' ');
 
         // Will throw error if not valid.
         validateStartup(session);

@@ -56,6 +56,7 @@ angular.module('owsWalletPluginClient').config(function($provide, $logProvider, 
           }
 
           historicLogService.add(level, args.join(' '));
+          args[0] = historicLogService.prefix() + args[0];
           orig.apply(null, args);
         } catch (e) {
           console.log('ERROR (at log decorator):', e, args[0]);

@@ -1,6 +1,7 @@
 'use strict';
 
 var logs = [];
+var logEntryPrefix = '';
 
 angular.module('owsWalletPluginClient.services').factory('historicLogService', function historicLogService(lodash) {
   var root = {};
@@ -55,6 +56,13 @@ angular.module('owsWalletPluginClient.services').factory('historicLogService', f
       });
     }
     return filteredLogs;
+  };
+
+  root.prefix = function(str) {
+    if (str) {
+      logEntryPrefix = str;
+    }
+    return logEntryPrefix;
   };
 
   return root;

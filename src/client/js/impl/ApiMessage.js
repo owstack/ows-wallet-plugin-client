@@ -203,7 +203,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       var onComplete = function(message) {
         var responseObj;
 
-        $log.debug('RESPONSE  ' + message.header.sequence + ': ' + responseToJson(message));
+        $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
           // Fail
@@ -268,7 +268,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
           $log.debug('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
         } else {
-          $log.debug('RESPONSE  ' + self.header.sequence + ': ' + responseToJson(self));
+          $log.debug('RESPONSE  ' + self.header.sequence + ': ' + messageToJson(self));
         }
 
         // Post the message to the host.
@@ -386,6 +386,15 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       request: message.request,
       response: message.response
     }
+  };
+
+  function messageToJson(message) {
+    var m = {
+      header: message.header,
+      request: message.request,
+      response: message.response
+    };
+    return angular.toJson(m);
   };
 
   function requestToJson(message) {
