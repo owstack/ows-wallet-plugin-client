@@ -35,28 +35,26 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
 
   /**
    * Constructor.
-   * @return {Object} An instance of Settings.
    * @constructor
    */
   function Settings() {
-    return this;
+    throw new Error('Settings is a static class');
   };
 
   /**
    * Retrieve settings.
    * @return {Object} The app settings.
    */
-  Settings.prototype.get = function() {
-    var self = this;
+  Settings.get = function() {
     var request = {
       method: 'GET',
       url: '/settings',
       responseObj: {}
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(self, response);
-      return self;
+      lodash.assign(Settings, response);
+      return Settings;
 
     }).catch(function(error) {
       $log.error('Settings.get(): ' + error.message + ', detail:' + error.detail);

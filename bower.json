@@ -8,6 +8,7 @@
   ],
   "dependencies": {
     "angular-gettext": "2.2.1",
+    "angular-moment": "0.10.1",
     "ionic": "https://github.com/owstack/ionic-v1.git#ows-release",
     "ng-lodash": "0.5.0"
   },

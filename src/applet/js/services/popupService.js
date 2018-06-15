@@ -2,7 +2,11 @@
 
 angular.module('owsWalletPluginClient.services').service('popupService', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
 
-  var isCordova = owswallet.Plugin.isCordova();
+  var isCordova;
+  
+  owswallet.Plugin.ready(function() {
+    isCordova = owswallet.Plugin.isCordova();
+  });
 
   /*************** Ionic ****************/
 

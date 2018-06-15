@@ -66,9 +66,14 @@ angular.module('owsWalletPluginClient').config(function($provide, $logProvider, 
 
     // Get the isCordova boolean from the URL.
     function isCordova() {
-      var isCordova = window.location.search.substring(window.location.search.indexOf('isCordova=') + 10);
-      if (isCordova.indexOf('&') >= 0) {
-        isCordova = isCordova.substring(0, isCordova.indexOf('&'));
+      var isCordova = null;
+      var idxIsCordova = window.location.search.indexOf('isCordova=');
+
+      if (idxIsCordova >= 0) {
+        var isCordova = window.location.search.substring(idxIsCordova + 10);
+        if (isCordova.indexOf('&') >= 0) {
+          isCordova = isCordova.substring(0, isCordova.indexOf('&'));
+        }
       }
       return (isCordova == 'true');
     };

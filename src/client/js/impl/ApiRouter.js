@@ -38,7 +38,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
    * );
    *
    * path - the url path to which a client sends their request; accepts express-style route strings
-   * method - one of GET, POST
+   * method - one of GET, POST, PUT, DELETE
    * handler - the function to be called when a message arrives on the route; fn(message, callback)
    * 
    * where fn(message, callback),
@@ -58,39 +58,35 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
    *   callback - a function to be called when the handler wants to sent the message; fn(message)
    */
   ApiRouter.applyRoutes = function(session) {
-    var targetId = session.plugin.uri;
-    if (!targetId) {
-      $log.error('Cannot add routes, no target specified. Check plugin.json value for \'uri\'.');
-      return;
-    }
-
     // Get the client configured routes.
     var routes = $pluginConfig.router.routes();
 
     // Build a valid host routes list (we don't just pass whatever the user configured in the routes array).
     var errors = false;
-    var hostRoutes = lodash.map(routes, function(r) {
+    routes = lodash.map(routes, function(r) {
       if (!r.path || !r.method || !r.handler) {
         $log.error('Invalid route: ' + JSON.stringify(r));
         errors = true;
       }
 
+      // Prepend the plugin ID to create a globally unique route.
       return {
-        path: r.path,
+        path: '/' + session.plugin.header.id + r.path,
         method: r.method,
         handler: r.handler
       };
     });
 
     if (!errors) {
-      // Add routes to our local map and broadcast and event to notify the host app to add routes.
+      // Add routes to our local map and broadcast an event to notify the host app to add routes.
       routeMap = routeMap.concat(routes);
-      $rootScope.$emit('Local/RoutesChanged', hostRoutes, targetId);
+      $rootScope.$emit('Local/RoutesChanged', routes);
     }
 
     // Add a route for this client to receive event messages from the host app.
     // The route name uses our session id; e.g., "/1234567890". This guarantees a unique entry in the host app routing map.
     var eventRoute = [{ path: '/' + session.id , method: 'POST', handler: 'hostEvent' }];
+    
     routeMap = routeMap.concat(eventRoute);
   };
 

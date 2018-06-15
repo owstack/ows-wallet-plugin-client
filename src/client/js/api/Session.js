@@ -36,7 +36,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       $rootScope.$emit('Local/Initialized', 'session');
     
     }).catch(function(error) {
-      $log.error('Session(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
 
     });
@@ -47,7 +47,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
        method: 'GET',
        url: '/session/' + apiHelpers.sessionId(),
        responseObj: {}
-      }
+      };
 
       return new ApiMessage(request).send();
     };
@@ -72,13 +72,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       method: 'POST',
       url: '/session/flush',
       data: {}
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.flush():' + error.message + ', detail:' + error.detail);
+      $log.error('Session.flush():' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });
@@ -95,7 +95,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       method: 'GET',
       url: '/session/' + this.id + '/var/' + name,
       responseObj: {}
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       self[name] = {};
@@ -103,7 +103,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.get(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.get(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });
@@ -119,7 +119,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       method: 'GET',
       url: '/session/' + this.id + '/restore',
       data: {}
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       self.data = {};
@@ -127,7 +127,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.restore(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.restore(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });
@@ -145,15 +145,37 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       method: 'POST',
       url: '/session/' + this.id + '/var/' + name,
       data: value
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       self.data = self.data || {};
-      lodash.merge(self.data, response);
-      return response;
+      self.data[name] = response.data;
+      return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.set(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.set(): ' + error.message + ', ' + error.detail);
+      throw new Error(error.message);
+      
+    });
+  };
+
+  /**
+   * Remove session data by name.
+   * @param {String} name - Location to store the specified value.
+   * @return {Promise} A promise at completion.
+   */
+  Session.prototype.remove = function(name) {
+    var self = this;
+    var request = {
+      method: 'DELETE',
+      url: '/session/' + this.id + '/var/' + name
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      $log.error('Session.remove(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });
@@ -163,15 +185,15 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * Broadcast an event to any interesteed listener; either the host app or another plugin. For routingm this event is
    * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
    * feedback about delivery.
-   * @param {String} eventType - The type of event being sent, should be listened for by receivers wanting to receove this event.
+   * @param {String} eventName - The name of the event being sent, should be listened for by receivers wanting to receive this event.
    * @param {Object} value - The event data payload.
    */
-  Session.prototype.broadcastEvent = function(eventType, eventData) {
+  Session.prototype.broadcastEvent = function(eventName, eventData) {
     var request = {
       method: 'POST',
       url: '/event',
       data: {
-        type: eventType,
+        name: eventName,
         data: eventData
       }
     };
@@ -192,13 +214,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       opts: {
         timeout: -1
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.chooseWallet(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Session.chooseWallet(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });

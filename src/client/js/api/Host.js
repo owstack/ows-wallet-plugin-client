@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('App', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Host', function ($log, lodash, ApiMessage) {
 
   /**
-   * App
+   * Host
    *
    * Provides information about the host app.
    *
@@ -26,35 +26,33 @@ angular.module('owsWalletPluginClient.api').factory('App', function ($log, lodas
 
   /**
    * Constructor.
-   * @return {Object} An instance of App.
    * @constructor
    */
-  function App() {
-    return this;
+  function Host() {
+    throw new Error('Host is a static class');
   };
 
   /**
    * Retrieve app information.
    * @return {Object} The app information.
    */
-  App.prototype.get = function() {
-    var self = this;
+  Host.get = function() {
     var request = {
       method: 'GET',
-      url: '/app',
+      url: '/info/host',
       responseObj: {}
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(self, response);
-      return self;
+      lodash.assign(Host, response);
+      return Host;
 
     }).catch(function(error) {
-      $log.error('App.get(): ' + error.message + ', detail:' + error.detail);
+      $log.error('Host.get(): ' + error.message + ', detail:' + error.detail);
       throw new Error(error.message);
       
     });
   };
 
-  return App;
+  return Host;
 });

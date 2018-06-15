@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('System', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('System', function (lodash, Session) {
 
   /**
    * System
@@ -23,12 +23,51 @@ angular.module('owsWalletPluginClient.api').factory('System', function (lodash) 
    */
   System.checkRequired = function(required, obj) {
     var missing = [];
-    lodash.forEach(required, function(param) {
-      if (lodash.get(obj, param, undefined) == undefined) {
-        missing.push(param);
+    lodash.forEach(required, function(property) {
+      if (lodash.get(obj, property, undefined) == undefined) {
+        missing.push(property);
       }
     });
     return missing;
+  };
+
+  /**
+   * Assigns destObj the object properties of srcObj according to properties. Properties is an array of strings
+   * naming each property on srcObj. Deep property names may be specified, exmaple 'a.b'. Unresolved properties
+   * on srcObj are undefined on destObj. This function mutates destObj.
+   * @return {Object} The desination object.
+   * @static
+   */
+  System.assign = function(destObj, srcObj, properties) {
+    lodash.forEach(properties, function(property) {
+      lodash.set(destObj, property, lodash.get(srcObj, property, undefined));
+    });
+    return destObj;
+  };
+
+  /**
+   * Return the configuration of a dependent plugin.
+   * @param {String} pluginId - The id of the dependent plugin.
+   * @return {String} The properly formed API root.
+   * @static
+   */
+  System.getApiRoot = function(pluginId) {
+    return '/' + pluginId;
+  };
+
+  /**
+   * Return the configuration of a dependent plugin.
+   * @param {String} pluginId - The id of the dependent plugin.
+   * @param {String} configId - The configuration id.
+   * @return {Object} The plugin configuration.
+   * @static
+   */
+  System.getDependentPluginConfig = function(pluginId, configId) {
+    var config = Session.getInstance().plugin.dependencies[pluginId][configId];
+    if (!config) {
+      throw new Error('Could not get dependant plugin configuration, check plugin.json');
+    }
+    return config;
   };
 
   /**

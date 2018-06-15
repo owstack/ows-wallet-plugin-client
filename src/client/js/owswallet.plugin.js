@@ -6,16 +6,25 @@
  * Usage:
  *
  * owswallet.Plugin.start(function() {
- *   // Will execute when plugin is loaded, or immediately if the plugin is already loaded.
+ *   // Will execute when this plugin is loaded, or immediately if the plugin is already loaded.
  * });
  * 
  * owswallet.Plugin.ready(function() {
- *   // Will execute when plugin is ready, or immediately if the plugin is already ready.
+ *   // Will execute when this plugin is ready, or immediately if the plugin is ready.
  * });
  *
- * owswallet.Plugin.openForBusiness(pluginId, function() {
- *   // Will execute when the specified pluginId is ready, or immediately if the plugin is already ready.
+ * owswallet.Plugin.openForBusiness(pluginIds, function() {
+ *   // Will execute when this plugin and all the specified pluginIds are ready, or immediately if all pluginIds are ready.
+ *   // Param pluginIds accepts an array or string value.
  * });
+ *
+ * The following calls are equivalent.
+ *
+ *   owswallet.Plugin.readt(function(){});
+ *   owswallet.Plugin.openForBusiness(null, function(){});
+ *
+ *
+ * Platform identification.
  *
  * var isCordova = owswallet.Plugin.isCordova();
  * var isNodeWebkit = owswallet.Plugin.isNodeWebKit();
@@ -67,13 +76,29 @@ var owswallet = {};
       }
     },
 
-    openForBusiness: function(pluginId, cb) {
-      if (self.isReady && self.isOpen[pluginId]) {
+    openForBusiness: function(pluginIds, cb) {
+      // This function requires that this plugin is ready as well as the dependent 'pluginIds'.
+
+      // Ensure array.
+      if (!Array.isArray(pluginIds)) {
+        pluginIds = [pluginIds];
+      }
+
+      // Calling openForBusiness(null, ...) is the same as calling ready(...)
+      var skipOpenCheck = (pluginIds.length == 1 && pluginIds[0] == null);
+
+      // Check if all required plugins are open.
+      var allOpen = true;
+      for (var p = 0; p < pluginIds.length; p++) {
+        allOpen = allOpen && self.isOpen[pluginIds[p]];
+      }
+
+      if (self.isReady && (allOpen || skipOpenCheck)) {
         cb();
       } else {
-        // The plugin isn't ready yet, add it to this array which will be called once the plugin is ready.
+        // Not all plugins are ready yet, save plugin's and callback to be called once all are ready.
         openCallbacks.push({
-          pluginId: pluginId,
+          pluginIds: pluginIds,
           callback: cb
         });
       }
@@ -82,31 +107,24 @@ var owswallet = {};
     setOpen: function(pluginId) {
       self.isOpen[pluginId] = true;
 
-      var indexes = [];
-      for (var x = 0; x < openCallbacks.length; x++) {
-        // Fire off all the callbacks that were added before the plugin was ready.
-        if (openCallbacks[x] && openCallbacks[x].pluginId == pluginId) {
-          openCallbacks[x].callback();
-        }
-      }
-
-      // Remove executed callbacks.
-      for (var i = indexes.length -1; i >= 0; i--) {
-         openCallbacks.splice(indexes[i], 1);
+      if (self.isReady) {
+        checkAndExecuteOpenCallbacks();
       }
     },
 
-    onEvent: function(cb) {
-      eventCallbacks.push({
+    onEvent: function(name, cb) {
+      // Event callbacks are organized by event name. The call must specify an event name in order to recieve an event, see notify(event).
+      eventCallbacks[name] = eventCallbacks[name] || [];
+      eventCallbacks[name].push({
         callback: cb
       });
     },
 
     notify: function(event) {
       var indexes = [];
-      for (var x = 0; x < eventCallbacks.length; x++) {
+      for (var x = 0; x < eventCallbacks[event.name].length; x++) {
         // Fire off all the event callbacks.
-        eventCallbacks[x].callback(event);
+        eventCallbacks[event.name][x].callback(event);
       }
     },
 
@@ -129,35 +147,35 @@ var owswallet = {};
     },
 
     isIOS: function() {
-      return self.platform.isMobile.iOS;
+      return platform.isMobile.iOS;
     },
 
     isAndroid: function() {
-      return self.platform.isMobile.Android;
+      return platform.isMobile.Android;
     },
 
     isCordova: function() {
-      return self.platform.isCordova;
+      return platform.isCordova;
     },
 
     isNodeWebKit: function() {
-      return self.platform.isNodeWebkit;
+      return platform.isNodeWebkit;
     },
 
     isSafari: function() {
-      return self.platform.isSafari;
+      return platform.isSafari;
     },
 
     isMobile: function() {
-      return self.platform.isMobile;
+      return platform.isMobile;
     },
 
     isIPhoneX: function() {
-      return self.platform.isIPhoneX;
+      return platform.isIPhoneX;
     },
 
     userAgent: function() {
-      return self.platform.userAgent;
+      return platform.userAgent;
     }
 
   };
@@ -200,6 +218,33 @@ var owswallet = {};
     }
 
     readyCallbacks = [];
+
+    // If dependent plugins became ready before us then we need to check and execute open callbacks now that we are ready.
+    checkAndExecuteOpenCallbacks();
+  };
+
+  function checkAndExecuteOpenCallbacks() {
+    var indexes = [];
+    for (var x = 0; x < openCallbacks.length; x++) {
+      // Fire off all the callbacks that were added before the plugin was ready.
+      if (openCallbacks[x]) {
+
+        var allOpen = true;
+        for (var p = 0; p < openCallbacks[x].pluginIds.length; p++) {
+          allOpen = allOpen && self.isOpen[openCallbacks[x].pluginIds[p]];
+        }
+
+        if (allOpen) {
+          openCallbacks[x].callback();
+          indexes.push(x);
+        }
+      }
+    }
+
+    // Remove executed callbacks.
+    for (var i = indexes.length -1; i >= 0; i--) {
+       openCallbacks.splice(indexes[i], 1);
+    }
   };
 
 })(window, document, owswallet);

@@ -14,7 +14,7 @@ angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, 
   	}
 
     // A properly received message does not send a response back to the host app.
-    switch (event.type) {
+    switch (event.name) {
       case 'ready':
         // We're being told another plugin is ready.
         owswallet.Plugin.setOpen(event.pluginId);

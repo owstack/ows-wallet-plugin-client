@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, historicLogService) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, Host, historicLogService) {
 
   owswallet.Plugin.start(function() {
 
@@ -16,6 +16,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     // we're ready.
     var initializers = {
       platformInfo: { fn: getPlatformInfo,     done: false },
+      host:         { fn: getHostInfo,         done: false },
       session:      { fn: Session.getInstance, done: false }
     };
 
@@ -75,7 +76,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         data: {
           sessionId: apiHelpers.sessionId()
         }
-      }
+      };
 
       return new ApiMessage(request).send().then(function(response) {
         $log.info('START: ' + response.statusText + ' (' + response.statusCode + ')');
@@ -103,12 +104,17 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       }
     };
 
+    /**
+     * Initializers
+     * These functions are run during startup and are required to complete before notifying the plugin that we're ready.
+     */
+
     function getPlatformInfo() {
       var request = {
         method: 'GET',
         url: '/info/platform',
         responseObj: {}
-      }
+      };
 
       return new ApiMessage(request).send().then(function(response) {
         owswallet.Plugin.setPlatform(response);
@@ -118,6 +124,14 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
         $log.error('getPlatform(): ' + JSON.stringify(error));
         
       });
+    };
+
+    function getHostInfo() {
+      Host.get().then(function() {
+        $rootScope.$emit('Local/Initialized', 'host');
+      }).catch(function(error) {
+        $rootScope.$emit('Local/Initialized', 'host');
+      })
     };
 
     $rootScope.$on('Local/Initialized', function(event, what) {
@@ -134,8 +148,9 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       if (done) {
         var session = Session.getInstance();
 
-        // Set our client name.
+        // Set our client name and plugin ID.
         apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
+        apiHelpers.pluginId(session.plugin.header.id);
 
         // Add a prefix to identify our log entries.
         historicLogService.prefix(apiHelpers.clientName() + '/' + pluginKind + ' ');
@@ -153,7 +168,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
           data: {
             sessionId: session.id
           }
-        }
+        };
 
         return new ApiMessage(request).send().then(function(response) {
           // We're ready to run!
@@ -170,13 +185,12 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     });
 
     // The client may update its host app routes at any time.  When routes are changed this handler updates the host app.
-    $rootScope.$on('Local/RoutesChanged', function(event, routes, target) {
+    $rootScope.$on('Local/RoutesChanged', function(event, routes) {
       var request = {
         method: 'POST',
         url: '/session/' + Session.getInstance().id + '/routes',
         data: {
-          routes: routes,
-          target: target
+          routes: routes
         }
       };
 

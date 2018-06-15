@@ -51,6 +51,8 @@ module.exports = function(grunt) {
         src: [
           'angular-path-to-regexp/angular-path-to-regexp.js',
           'bower_components/angular-gettext/dist/angular-gettext.js',
+          'bower_components/moment/min/moment-with-locales.js',
+          'bower_components/angular-moment/angular-moment.js',
           'bower_components/ng-lodash/build/ng-lodash.js',
           'src/client/js/owswallet.plugin.js',
           'src/client/js/pluginClient.js',

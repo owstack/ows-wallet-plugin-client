@@ -55,7 +55,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
         amount: this.amount,
         useSendMax: this.useSendMax
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
@@ -84,7 +84,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
           isCustomRate: isCustomRate
         }
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
@@ -107,7 +107,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       data: {
         walletId: walletId
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
@@ -130,7 +130,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       data: {
         status: 'approve'
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;
@@ -153,7 +153,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       data: {
         status: 'denied'
       }
-    }
+    };
 
     return new ApiMessage(request).send().then(function(response) {
       return response;

@@ -45,7 +45,7 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) 
       data: {
         showSplash: false
       }
-    }
+    };
 
     return new ApiMessage(request).send();
   };

@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Contants', function () {
+angular.module('owsWalletPluginClient.api').factory('Constants', function () {
 
   /**
-   * Contantsants
+   * Constants
    *
    * Provides commonly used constant values.
    */
@@ -12,12 +12,200 @@ angular.module('owsWalletPluginClient.api').factory('Contants', function () {
    * Constructor.
    * @constructor
    */
-  function Contants() {
-    throw new Error('Contants is a static class');
+  function Constants() {
+    throw new Error('Constants is a static class');
   };
 
-  Contants.BITS_PER_BTC = 1e6;
-  Contants.SATOSHI_PER_BTC = 1e8;
+  Constants.BITS_PER_BTC = 1e6;
+  Constants.SATOSHI_PER_BTC = 1e8;
 
-  return Contants;
+  Constants.currencyMap = function(currencyCode, property) {
+    if (typeof currencyCode !== 'string') {
+      return undefined;
+    }
+    var code = currencyCode.toUpperCase();
+
+    if (!currencyMap.hasOwnProperty(code)){
+      return undefined;
+    }
+    return currencyMap[code][property];
+  };
+
+  var currencyMap = {
+    'AED': { symbol: 'د.إ', decimals: 2 },
+    'AFN': { symbol: '؋', decimals: 2 },
+    'ALL': { symbol: 'L', decimals: 2 },
+    'AMD': { symbol: '֏', decimals: 2 },
+    'ANG': { symbol: 'ƒ', decimals: 2 },
+    'AOA': { symbol: 'Kz', decimals: 2 },
+    'ARS': { symbol: '$', decimals: 2 },
+    'AUD': { symbol: '$', decimals: 2 },
+    'AWG': { symbol: 'ƒ', decimals: 2 },
+    'AZN': { symbol: '₼', decimals: 2 },
+    'BAM': { symbol: 'KM', decimals: 2 },
+    'BBD': { symbol: '$', decimals: 2 },
+    'BDT': { symbol: '৳', decimals: 2 },
+    'BGN': { symbol: 'лв', decimals: 2 },
+    'BHD': { symbol: '.د.ب', decimals: 2 },
+    'BIF': { symbol: 'FBu', decimals: 2 },
+    'BMD': { symbol: '$', decimals: 2 },
+    'BND': { symbol: '$', decimals: 2 },
+    'BOB': { symbol: '$b', decimals: 2 },
+    'BRL': { symbol: 'R$', decimals: 2 },
+    'BSD': { symbol: '$', decimals: 2 },
+    'BTC': { symbol: '฿', decimals: 2 },
+    'BTN': { symbol: 'Nu.', decimals: 2 },
+    'BWP': { symbol: 'P', decimals: 2 },
+    'BYR': { symbol: 'Br', decimals: 2 },
+    'BYN': { symbol: 'Br', decimals: 2 },
+    'BZD': { symbol: 'BZ$', decimals: 2 },
+    'CAD': { symbol: '$', decimals: 2 },
+    'CDF': { symbol: 'FC', decimals: 2 },
+    'CHF': { symbol: 'CHF', decimals: 2 },
+    'CLP': { symbol: '$', decimals: 2 },
+    'CNY': { symbol: '¥', decimals: 2 },
+    'COP': { symbol: '$', decimals: 2 },
+    'CRC': { symbol: '₡', decimals: 2 },
+    'CUC': { symbol: '$', decimals: 2 },
+    'CUP': { symbol: '₱', decimals: 2 },
+    'CVE': { symbol: '$', decimals: 2 },
+    'CZK': { symbol: 'Kč', decimals: 2 },
+    'DJF': { symbol: 'Fdj', decimals: 2 },
+    'DKK': { symbol: 'kr', decimals: 2 },
+    'DOP': { symbol: 'RD$', decimals: 2 },
+    'DZD': { symbol: 'دج', decimals: 2 },
+    'EEK': { symbol: 'kr', decimals: 2 },
+    'EGP': { symbol: '£', decimals: 2 },
+    'ERN': { symbol: 'Nfk', decimals: 2 },
+    'ETB': { symbol: 'Br', decimals: 2 },
+    'ETH': { symbol: 'Ξ', decimals: 2 },
+    'EUR': { symbol: '€', decimals: 2 },
+    'FJD': { symbol: '$', decimals: 2 },
+    'FKP': { symbol: '£', decimals: 2 },
+    'GBP': { symbol: '£', decimals: 2 },
+    'GEL': { symbol: '₾', decimals: 2 },
+    'GGP': { symbol: '£', decimals: 2 },
+    'GHC': { symbol: '₵', decimals: 2 },
+    'GHS': { symbol: 'GH₵', decimals: 2 },
+    'GIP': { symbol: '£', decimals: 2 },
+    'GMD': { symbol: 'D', decimals: 2 },
+    'GNF': { symbol: 'FG', decimals: 2 },
+    'GTQ': { symbol: 'Q', decimals: 2 },
+    'GYD': { symbol: '$', decimals: 2 },
+    'HKD': { symbol: '$', decimals: 2 },
+    'HNL': { symbol: 'L', decimals: 2 },
+    'HRK': { symbol: 'kn', decimals: 2 },
+    'HTG': { symbol: 'G', decimals: 2 },
+    'HUF': { symbol: 'Ft', decimals: 2 },
+    'IDR': { symbol: 'Rp', decimals: 2 },
+    'ILS': { symbol: '₪', decimals: 2 },
+    'IMP': { symbol: '£', decimals: 2 },
+    'INR': { symbol: '₹', decimals: 2 },
+    'IQD': { symbol: 'ع.د', decimals: 2 },
+    'IRR': { symbol: '﷼', decimals: 2 },
+    'ISK': { symbol: 'kr', decimals: 2 },
+    'JEP': { symbol: '£', decimals: 2 },
+    'JMD': { symbol: 'J$', decimals: 2 },
+    'JOD': { symbol: 'JD', decimals: 2 },
+    'JPY': { symbol: '¥', decimals: 2 },
+    'KES': { symbol: 'KSh', decimals: 2 },
+    'KGS': { symbol: 'лв', decimals: 2 },
+    'KHR': { symbol: '៛', decimals: 2 },
+    'KMF': { symbol: 'CF', decimals: 2 },
+    'KPW': { symbol: '₩', decimals: 2 },
+    'KRW': { symbol: '₩', decimals: 2 },
+    'KWD': { symbol: 'KD', decimals: 2 },
+    'KYD': { symbol: '$', decimals: 2 },
+    'KZT': { symbol: 'лв', decimals: 2 },
+    'LAK': { symbol: '₭', decimals: 2 },
+    'LBP': { symbol: '£', decimals: 2 },
+    'LKR': { symbol: '₨', decimals: 2 },
+    'LRD': { symbol: '$', decimals: 2 },
+    'LSL': { symbol: 'M', decimals: 2 },
+    'LTC': { symbol: 'Ł', decimals: 2 },
+    'LTL': { symbol: 'Lt', decimals: 2 },
+    'LVL': { symbol: 'Ls', decimals: 2 },
+    'LYD': { symbol: 'LD', decimals: 2 },
+    'MAD': { symbol: 'MAD', decimals: 2 },
+    'MDL': { symbol: 'lei', decimals: 2 },
+    'MGA': { symbol: 'Ar', decimals: 2 },
+    'MKD': { symbol: 'ден', decimals: 2 },
+    'MMK': { symbol: 'K', decimals: 2 },
+    'MNT': { symbol: '₮', decimals: 2 },
+    'MOP': { symbol: 'MOP$', decimals: 2 },
+    'MRO': { symbol: 'UM', decimals: 2 },
+    'MRU': { symbol: 'UM', decimals: 2 },
+    'MUR': { symbol: '₨', decimals: 2 },
+    'MVR': { symbol: 'Rf', decimals: 2 },
+    'MWK': { symbol: 'MK', decimals: 2 },
+    'MXN': { symbol: '$', decimals: 2 },
+    'MYR': { symbol: 'RM', decimals: 2 },
+    'MZN': { symbol: 'MT', decimals: 2 },
+    'NAD': { symbol: '$', decimals: 2 },
+    'NGN': { symbol: '₦', decimals: 2 },
+    'NIO': { symbol: 'C$', decimals: 2 },
+    'NOK': { symbol: 'kr', decimals: 2 },
+    'NPR': { symbol: '₨', decimals: 2 },
+    'NZD': { symbol: '$', decimals: 2 },
+    'OMR': { symbol: '﷼', decimals: 2 },
+    'PAB': { symbol: 'B/.', decimals: 2 },
+    'PEN': { symbol: 'S/.', decimals: 2 },
+    'PGK': { symbol: 'K', decimals: 2 },
+    'PHP': { symbol: '₱', decimals: 2 },
+    'PKR': { symbol: '₨', decimals: 2 },
+    'PLN': { symbol: 'zł', decimals: 2 },
+    'PYG': { symbol: 'Gs', decimals: 2 },
+    'QAR': { symbol: '﷼', decimals: 2 },
+    'RMB': { symbol: '￥', decimals: 2 },
+    'RON': { symbol: 'lei', decimals: 2 },
+    'RSD': { symbol: 'Дин.', decimals: 2 },
+    'RUB': { symbol: '₽', decimals: 2 },
+    'RWF': { symbol: 'R₣', decimals: 2 },
+    'SAR': { symbol: '﷼', decimals: 2 },
+    'SBD': { symbol: '$', decimals: 2 },
+    'SCR': { symbol: '₨', decimals: 2 },
+    'SDG': { symbol: 'ج.س.', decimals: 2 },
+    'SEK': { symbol: 'kr', decimals: 2 },
+    'SGD': { symbol: '$', decimals: 2 },
+    'SHP': { symbol: '£', decimals: 2 },
+    'SLL': { symbol: 'Le', decimals: 2 },
+    'SOS': { symbol: 'S', decimals: 2 },
+    'SRD': { symbol: '$', decimals: 2 },
+    'SSP': { symbol: '£', decimals: 2 },
+    'STD': { symbol: 'Db', decimals: 2 },
+    'STN': { symbol: 'Db', decimals: 2 },
+    'SVC': { symbol: '$', decimals: 2 },
+    'SYP': { symbol: '£', decimals: 2 },
+    'SZL': { symbol: 'E', decimals: 2 },
+    'THB': { symbol: '฿', decimals: 2 },
+    'TJS': { symbol: 'SM', decimals: 2 },
+    'TMT': { symbol: 'T', decimals: 2 },
+    'TND': { symbol: 'د.ت', decimals: 2 },
+    'TOP': { symbol: 'T$', decimals: 2 },
+    'TRL': { symbol: '₤', decimals: 2 },
+    'TRY': { symbol: '₺', decimals: 2 },
+    'TTD': { symbol: 'TT$', decimals: 2 },
+    'TVD': { symbol: '$', decimals: 2 },
+    'TWD': { symbol: 'NT$', decimals: 2 },
+    'TZS': { symbol: 'TSh', decimals: 2 },
+    'UAH': { symbol: '₴', decimals: 2 },
+    'UGX': { symbol: 'USh', decimals: 2 },
+    'USD': { symbol: '$', decimals: 2 },
+    'UYU': { symbol: '$U', decimals: 2 },
+    'UZS': { symbol: 'лв', decimals: 2 },
+    'VEF': { symbol: 'Bs', decimals: 2 },
+    'VND': { symbol: '₫', decimals: 2 },
+    'VUV': { symbol: 'VT', decimals: 2 },
+    'WST': { symbol: 'WS$', decimals: 2 },
+    'XAF': { symbol: 'FCFA', decimals: 2 },
+    'XBT': { symbol: 'Ƀ', decimals: 2 },
+    'XCD': { symbol: '$', decimals: 2 },
+    'XOF': { symbol: 'CFA', decimals: 2 },
+    'XPF': { symbol: '₣', decimals: 2 },
+    'YER': { symbol: '﷼', decimals: 2 },
+    'ZAR': { symbol: 'R', decimals: 2 },
+    'ZWD': { symbol: 'Z$', decimals: 2}
+  };
+
+  return Constants;
 });

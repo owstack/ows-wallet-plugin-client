@@ -24,7 +24,11 @@ angular.module('owsWalletPluginClient.filters', []).filter('orderObjectBy', func
 angular.module('owsWalletPluginClient.services').service('externalLinkService', function(nodeWebkitService, popupService, gettextCatalog, $window, $log, $timeout) {
 
 	var root = {};
-	var isNodeWebKit = owswallet.Plugin.isNodeWebKit();
+  var isNodeWebKit;
+
+  owswallet.Plugin.ready(function(){
+    isNodeWebKit = owswallet.Plugin.isNodeWebKit();
+  });
 
   root.open = function(url, optIn, title, message, okText, cancelText) {
     var old = $window.handleOpenURL;
@@ -91,7 +95,11 @@ angular.module('owsWalletPluginClient.services').service('nodeWebkitService', fu
 
 angular.module('owsWalletPluginClient.services').service('popupService', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
 
-  var isCordova = owswallet.Plugin.isCordova();
+  var isCordova;
+  
+  owswallet.Plugin.ready(function() {
+    isCordova = owswallet.Plugin.isCordova();
+  });
 
   /*************** Ionic ****************/
 

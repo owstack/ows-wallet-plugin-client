@@ -66,7 +66,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
       this.header = {
         type: 'message',
         sequence: sequence++,
-        id: '' + now.getTime(),
+        id: uuidv4(),
         timestamp: now,
         sessionId: apiHelpers.sessionId(),
         clientName:  apiHelpers.clientName()
@@ -135,6 +135,8 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         case 'POST': validatePOST();
           break;
         case 'PUT': validatePUT();
+          break;
+        case 'DELETE':
           break;
       }
     };
@@ -211,7 +213,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
             code: message.response.statusCode,
             source: message.request.url,
             message: message.response.statusText,
-            detail: JSON.stringify(message.response.data)
+            detail: message.response.data.message
           }));
 
         } else {
@@ -294,6 +296,13 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
    * Private static methods
    */
 
+  function uuidv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   function isRequest(message) {
     return lodash.isEmpty(message.response);
   };
@@ -349,7 +358,7 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
 
   // Timeout a message waiting for a response. Enables the client app to process a message delivery failure.
   function timeout(message) {
-    $log.debug('Plugin client request timeout: ' + serialize(message));
+    $log.warn('Plugin client request timeout: ' + serialize(message));
 
     var promiseIndex = lodash.findIndex(promises, function(promise) {
       return promise.id == message.header.id;
