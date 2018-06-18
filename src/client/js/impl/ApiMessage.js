@@ -69,7 +69,8 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
         id: uuidv4(),
         timestamp: now,
         sessionId: apiHelpers.sessionId(),
-        clientName:  apiHelpers.clientName()
+        clientName:  apiHelpers.clientName(),
+        clientId:  apiHelpers.pluginId()
       };
       this.request = request || {};
       this.response = {};

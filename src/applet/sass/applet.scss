@@ -3,10 +3,12 @@
  */
  
 // popupService dialog style.
-.button-primary {
-	color: $v-popup-primary-button-color !important;
-}
+.popup {
+	.button-primary.button-clear {
+		color: $v-popup-primary-button-color !important;
+	}
 
-.button-secondary {
-	color: $v-popup-secondary-button-color !important;
+	.button-secondary.button-clear {
+		color: $v-popup-secondary-button-color !important;
+	}
 }

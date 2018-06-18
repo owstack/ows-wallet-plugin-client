@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, Host, historicLogService) {
+angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, Settings, Host, historicLogService) {
 
   owswallet.Plugin.start(function() {
 
@@ -16,7 +16,8 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     // we're ready.
     var initializers = {
       platformInfo: { fn: getPlatformInfo,     done: false },
-      host:         { fn: getHostInfo,         done: false },
+      hostInfo:     { fn: getHostInfo,         done: false },
+      settings:     { fn: getSettings,         done: false },
       session:      { fn: Session.getInstance, done: false }
     };
 
@@ -119,7 +120,7 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
       return new ApiMessage(request).send().then(function(response) {
         owswallet.Plugin.setPlatform(response);
         $rootScope.$emit('Local/Initialized', 'platformInfo');
-
+        
       }).catch(function(error) {
         $log.error('getPlatform(): ' + JSON.stringify(error));
         
@@ -128,9 +129,17 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
 
     function getHostInfo() {
       Host.get().then(function() {
-        $rootScope.$emit('Local/Initialized', 'host');
+        $rootScope.$emit('Local/Initialized', 'hostInfo');
       }).catch(function(error) {
-        $rootScope.$emit('Local/Initialized', 'host');
+        $rootScope.$emit('Local/Initialized', 'hostInfo');
+      })
+    };
+
+    function getSettings() {
+      Settings.get().then(function() {
+        $rootScope.$emit('Local/Initialized', 'settings');
+      }).catch(function(error) {
+        $rootScope.$emit('Local/Initialized', 'settings');
       })
     };
 

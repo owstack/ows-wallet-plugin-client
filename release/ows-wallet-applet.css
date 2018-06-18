@@ -9868,10 +9868,10 @@ ion-nav-bar.hide {
 /*
  * SASS for OWS Wallet applet plugin client.
  */
-.button-primary {
+.popup .button-primary.button-clear {
   color: #00afff !important; }
 
-.button-secondary {
+.popup .button-secondary.button-clear {
   color: #444444 !important; }
 
 /*

@@ -44,6 +44,7 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
     'AZN': { symbol: '₼', decimals: 2 },
     'BAM': { symbol: 'KM', decimals: 2 },
     'BBD': { symbol: '$', decimals: 2 },
+    'BCH': { symbol: '฿', decimals: 2 },
     'BDT': { symbol: '৳', decimals: 2 },
     'BGN': { symbol: 'лв', decimals: 2 },
     'BHD': { symbol: '.د.ب', decimals: 2 },
