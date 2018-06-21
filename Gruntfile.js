@@ -67,6 +67,9 @@ module.exports = function(grunt) {
       },
       js_applet: {
         src: [
+          'bower_components/qrcode-generator/js/qrcode.js',
+          'bower_components/qrcode-generator/js/qrcode_UTF8.js',
+          'bower_components/angular-qrcode/angular-qrcode.js',
           'src/applet/js/translations.js',
           'src/applet/js/**/*.js'
         ],

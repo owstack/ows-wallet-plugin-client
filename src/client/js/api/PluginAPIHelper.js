@@ -10,6 +10,7 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
 
   /**
    * Constructor.
+   * @param {Object} plugin - A minimal plugin object providing only the plugin id.
    * @constructor
    */
   function PluginAPIHelper(plugin) {

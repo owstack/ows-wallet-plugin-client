@@ -25828,7 +25828,7 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
     'AZN': { symbol: '₼', decimals: 2 },
     'BAM': { symbol: 'KM', decimals: 2 },
     'BBD': { symbol: '$', decimals: 2 },
-    'BCH': { symbol: '฿', decimals: 2 },
+    'BCH': { symbol: '฿', decimals: 8 },
     'BDT': { symbol: '৳', decimals: 2 },
     'BGN': { symbol: 'лв', decimals: 2 },
     'BHD': { symbol: '.د.ب', decimals: 2 },
@@ -25838,7 +25838,7 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
     'BOB': { symbol: '$b', decimals: 2 },
     'BRL': { symbol: 'R$', decimals: 2 },
     'BSD': { symbol: '$', decimals: 2 },
-    'BTC': { symbol: '฿', decimals: 2 },
+    'BTC': { symbol: '฿', decimals: 8 },
     'BTN': { symbol: 'Nu.', decimals: 2 },
     'BWP': { symbol: 'P', decimals: 2 },
     'BYR': { symbol: 'Br', decimals: 2 },
@@ -25997,6 +25997,75 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
 
 'use strict';
 
+angular.module('owsWalletPluginClient.api').factory('Device', function ($log, ApiMessage) {
+
+  /**
+   * Device
+   *
+   * Provides access to device specific capabilties.
+   */
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function Device() {
+    throw new Error('Device is a static class');
+  };
+
+  /**
+   * Put a text string on the device clipboard.
+   * @return {String} data - The text string copied to the clipboard.
+   * @static
+   */
+  Device.copyToClipboard = function(data) {
+    var request = {
+      method: 'PUT',
+      url: '/clipboard',
+      data: data,
+      responseObj: {}
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return;
+
+    }).catch(function(error) {
+      $log.error('Device.copyToClipboard(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+
+  };
+
+  /**
+   * Send data outside the plugin using the device share UI.
+   * @return {object} data - The data to share.
+   * @static
+   */
+  Device.socialShare = function(data) {
+    var request = {
+      method: 'POST',
+      url: '/share',
+      data: data,
+      responseObj: {}
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return;
+
+    }).catch(function(error) {
+      $log.error('Device.socialShare(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+
+  };
+
+  return Device;
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, lodash) {
 
 	var root = {};
@@ -26089,7 +26158,7 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, System) {
+angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http) {
 
   /**
    * Http
@@ -26205,6 +26274,7 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
 
   /**
    * Constructor.
+   * @param {Object} plugin - A minimal plugin object providing only the plugin id.
    * @constructor
    */
   function PluginAPIHelper(plugin) {
@@ -26680,102 +26750,6 @@ angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('System', function (lodash, Session) {
-
-  /**
-   * System
-   *
-   * Provides general purpose system utilities.
-   */
-
-  /**
-   * Constructor.
-   * @constructor
-   */
-  function System() {
-    throw new Error('System is a static class');
-  };
-
-  /**
-   * Return whether or not the specified object has all required properties.
-   * @return {Object} An array of missing properties.
-   * @static
-   */
-  System.checkRequired = function(required, obj) {
-    var missing = [];
-    lodash.forEach(required, function(property) {
-      if (lodash.get(obj, property, undefined) == undefined) {
-        missing.push(property);
-      }
-    });
-    return missing;
-  };
-
-  /**
-   * Assigns destObj the object properties of srcObj according to properties. Properties is an array of strings
-   * naming each property on srcObj. Deep property names may be specified, exmaple 'a.b'. Unresolved properties
-   * on srcObj are undefined on destObj. This function mutates destObj.
-   * @return {Object} The desination object.
-   * @static
-   */
-  System.assign = function(destObj, srcObj, properties) {
-    lodash.forEach(properties, function(property) {
-      lodash.set(destObj, property, lodash.get(srcObj, property, undefined));
-    });
-    return destObj;
-  };
-
-  /**
-   * Return the configuration of a dependent plugin.
-   * @param {String} pluginId - The id of the dependent plugin.
-   * @return {String} The properly formed API root.
-   * @static
-   */
-  System.getApiRoot = function(pluginId) {
-    return '/' + pluginId;
-  };
-
-  /**
-   * Return the configuration of a dependent plugin.
-   * @param {String} pluginId - The id of the dependent plugin.
-   * @param {String} configId - The configuration id.
-   * @return {Object} The plugin configuration.
-   * @static
-   */
-  System.getDependentPluginConfig = function(pluginId, configId) {
-    var config = Session.getInstance().plugin.dependencies[pluginId][configId];
-    if (!config) {
-      throw new Error('Could not get dependant plugin configuration, check plugin.json');
-    }
-    return config;
-  };
-
-  /**
-   * Return the value of a URL parameter by name.
-   * @return {string | undefined} The value of the parameter, null if parameter not found in URL.
-   * @static
-   */
-  System.getUrlParameterByName = function(name, url) {
-    if (!url) {
-      return undefined;
-    }
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
-    var results = regex.exec(url);
-    if (!results) {
-      return undefined;
-    }
-    if (!results[2]) {
-      return '';
-    }
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
-  };
-
-  return System;
-});
-
-'use strict';
-
 angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, $log, ApiMessage) {
 
   /**
@@ -26946,7 +26920,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Utils', function (rateService) {
+angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash, Session) {
 
   /**
    * Utils
@@ -26962,14 +26936,114 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (rateServi
     throw new Error('Utils is a static class');
   };
 
+
   /**
-   * Retrieve a currency exchange rate (vs. bitcoin price).
-   * @param {String} code - The ISO currency code for exchange.
-   * @return {Object} An instance of a service object.
+   * Return whether or not the specified object has all required properties.
+   * @return {Object} An array of missing properties.
    * @static
    */
-  Utils.getRate = function(isoCode) {
-    return rateService.getRate(isoCode);
+  Utils.checkRequired = function(required, obj) {
+    var missing = [];
+    lodash.forEach(required, function(property) {
+      if (lodash.get(obj, property, undefined) == undefined) {
+        missing.push(property);
+      }
+    });
+    return missing;
+  };
+
+  /**
+   * Assigns destObj the object properties of srcObj according to properties. Properties is an array of strings
+   * naming each property on srcObj. Deep property names may be specified, exmaple 'a.b'. Unresolved properties
+   * on srcObj are undefined on destObj. This function mutates destObj.
+   * @return {Object} The desination object.
+   * @static
+   */
+  Utils.assign = function(destObj, srcObj, properties) {
+    lodash.forEach(properties, function(property) {
+      lodash.set(destObj, property, lodash.get(srcObj, property, undefined));
+    });
+    return destObj;
+  };
+
+  Utils.assign = function(destObj, srcObj, propertyMap) {
+    lodash.forEach(Object.keys(propertyMap), function(property) {
+
+      if (typeof propertyMap[property] == 'string') {
+        lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, undefined));
+
+      } else {
+        var destProperty = propertyMap[property].property;
+        var destType = propertyMap[property].type;
+        var srcValue = lodash.get(srcObj, property, undefined);
+        var value;
+
+        switch (destType) {
+          case 'date': 
+            value = new Date(srcValue);
+            break;
+
+          case 'float':
+            value = parseFloat(srcValue);
+            break;
+
+          case 'map':
+            var map = propertyMap[property].map;
+            value = map[srcValue];
+            break;
+        }
+
+        lodash.set(destObj, destProperty, value);
+      }
+
+    });
+    return destObj;
+  };
+
+  /**
+   * Return the configuration of a dependent plugin.
+   * @param {String} pluginId - The id of the dependent plugin.
+   * @return {String} The properly formed API root.
+   * @static
+   */
+  Utils.getApiRoot = function(pluginId) {
+    return '/' + pluginId;
+  };
+
+  /**
+   * Return the configuration of a dependent plugin.
+   * @param {String} pluginId - The id of the dependent plugin.
+   * @param {String} configId - The configuration id.
+   * @return {Object} The plugin configuration.
+   * @static
+   */
+  Utils.getDependentPluginConfig = function(pluginId, configId) {
+    var config = Session.getInstance().plugin.dependencies[pluginId][configId];
+    if (!config) {
+      throw new Error('Could not get dependant plugin configuration, check plugin.json');
+    }
+    return config;
+  };
+
+  /**
+   * Return the value of a URL parameter by name.
+   * @return {String | undefined} The value of the parameter, null if parameter not found in URL.
+   * @static
+   */
+  Utils.getUrlParameterByName = function(name, url) {
+    if (!url) {
+      return undefined;
+    }
+    name = name.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    var results = regex.exec(url);
+    if (!results) {
+      return undefined;
+    }
+    if (!results[2]) {
+      return '';
+    }
+    return decodeURIComponent(results[2].replace(/\+/g, ' '));
   };
 
   return Utils;

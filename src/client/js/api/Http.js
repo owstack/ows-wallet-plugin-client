@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, System) {
+angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http) {
 
   /**
    * Http

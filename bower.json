@@ -9,6 +9,7 @@
   "dependencies": {
     "angular-gettext": "2.2.1",
     "angular-moment": "0.10.1",
+    "angular-qrcode": "https://github.com/owstack/angular-qrcode.git#~6.3.0",
     "ionic": "https://github.com/owstack/ionic-v1.git#ows-release",
     "ng-lodash": "0.5.0"
   },

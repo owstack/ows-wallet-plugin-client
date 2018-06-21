@@ -9868,6 +9868,11 @@ ion-nav-bar.hide {
 /*
  * SASS for OWS Wallet applet plugin client.
  */
+.ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap; }
+
 .popup .button-primary.button-clear {
   color: #00afff !important; }
 

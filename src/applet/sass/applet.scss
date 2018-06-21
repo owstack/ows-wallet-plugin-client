@@ -1,6 +1,12 @@
 /*
  * SASS for OWS Wallet applet plugin client.
  */
+
+.ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;	
+}
  
 // popupService dialog style.
 .popup {
