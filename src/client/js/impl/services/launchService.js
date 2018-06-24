@@ -1,6 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, Settings, Host, historicLogService) {
+angular.module('owsWalletPluginClient.impl.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
+  /* @namespace owsWalletPluginClient.api */ Session,
+  /* @namespace owsWalletPluginClient.api */ Settings,
+  /* @namespace owsWalletPluginClient.api */ Host) {
 
   owswallet.Plugin.start(function() {
 
@@ -113,12 +116,11 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     function getPlatformInfo() {
       var request = {
         method: 'GET',
-        url: '/info/platform',
-        responseObj: {}
+        url: '/info/platform'
       };
 
       return new ApiMessage(request).send().then(function(response) {
-        owswallet.Plugin.setPlatform(response);
+        owswallet.Plugin.setPlatform(response.data);
         $rootScope.$emit('Local/Initialized', 'platformInfo');
         
       }).catch(function(error) {

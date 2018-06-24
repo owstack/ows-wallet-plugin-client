@@ -25,8 +25,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
     var request = {
       method: 'PUT',
       url: '/clipboard',
-      data: data,
-      responseObj: {}
+      data: data
     };
 
     return new ApiMessage(request).send().then(function(response) {
@@ -49,8 +48,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
     var request = {
       method: 'POST',
       url: '/share',
-      data: data,
-      responseObj: {}
+      data: data
     };
 
     return new ApiMessage(request).send().then(function(response) {

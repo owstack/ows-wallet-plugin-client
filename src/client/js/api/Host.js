@@ -39,12 +39,11 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
   Host.get = function() {
     var request = {
       method: 'GET',
-      url: '/info/host',
-      responseObj: {}
+      url: '/info/host'
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(Host, response);
+      lodash.assign(Host, response.data);
       return Host;
 
     }).catch(function(error) {

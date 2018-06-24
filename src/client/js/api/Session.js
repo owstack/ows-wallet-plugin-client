@@ -1,6 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, $log, ApiMessage, Applet, Servlet, Wallet) {
+angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, $log, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ Applet,
+  /* @namespace owsWalletPluginClient.api */ Servlet,
+  /* @namespace owsWalletPluginClient.api */ Wallet) {
 
   /**
    * Session
@@ -24,9 +27,9 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     }
     instance = this;
 
-    getSession().then(function(sessionObj) {
+    getSession().then(function(response) {
       // Assign the session data to ourself.
-      lodash.assign(self, sessionObj);
+      lodash.assign(self, response.data);
 
       switch (self.plugin.header.kind) {
         case 'applet': self.plugin = new Applet(self.plugin); break;
@@ -45,8 +48,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     function getSession() {
       var request = {
        method: 'GET',
-       url: '/session/' + apiHelpers.sessionId(),
-       responseObj: {}
+       url: '/session/' + apiHelpers.sessionId()
       };
 
       return new ApiMessage(request).send();
@@ -93,14 +95,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     var self = this;
     var request = {
       method: 'GET',
-      url: '/session/' + this.id + '/var/' + name,
-      responseObj: {}
+      url: '/session/' + this.id + '/var/' + name
     };
 
     return new ApiMessage(request).send().then(function(response) {
       self[name] = {};
-      lodash.assign(self[name], response);
-      return response;
+      lodash.assign(self[name], response.data);
+      return response.data;
 
     }).catch(function(error) {
       $log.error('Session.get(): ' + error.message + ', ' + error.detail);
@@ -210,14 +211,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     var request = {
       method: 'GET',
       url: '/session/' + this.id + '/choosewallet',
-      responseObj: 'Wallet',
       opts: {
         timeout: -1
       }
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      return response;
+      return new Wallet(response.data);
 
     }).catch(function(error) {
       $log.error('Session.chooseWallet(): ' + error.message + ', ' + error.detail);

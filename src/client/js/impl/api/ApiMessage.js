@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter, ApiError) {
+angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   var host = window.parent;
 
@@ -204,8 +205,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     return new Promise(function(resolve, reject) {
 
       var onComplete = function(message) {
-        var responseObj;
-
         $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
@@ -218,34 +217,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
           }));
 
         } else {
-
           // Success
-          switch (message.response.statusCode) {
-            case 204: // No content
-              responseObj = undefined;
-              break;
+          resolve(message.response);
 
-            default:
-              if (!lodash.isUndefined(message.request.responseObj)) {
-
-                if (lodash.isEmpty(message.request.responseObj)) {
-                  // An empty response object informs that we should pass back the raw response data without status.
-                  responseObj = message.response.data;
-                } else {
-                  // Create an instance of the promised responseObj with the message data.
-                  responseObj = $injector.get(message.request.responseObj);
-                  responseObj = eval(new responseObj(message.response.data));              
-                }
-
-              } else {
-                // Send the plain response object data if no responseObj set.
-                // The receiver will have to know how to interpret the object.
-                responseObj = message.response;
-              }
-              break;
-          }
-
-          resolve(responseObj);
         }
       };
 

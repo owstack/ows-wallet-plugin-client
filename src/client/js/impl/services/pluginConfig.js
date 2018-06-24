@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient').provider('$pluginConfig', function(lodash) {
+angular.module('owsWalletPluginClient.impl.services').provider('$pluginConfig', function(lodash) {
 
   var provider = this;
   provider.platform = {};

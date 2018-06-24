@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash, Session) {
+angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * Storage

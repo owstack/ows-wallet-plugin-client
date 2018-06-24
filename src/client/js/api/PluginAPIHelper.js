@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function (Session) {
+angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function (
+  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * PluginAPIHelper

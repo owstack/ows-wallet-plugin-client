@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, lodash) {
+angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', function($log, lodash) {
 
 	var root = {};
 

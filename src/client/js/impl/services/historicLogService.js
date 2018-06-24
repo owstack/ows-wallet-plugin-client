@@ -3,7 +3,7 @@
 var logs = [];
 var logEntryPrefix = '';
 
-angular.module('owsWalletPluginClient.services').factory('historicLogService', function historicLogService(lodash) {
+angular.module('owsWalletPluginClient.impl.services').factory('historicLogService', function historicLogService(lodash) {
   var root = {};
 
   var levels = [

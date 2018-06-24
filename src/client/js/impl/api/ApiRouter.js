@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, $pluginConfig, $log, lodash, pathToRegexpService) {
+angular.module('owsWalletPluginClient.impl.api').factory('ApiRouter', function ($rootScope, $pluginConfig, $log, lodash, pathToRegexpService) {
 
   /**
    * API routes.

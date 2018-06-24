@@ -395,6 +395,7 @@ function pathToRegexp (path, keys, options) {
 
 },{}]},{},[1]);
 
+!function(e){"use strict";function n(){try{return e.injector(["ns"]).get("config")}catch(n){return{}}}function t(t){var r=e.copy(o);return e.extend(r,n(),t),r}function r(e){return e.charAt(0).toUpperCase()+e.slice(1)}function a(n,t){e.forEach(t.methods,function(e){var a=n[e];n[e]=function(){var e=c.call(arguments);return t.camelCase?e[0]=n.name+r(e[0]):e[0]=[n.name,e[0]].join(t.delimiter),a.apply(n,e)}})}var c=Array.prototype.slice,i=e.bind(e,e.module),o={methods:"constant factory provider service value".split(" "),delimiter:".",camelCase:!1};e.module=function(e,n,r){var c=i(e,n,r);return c.namespace=function(e){return a(c,t(e||{})),c},c}}(this.angular);
 /**
  * @ngdoc module
  * @name gettext
@@ -25440,173 +25441,28 @@ var modules = [
   'gettext',
 	'ngLodash',
   'pathToRegexpModule',
+	'owsWalletPluginClient.impl.api',
+	'owsWalletPluginClient.impl.apiHandlers',
+	'owsWalletPluginClient.impl.services',
 	'owsWalletPluginClient.api',
-	'owsWalletPluginClient.impl',
 	'owsWalletPluginClient.directives',
 	'owsWalletPluginClient.filters',
 	'owsWalletPluginClient.services'
 ];
 
-var owsWalletPluginClient = angular.module('owsWalletPluginClient', modules);
+angular.module('owsWalletPluginClient', modules);
 
-angular.module('owsWalletPluginClient.api', []);
-angular.module('owsWalletPluginClient.impl', []);
+angular.module('owsWalletPluginClient.impl.api', []);
+angular.module('owsWalletPluginClient.impl.apiHandlers', []);
+angular.module('owsWalletPluginClient.impl.services', []);
+angular.module('owsWalletPluginClient.api', []).namespace();
 angular.module('owsWalletPluginClient.directives', []);
 angular.module('owsWalletPluginClient.filters', []);
 angular.module('owsWalletPluginClient.services', []);
 
 'use strict';
 
-angular.module('owsWalletPluginClient').provider('$pluginConfig', function(lodash) {
-
-  var provider = this;
-  provider.platform = {};
-  var PLATFORM = 'platform';
-
-  var configProperties = {
-    router: {
-      routes: PLATFORM
-    },
-    platform: {}
-  };
-
-  createConfig(configProperties, provider, '');
-
-  // Default configuration
-  setPlatformConfig('default', {
-    router: {
-      routes: []
-    }
-  });
-
-  // iOS (it is the default already)
-  setPlatformConfig('ios', {
-    router: {
-      routes: []
-    }
-  });
-
-  // Android
-  setPlatformConfig('android', {
-    router: {
-      routes: []
-    }
-  });
-
-  // NodeWebKit
-  setPlatformConfig('nodewebkit', {
-    router: {
-      routes: []
-    }
-  });
-
-  // Create methods for each config to get/set
-  function createConfig(configObj, providerObj) {
-    lodash.forEach(configObj, function(value) {
-      // Create a method for the provider/config methods that will be exposed
-      providerObj = function(newValue) {
-        if (arguments.length) {
-          configObj = newValue;
-          return providerObj;
-        }
-        return configObj;
-      };
-    });
-  }
-
-  // Used to set configs
-  function setConfig(configs) {
-    configProperties = platformConfigs;
-    provider.platform[platformName] = {};
-
-    addConfig(configProperties, configProperties.platform[platformName]);
-
-    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
-  }
-
-  // Used to set platform configuration.
-  function setPlatformConfig(platformName, platformConfigs) {
-    configProperties.platform[platformName] = platformConfigs;
-    provider.platform[platformName] = {};
-
-    addConfig(configProperties, configProperties.platform[platformName]);
-
-    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
-  }
-
-  // Used to recursively add new platform configuration.
-  function addConfig(configObj, platformObj) {
-    for (var n in configObj) {
-      if (n != PLATFORM && configObj.hasOwnProperty(n)) {
-        if (angular.isObject(configObj[n])) {
-          if (lodash.isUndefined(platformObj[n])) {
-            platformObj[n] = {};
-          }
-          addConfig(configObj[n], platformObj[n]);
-
-        } else if (lodash.isUndefined(platformObj[n])) {
-          platformObj[n] = null;
-        }
-      }
-    }
-  }
-
-  // Create methods for each configuration to get/set.
-  function createConfig(configObj, providerObj, platformPath) {
-    lodash.forEach(configObj, function(value, namespace) {
-
-      if (angular.isObject(configObj[namespace])) {
-        // Recursively drill down the config object so we can create a method for each one.
-        providerObj[namespace] = {};
-        createConfig(configObj[namespace], providerObj[namespace], platformPath + '.' + namespace);
-
-      } else {
-        // Create a method for the provider/config methods that will be exposed.
-        providerObj[namespace] = function(newValue) {
-          if (arguments.length) {
-            configObj[namespace] = newValue;
-            return providerObj;
-          }
-          if (configObj[namespace] == PLATFORM) {
-            // If the config is set to 'platform', then get this config's platform value.
-            var platformConfig = stringObj(configProperties.platform, owswallet.Plugin.platform() + platformPath + '.' + namespace);
-            if (platformConfig || platformConfig === false) {
-              return platformConfig;
-            }
-            // Didn't find a specific platform config, now try the default.
-            return stringObj(configProperties.platform, 'default' + platformPath + '.' + namespace);
-          }
-          return configObj[namespace];
-        };
-      }
-
-    });
-  }
-
-  function stringObj(obj, str) {
-    str = str.split(".");
-    for (var i = 0; i < str.length; i++) {
-      if (obj && !lodash.isUndefined(obj[str[i]])) {
-        obj = obj[str[i]];
-      } else {
-        return null;
-      }
-    }
-    return obj;
-  }
-
-  provider.setPlatformConfig = setPlatformConfig;
-
-  // Service definition for internal use
-  provider.$get = function() {
-    return provider;
-  };
-
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient').config(function($provide, $logProvider, historicLogServiceProvider) {
+angular.module('owsWalletPluginClient').config(['$provide', '$logProvider', 'historicLogServiceProvider', function($provide, $logProvider, historicLogServiceProvider) {
 
 	// Setup logging.
   $logProvider.debugEnabled(true);
@@ -25687,11 +25543,11 @@ angular.module('owsWalletPluginClient').config(function($provide, $logProvider, 
     return $delegate;
   }]);
 
-}).run(function(launchService) {
+}]).run(['launchService', function(launchService) {
 
   // Just bump the launchService.
 
-});
+}]);
 
 angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettextCatalog) {
 /* jshint -W100 */
@@ -25699,7 +25555,7 @@ angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettext
 }]);
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('ApiError', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('ApiError', ['lodash', function (lodash) {
 
   /**
    * ApiError
@@ -25725,11 +25581,11 @@ angular.module('owsWalletPluginClient.api').factory('ApiError', function (lodash
   };
 
   return ApiError;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', function (lodash) {
 
   /**
    * Applet
@@ -25780,7 +25636,7 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) 
   };
 
   return Applet;
-});
+}]);
 
 'use strict';
 
@@ -25997,7 +25853,7 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Device', function ($log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessage', function ($log, ApiMessage) {
 
   /**
    * Device
@@ -26022,8 +25878,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
     var request = {
       method: 'PUT',
       url: '/clipboard',
-      data: data,
-      responseObj: {}
+      data: data
     };
 
     return new ApiMessage(request).send().then(function(response) {
@@ -26046,8 +25901,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
     var request = {
       method: 'POST',
       url: '/share',
-      data: data,
-      responseObj: {}
+      data: data
     };
 
     return new ApiMessage(request).send().then(function(response) {
@@ -26062,44 +25916,11 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
   };
 
   return Device;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').service('hostEvent', function($log, lodash) {
-
-	var root = {};
-
-  root.respond = function(message, callback) {
-	  // Request parameters.
-    var event = message.request.data;
-
-  	if (lodash.isEmpty(event)) {
-      $log.error('Received a host event message with no event data.');
-      return;
-  	}
-
-    // A properly received message does not send a response back to the host app.
-    switch (event.name) {
-      case 'ready':
-        // We're being told another plugin is ready.
-        owswallet.Plugin.setOpen(event.pluginId);
-        break;
-
-      default:
-        // We're receiving an event.
-        owswallet.Plugin.onEvent(event);
-        break;
-    }
-
-  };
-
-  return root;
-});
-
-'use strict';
-
-angular.module('owsWalletPluginClient.api').factory('Host', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
 
   /**
    * Host
@@ -26138,12 +25959,11 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
   Host.get = function() {
     var request = {
       method: 'GET',
-      url: '/info/host',
-      responseObj: {}
+      url: '/info/host'
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(Host, response);
+      lodash.assign(Host, response.data);
       return Host;
 
     }).catch(function(error) {
@@ -26154,11 +25974,11 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
   };
 
   return Host;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http) {
+angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '$http', function ($log, lodash, $http) {
 
   /**
    * Http
@@ -26260,11 +26080,12 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
   };
 
   return Http;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function (Session) {
+angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', ['owsWalletPluginClient.api.Session', function (
+  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * PluginAPIHelper
@@ -26302,11 +26123,11 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
   };
 
     return PluginAPIHelper;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', function (lodash) {
 
   /**
    * Servlet
@@ -26327,11 +26148,14 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash)
   };
 
   return Servlet;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, $log, ApiMessage, Applet, Servlet, Wallet) {
+angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'lodash', 'apiHelpers', '$log', 'ApiMessage', 'owsWalletPluginClient.api.Applet', 'owsWalletPluginClient.api.Servlet', 'owsWalletPluginClient.api.Wallet', function ($rootScope, lodash, apiHelpers, $log, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ Applet,
+  /* @namespace owsWalletPluginClient.api */ Servlet,
+  /* @namespace owsWalletPluginClient.api */ Wallet) {
 
   /**
    * Session
@@ -26355,9 +26179,9 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     }
     instance = this;
 
-    getSession().then(function(sessionObj) {
+    getSession().then(function(response) {
       // Assign the session data to ourself.
-      lodash.assign(self, sessionObj);
+      lodash.assign(self, response.data);
 
       switch (self.plugin.header.kind) {
         case 'applet': self.plugin = new Applet(self.plugin); break;
@@ -26376,8 +26200,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     function getSession() {
       var request = {
        method: 'GET',
-       url: '/session/' + apiHelpers.sessionId(),
-       responseObj: {}
+       url: '/session/' + apiHelpers.sessionId()
       };
 
       return new ApiMessage(request).send();
@@ -26424,14 +26247,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     var self = this;
     var request = {
       method: 'GET',
-      url: '/session/' + this.id + '/var/' + name,
-      responseObj: {}
+      url: '/session/' + this.id + '/var/' + name
     };
 
     return new ApiMessage(request).send().then(function(response) {
       self[name] = {};
-      lodash.assign(self[name], response);
-      return response;
+      lodash.assign(self[name], response.data);
+      return response.data;
 
     }).catch(function(error) {
       $log.error('Session.get(): ' + error.message + ', ' + error.detail);
@@ -26541,14 +26363,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     var request = {
       method: 'GET',
       url: '/session/' + this.id + '/choosewallet',
-      responseObj: 'Wallet',
       opts: {
         timeout: -1
       }
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      return response;
+      return new Wallet(response.data);
 
     }).catch(function(error) {
       $log.error('Session.chooseWallet(): ' + error.message + ', ' + error.detail);
@@ -26558,11 +26379,11 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
   };
 
   return Session;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Settings', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
 
   /**
    * Settings
@@ -26610,12 +26431,11 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
   Settings.get = function() {
     var request = {
       method: 'GET',
-      url: '/settings',
-      responseObj: {}
+      url: '/settings'
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(Settings, response);
+      lodash.assign(Settings, response.data);
       return Settings;
 
     }).catch(function(error) {
@@ -26626,11 +26446,12 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
   };
 
   return Settings;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash, Session) {
+angular.module('owsWalletPluginClient.api').factory('Storage', ['lodash', 'owsWalletPluginClient.api.Session', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * Storage
@@ -26746,11 +26567,11 @@ angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
   };
  
   return Storage;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, $log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$log', 'ApiMessage', function (lodash, $log, ApiMessage) {
 
   /**
    * Transaction
@@ -26760,6 +26581,12 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
 
   /**
    * Constructor.
+   * @param {String} walletId - The id of the wallet in which the transaction will be created.
+   * @param {String} urlOrAddress - The URL (typically a payment protocol endoint) or cryptocurrency address for the payment destination.
+   * @param {Number} amount - The amount to send, less fees.
+   * @param {boolean} useSendMax - If true then the amount to send is calculated based on the wallet balance, balance at tx input assignments, and network fee.
+   * @param {String} useSendMax - If true then the amount to send is calculated based on the wallet balance, balance at tx input assignments, and network fee.
+   * @param {String} description (optional) - A transaction description.
    * @return {Transaction} An instance of Transaction.
    * @constructor
    *
@@ -26767,7 +26594,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
    *
    *   - (A) walletId & urlOrAddress OR
    *   - (B) walletId & urlOrAddress & amount OR
-   *   - (C) walletId & urlOrAddress & userSendMax
+   *   - (C) walletId & urlOrAddress & useSendMax
    *
    * (A) Pay to a network payment request URL from the wallet. The urlOrAddress must resolve to an address and amount.
    *
@@ -26803,7 +26630,8 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
         walletId: this.walletId,
         urlOrAddress: this.urlOrAddress,
         amount: this.amount,
-        useSendMax: this.useSendMax
+        useSendMax: this.useSendMax,
+        description: this.description || ''
       }
     };
 
@@ -26916,11 +26744,12 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
   };
 
   return Transaction;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash, Session) {
+angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWalletPluginClient.api.Session', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * Utils
@@ -27047,11 +26876,11 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash, S
   };
 
   return Utils;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', function (lodash) {
 
   /**
    * Wallet
@@ -27099,11 +26928,11 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash) 
   };
 
   return Wallet;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').service('apiHelpers', function() {
+angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function() {
 
 	var root = {};
 
@@ -27140,7 +26969,8 @@ angular.module('owsWalletPluginClient.impl').service('apiHelpers', function() {
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter, ApiError) {
+angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootScope', 'lodash', '$injector', '$timeout', 'apiHelpers', '$log', 'ApiRouter', 'owsWalletPluginClient.api.ApiError', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   var host = window.parent;
 
@@ -27344,8 +27174,6 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
     return new Promise(function(resolve, reject) {
 
       var onComplete = function(message) {
-        var responseObj;
-
         $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
@@ -27358,34 +27186,9 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
           }));
 
         } else {
-
           // Success
-          switch (message.response.statusCode) {
-            case 204: // No content
-              responseObj = undefined;
-              break;
+          resolve(message.response);
 
-            default:
-              if (!lodash.isUndefined(message.request.responseObj)) {
-
-                if (lodash.isEmpty(message.request.responseObj)) {
-                  // An empty response object informs that we should pass back the raw response data without status.
-                  responseObj = message.response.data;
-                } else {
-                  // Create an instance of the promised responseObj with the message data.
-                  responseObj = $injector.get(message.request.responseObj);
-                  responseObj = eval(new responseObj(message.response.data));              
-                }
-
-              } else {
-                // Send the plain response object data if no responseObj set.
-                // The receiver will have to know how to interpret the object.
-                responseObj = message.response;
-              }
-              break;
-          }
-
-          resolve(responseObj);
         }
       };
 
@@ -27564,11 +27367,11 @@ angular.module('owsWalletPluginClient.impl').factory('ApiMessage', function ($ro
   };
 
   return ApiMessage;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($rootScope, $pluginConfig, $log, lodash, pathToRegexpService) {
+angular.module('owsWalletPluginClient.impl.api').factory('ApiRouter', ['$rootScope', '$pluginConfig', '$log', 'lodash', 'pathToRegexpService', function ($rootScope, $pluginConfig, $log, lodash, pathToRegexpService) {
 
   /**
    * API routes.
@@ -27731,14 +27534,47 @@ angular.module('owsWalletPluginClient.impl').factory('ApiRouter', function ($roo
   };
 
   return ApiRouter;
-});
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', ['$log', 'lodash', function($log, lodash) {
+
+	var root = {};
+
+  root.respond = function(message, callback) {
+	  // Request parameters.
+    var event = message.request.data;
+
+  	if (lodash.isEmpty(event)) {
+      $log.error('Received a host event message with no event data.');
+      return;
+  	}
+
+    // A properly received message does not send a response back to the host app.
+    switch (event.name) {
+      case 'ready':
+        // We're being told another plugin is ready.
+        owswallet.Plugin.setOpen(event.pluginId);
+        break;
+
+      default:
+        // We're receiving an event.
+        owswallet.Plugin.onEvent(event);
+        break;
+    }
+
+  };
+
+  return root;
+}]);
 
 'use strict';
 
 var logs = [];
 var logEntryPrefix = '';
 
-angular.module('owsWalletPluginClient.services').factory('historicLogService', function historicLogService(lodash) {
+angular.module('owsWalletPluginClient.impl.services').factory('historicLogService', ['lodash', function historicLogService(lodash) {
   var root = {};
 
   var levels = [
@@ -27801,11 +27637,14 @@ angular.module('owsWalletPluginClient.services').factory('historicLogService', f
   };
 
   return root;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, Session, Settings, Host, historicLogService) {
+angular.module('owsWalletPluginClient.impl.services').service('launchService', ['$rootScope', '$injector', 'lodash', 'apiHelpers', '$log', 'ApiMessage', 'ApiRouter', 'historicLogService', 'owsWalletPluginClient.api.Session', 'owsWalletPluginClient.api.Settings', 'owsWalletPluginClient.api.Host', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
+  /* @namespace owsWalletPluginClient.api */ Session,
+  /* @namespace owsWalletPluginClient.api */ Settings,
+  /* @namespace owsWalletPluginClient.api */ Host) {
 
   owswallet.Plugin.start(function() {
 
@@ -27918,12 +27757,11 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
     function getPlatformInfo() {
       var request = {
         method: 'GET',
-        url: '/info/platform',
-        responseObj: {}
+        url: '/info/platform'
       };
 
       return new ApiMessage(request).send().then(function(response) {
-        owswallet.Plugin.setPlatform(response);
+        owswallet.Plugin.setPlatform(response.data);
         $rootScope.$emit('Local/Initialized', 'platformInfo');
         
       }).catch(function(error) {
@@ -28016,4 +27854,153 @@ angular.module('owsWalletPluginClient.services').service('launchService', functi
 
   });
 
-});
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.impl.services').provider('$pluginConfig', ['lodash', function(lodash) {
+
+  var provider = this;
+  provider.platform = {};
+  var PLATFORM = 'platform';
+
+  var configProperties = {
+    router: {
+      routes: PLATFORM
+    },
+    platform: {}
+  };
+
+  createConfig(configProperties, provider, '');
+
+  // Default configuration
+  setPlatformConfig('default', {
+    router: {
+      routes: []
+    }
+  });
+
+  // iOS (it is the default already)
+  setPlatformConfig('ios', {
+    router: {
+      routes: []
+    }
+  });
+
+  // Android
+  setPlatformConfig('android', {
+    router: {
+      routes: []
+    }
+  });
+
+  // NodeWebKit
+  setPlatformConfig('nodewebkit', {
+    router: {
+      routes: []
+    }
+  });
+
+  // Create methods for each config to get/set
+  function createConfig(configObj, providerObj) {
+    lodash.forEach(configObj, function(value) {
+      // Create a method for the provider/config methods that will be exposed
+      providerObj = function(newValue) {
+        if (arguments.length) {
+          configObj = newValue;
+          return providerObj;
+        }
+        return configObj;
+      };
+    });
+  }
+
+  // Used to set configs
+  function setConfig(configs) {
+    configProperties = platformConfigs;
+    provider.platform[platformName] = {};
+
+    addConfig(configProperties, configProperties.platform[platformName]);
+
+    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
+  }
+
+  // Used to set platform configuration.
+  function setPlatformConfig(platformName, platformConfigs) {
+    configProperties.platform[platformName] = platformConfigs;
+    provider.platform[platformName] = {};
+
+    addConfig(configProperties, configProperties.platform[platformName]);
+
+    createConfig(configProperties.platform[platformName], provider.platform[platformName], '');
+  }
+
+  // Used to recursively add new platform configuration.
+  function addConfig(configObj, platformObj) {
+    for (var n in configObj) {
+      if (n != PLATFORM && configObj.hasOwnProperty(n)) {
+        if (angular.isObject(configObj[n])) {
+          if (lodash.isUndefined(platformObj[n])) {
+            platformObj[n] = {};
+          }
+          addConfig(configObj[n], platformObj[n]);
+
+        } else if (lodash.isUndefined(platformObj[n])) {
+          platformObj[n] = null;
+        }
+      }
+    }
+  }
+
+  // Create methods for each configuration to get/set.
+  function createConfig(configObj, providerObj, platformPath) {
+    lodash.forEach(configObj, function(value, namespace) {
+
+      if (angular.isObject(configObj[namespace])) {
+        // Recursively drill down the config object so we can create a method for each one.
+        providerObj[namespace] = {};
+        createConfig(configObj[namespace], providerObj[namespace], platformPath + '.' + namespace);
+
+      } else {
+        // Create a method for the provider/config methods that will be exposed.
+        providerObj[namespace] = function(newValue) {
+          if (arguments.length) {
+            configObj[namespace] = newValue;
+            return providerObj;
+          }
+          if (configObj[namespace] == PLATFORM) {
+            // If the config is set to 'platform', then get this config's platform value.
+            var platformConfig = stringObj(configProperties.platform, owswallet.Plugin.platform() + platformPath + '.' + namespace);
+            if (platformConfig || platformConfig === false) {
+              return platformConfig;
+            }
+            // Didn't find a specific platform config, now try the default.
+            return stringObj(configProperties.platform, 'default' + platformPath + '.' + namespace);
+          }
+          return configObj[namespace];
+        };
+      }
+
+    });
+  }
+
+  function stringObj(obj, str) {
+    str = str.split(".");
+    for (var i = 0; i < str.length; i++) {
+      if (obj && !lodash.isUndefined(obj[str[i]])) {
+        obj = obj[str[i]];
+      } else {
+        return null;
+      }
+    }
+    return obj;
+  }
+
+  provider.setPlatformConfig = setPlatformConfig;
+
+  // Service definition for internal use
+  provider.$get = function() {
+    return provider;
+  };
+
+}]);

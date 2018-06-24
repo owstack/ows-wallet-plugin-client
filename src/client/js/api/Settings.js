@@ -48,12 +48,11 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
   Settings.get = function() {
     var request = {
       method: 'GET',
-      url: '/settings',
-      responseObj: {}
+      url: '/settings'
     };
 
     return new ApiMessage(request).send().then(function(response) {
-      lodash.assign(Settings, response);
+      lodash.assign(Settings, response.data);
       return Settings;
 
     }).catch(function(error) {

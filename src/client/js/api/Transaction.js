@@ -10,6 +10,12 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
 
   /**
    * Constructor.
+   * @param {String} walletId - The id of the wallet in which the transaction will be created.
+   * @param {String} urlOrAddress - The URL (typically a payment protocol endoint) or cryptocurrency address for the payment destination.
+   * @param {Number} amount - The amount to send, less fees.
+   * @param {boolean} useSendMax - If true then the amount to send is calculated based on the wallet balance, balance at tx input assignments, and network fee.
+   * @param {String} useSendMax - If true then the amount to send is calculated based on the wallet balance, balance at tx input assignments, and network fee.
+   * @param {String} description (optional) - A transaction description.
    * @return {Transaction} An instance of Transaction.
    * @constructor
    *
@@ -17,7 +23,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
    *
    *   - (A) walletId & urlOrAddress OR
    *   - (B) walletId & urlOrAddress & amount OR
-   *   - (C) walletId & urlOrAddress & userSendMax
+   *   - (C) walletId & urlOrAddress & useSendMax
    *
    * (A) Pay to a network payment request URL from the wallet. The urlOrAddress must resolve to an address and amount.
    *
@@ -53,7 +59,8 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
         walletId: this.walletId,
         urlOrAddress: this.urlOrAddress,
         amount: this.amount,
-        useSendMax: this.useSendMax
+        useSendMax: this.useSendMax,
+        description: this.description || ''
       }
     };
 
