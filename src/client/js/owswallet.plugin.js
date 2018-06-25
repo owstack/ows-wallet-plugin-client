@@ -20,7 +20,7 @@
  *
  * The following calls are equivalent.
  *
- *   owswallet.Plugin.readt(function(){});
+ *   owswallet.Plugin.ready(function(){});
  *   owswallet.Plugin.openForBusiness(null, function(){});
  *
  *
