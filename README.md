@@ -3,7 +3,7 @@ OWS Wallet Plugin Client
 
 The plugin client framework and API for OWS Wallet.
 
-## Features
+## Reference Guide
 
 ### owsWallet.Plugin
 #### Platform
@@ -19,6 +19,7 @@ The plugin client framework and API for OWS Wallet.
 ##### start(callback)
 ##### ready(callback)
 ##### openForBusiness(pluginIds, callback)
+
 ### API Reference
 #### ApiError
 #### Applet
@@ -34,19 +35,26 @@ The plugin client framework and API for OWS Wallet.
 #### Transaction
 #### Utils
 #### Wallet
+
 ### Services
 #### $log
 #### $pluginConfigProvider
+
 ### API module namespace
+
 ### Applet libary
+
 #### Directives
 ##### svg
+
 #### Filters
-#####orderObjectBy
+##### orderObjectBy
+
 #### Services
 ##### externalLinkService
 ##### nodeWebkitService
 ##### popupService
+
 ### Servlet library
 
 ## Installation

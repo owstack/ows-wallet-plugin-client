@@ -13,15 +13,99 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
    * @return {Http} An instance of Http.
    * @constructor
    */
-  function Http(url, config) {
+  function Http(url, config, recoveryHandler) {
     var self = this;
     this.url = url.toLowerCase();
     this.config = config;
 
+    var retries = [];
+
     validate();
 
-    // Private functions
-    //
+    /**
+     * Make an HTTP GET request.
+     * @param {String} endpoint - The URI to the resource.
+     * @return {Promise<Object>} A promise for the response.
+     */
+    this.get = function(endpoint) {
+      return new Promise(function(resolve, reject) {
+        var url = encodeURI(self.url + endpoint);
+
+        $log.debug('GET ' + url);
+
+        $http.get(url, self.config).then(function(response) {
+          $log.debug('GET SUCCESS: ' + JSON.stringify(response));
+          resolve(response);
+
+        }).catch(function(error) {
+          $log.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
+
+          var retryKey = 'GET' + endpoint;
+          if (recoveryHandler  && !retries.includes(retryKey)) {
+            // Execute the recoveryHandler and retry the GET request up to one time.
+            recoveryHandler(error).then(function() {
+
+              retries.push(retryKey);
+              return self.get(endpoint); // Retry request.
+
+            }).catch(function(error) {
+              lodash.pull(retries, retryKey);
+              reject(error);
+            });
+
+          } else {
+            reject(error);
+          }
+
+        });
+      });
+    };
+
+    /**
+     * Make an HTTP POST.
+     * @param {String} endpoint - The URI to the resource.
+     * @param {Object} data - The data object to post.
+     * @return {Promise<Object>} A promise for the response.
+     */
+    this.post = function(endpoint, data) {
+      var self = this;
+      return new Promise(function(resolve, reject) {
+        var url = encodeURI(self.url + endpoint);
+
+        $log.debug('POST ' + url + ' ' + JSON.stringify(data));
+
+        $http.post(url, data, self.config).then(function(response) {
+          $log.debug('POST SUCCESS: ' + url + ' ' + JSON.stringify(response));
+          resolve(response);
+
+        }).catch(function(error) {
+          $log.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
+
+          var retryKey = 'POST' + endpoint;
+          if (recoveryHandler && !retries.includes(retryKey)) {
+            // Execute the recoveryHandler and retry the POST request up to one time.
+            recoveryHandler(error).then(function() {
+              retries.push(retryKey);
+              return self.post(endpoint, data); // Retry request.
+
+            }).catch(function(error) {
+              lodash.pull(retries, retryKey);
+              reject(error);
+            });
+
+          } else {
+            lodash.pull(retries, retryKey);
+            reject(error);
+          }
+
+        });
+      });
+    };
+
+    /*
+     * Private functions
+     */
+
     function validate() {
     	// Check format for url.
       // Matches http(s)://<domain>.<tld>:<port>
@@ -50,55 +134,6 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
    */
   Http.guid = function() {
     return Date.now().toString();
-  };
-
-  /**
-   * Make an HTTP GET request.
-   * @param {String} endpoint - The URI to the resource.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  Http.prototype.get = function(endpoint) {
-    var self = this;
-  	return new Promise(function(resolve, reject) {
-      var url = encodeURI(self.url + endpoint);
-
-	    $log.debug('GET ' + url);
-
-	    $http.get(url, self.config).then(function(response) {
-	      $log.debug('GET SUCCESS: ' + JSON.stringify(response));
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      $log.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
-	      reject(error);
-
-	    });
-	  });
-  };
-
-  /**
-   * Make an HTTP POST.
-   * @param {String} endpoint - The URI to the resource.
-   * @param {Object} data - The data object to post.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  Http.prototype.post = function(endpoint, data) {
-    var self = this;
-  	return new Promise(function(resolve, reject) {
-      var url = encodeURI(self.url + endpoint);
-
-	    $log.debug('POST ' + url + ' ' + JSON.stringify(data));
-
-	    $http.post(url, data, self.config).then(function(response) {
-	      $log.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      $log.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
-	      reject(error);
-
-	    });
-    });
   };
 
   return Http;

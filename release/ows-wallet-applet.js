@@ -2139,78 +2139,381 @@ angular.module('monospaced.qrcode', [])
 
 'use strict';
 
-angular.module('owsWalletPluginClient.directives')
-  /**
-   * Replaces img tag with its svg content to allow for CSS styling of the svg.
-   */
-  .directive('svg', function($http) {
-    return {
-      restrict: 'A',
-      link: function(scope, element, attrs) {
-        var imgId = attrs.id;
-        var imgClass = attrs.class;
-        var imgUrl = attrs.src || attrs.ngSrc;
-        var svg;
+angular.module('owsWalletPluginClient.directives').directive('keypad', ['$log', function($log) {
 
-        // Load svg content
-        $http.get(imgUrl).success(function(data, status) {
-          svg = angular.element(data);
-          for (var i = svg.length - 1; i >= 0; i--) {
-            if (svg[i].constructor == SVGSVGElement) {
-              svg = angular.element(svg[i]);
-              break;
+  var template = '\
+		<div id="keypad" ng-controller="KeypadCtrl">\
+			<div class="keypad">\
+			  <div class="row">\
+			    <div class="col digit" ng-click="pushDigit(\'1\')">1</div>\
+			    <div class="col digit" ng-click="pushDigit(\'2\')">2</div>\
+			    <div class="col digit" ng-click="pushDigit(\'3\')">3</div>\
+			  </div>\
+			  <div class="row">\
+			    <div class="col digit" ng-click="pushDigit(\'4\')">4</div>\
+			    <div class="col digit" ng-click="pushDigit(\'5\')">5</div>\
+			    <div class="col digit" ng-click="pushDigit(\'6\')">6</div>\
+			  </div>\
+			  <div class="row">\
+			    <div class="col digit" ng-click="pushDigit(\'7\')">7</div>\
+			    <div class="col digit" ng-click="pushDigit(\'8\')">8</div>\
+			    <div class="col digit" ng-click="pushDigit(\'9\')">9</div>\
+			  </div>\
+			  <div class="row">\
+			    <div class="col digit" ng-click="pushDigit(\'.\')">.</div>\
+			    <div class="col digit" ng-click="pushDigit(\'0\')">0</div>\
+			    <div class="col digit" ng-click="removeDigit()">\
+			      <img svg src="{{buttonDelSrc}}">\
+			    </div>\
+			  </div>\
+			</div>\
+		</div>\
+	';
+
+  return {
+    restrict: 'E',
+    scope: {
+    	buttonDelSrc: '@',
+	    config: '@'
+    },
+    controller: 'KeypadCtrl',
+    template: template,
+    link: function (scope, element, attrs) {
+      scope.$watch('config', function(value) {
+      	scope.config = value;
+      });
+    }
+	};
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('KeypadCtrl', ['$rootScope', '$scope', '$timeout', '$log', 'lodash', 'stringUtils', 'owsWalletPluginClient.api.BN', 'owsWalletPluginClient.api.Constants', function($rootScope, $scope, $timeout, $log, lodash, stringUtils,
+  /* @namespace owsWalletPluginClient.api */ BN,
+  /* @namespace owsWalletPluginClient.api */ Constants) {
+
+  var language = 'en';
+  var lengthExpressionLimit = 9;
+  var placeholder = false;
+  var value = { entered: 0 };
+
+  var currencies = [];
+  var currencyIndex = 0;
+
+  var usdRates;
+  var currencyToggleCache = {};
+
+  $scope.$watch('config', function(config, oldConfig) {
+    if (config != oldConfig && config.length > 0) {
+      config = JSON.parse(config);
+      var previousCurrencyIndex = currencyIndex;
+
+      language = config.language || language;
+      lengthExpressionLimit = config.lengthExpressionLimit || lengthExpressionLimit;
+      usdRates = config.usdRates || usdRates;
+      currencies = config.currencies || currencies;
+
+      if (config.value) {
+        // Reject if value currency is not configured on keypad.
+        if (currencies.indexOf(config.value.currency) < 0) {
+          return $log.error('Keypad not configured for currency \'' + config.value.currency +'\'');
+        }
+
+        // Handle value change.
+        if (config.value.currency == currencies[currencyIndex]) {
+          // Value currency is same as current keypad currency, just apply the value.
+          value.entered = config.value.amount;
+
+        } else {
+          // Value currency is different than the current keypad currency, compute value through
+          // USD exchange rate.
+          var usdValue = BN.div(config.value.amount, usdRates[config.value.currency]);
+          value.entered = BN.multiply(usdValue, usdRates[currencies[currencyIndex]]);
+        }
+        clearCurrencyCache();
+
+      } else {
+
+        // Handle currency change.
+        if (typeof config.currencyIndex == 'number' || config.currencyIndex == undefined) {
+          currencyIndex = (config.currencyIndex != undefined ? config.currencyIndex : currencyIndex);
+        }
+
+        if (currencies.length > 1) {
+          if (!usdRates) {
+            return; // Cannot do anything without rates.
+          }
+
+          // Apply a currency conversion if the currency is changed.
+          if (currencyIndex != previousCurrencyIndex) {
+
+            currencyToggleCache[currencies[previousCurrencyIndex]] = {
+              value: value.entered,
+              placeholder: placeholder
+            };
+
+            var cacheEntry = currencyToggleCache[currencies[currencyIndex]];
+            if (cacheEntry) {
+              value.entered = cacheEntry.value;
+              placeholder = cacheEntry.placeholder;
+
+            } else {
+              // Compute value through USD exchange rate.
+              var usdValue = BN.div(value.entered, usdRates[currencies[previousCurrencyIndex]]);
+              value.entered = BN.multiply(usdValue, usdRates[currencies[currencyIndex]]);
+              placeholder = false;
             }
           }
+        }
+      }
 
-          if (typeof imgId !== 'undefined') {
-            svg.attr('id', imgId);
-          }
+      update();
+    }
+  });
 
-          if (typeof imgClass !== 'undefined') {
-            svg.attr('class', imgClass);
-          }
+  function clearCurrencyCache() {
+    currencyToggleCache = {};
+  };
 
-          // Custom attributes
-          //
-          // Get key value pairs for svg attrs.
-          var svgAttrs = [];
-          var pairs = attrs.svg.split(';');
-          for (var i = 0; i < pairs.length; i++) {
-            var a = pairs[i].split(':');
-            svgAttrs.push({
-              key: a[0],
-              value: a[1]
+  function update() {
+    var formatOpts = {
+      language: language,
+      isCrypto: Constants.isCryptoCurrency(currencies[currencyIndex]),
+      noZeroDecimals: true
+    };
+    value = stringUtils.format(value.entered, currencies[currencyIndex], formatOpts);
+
+    var valueHtml =
+      value.entered_u_p.sign +
+      value.entered_u_p.symbol +
+      value.entered_u_p.number.slice(0,-1) +
+      '<span class="' + (placeholder ? 'placeholder' : '') + '">' + value.entered_u_p.number.slice(-1) + '</span>' +
+      value.entered_u_p.currency;
+
+    $timeout(function() {
+      $scope.$apply();
+    });
+
+    $rootScope.$emit('Local/KeypadState', {
+      lengthExpressionLimit: lengthExpressionLimit,
+      currency: currencies[currencyIndex],
+      nextCurrency: currencies[(currencyIndex+1 >= currencies.length ? 0 : currencyIndex+1)],
+      nextCurrencyIndex: (currencyIndex+1 >= currencies.length ? 0 : currencyIndex+1),
+      amount: stringUtils.float(value.entered),
+      amountHtml: valueHtml,
+      placeholder: placeholder
+    });
+  };
+
+  $scope.pushDigit = function(digit) {
+    var entered = value.entered;
+
+    if (digit != '.' && entered.indexOf('.') < 0 && entered.length >= lengthExpressionLimit) {
+      return;
+
+    } else if (entered.indexOf('.') > -1 && digit == '.') {
+      return;
+
+    } else if (entered == '0' && placeholder && digit == '0') {
+      placeholder = false;
+
+    } else if (entered == '0' && !placeholder && digit == '0') {
+      return;
+
+    } else if (entered == '0' && !placeholder && digit == '.') {
+      entered = '0.0';
+      placeholder = true;
+
+    } else if (entered == '0' && placeholder && digit == '.') {
+      entered = '0.0';
+
+    } else if (entered == '0' && placeholder) {
+      entered = digit;
+      placeholder = false;
+
+    } else if (entered == '0' && !placeholder) {
+      entered = digit;
+
+    } else if (entered == '0.0' && placeholder) {
+      entered = '0.' + digit;
+      placeholder = false;
+
+    } else if (digit == '.') {
+      entered += '.0';
+      placeholder = true;
+
+    } else if (placeholder) {
+      entered = entered.slice(0, -1) + digit;
+      placeholder = false;
+
+    } else {
+      entered += digit;
+      placeholder = false;
+    }
+
+    value.entered = entered;
+    update();
+    clearCurrencyCache();
+  };
+
+  $scope.removeDigit = function() {
+    var entered = value.entered;
+
+    if (entered == '0' && placeholder) {
+      return;
+
+    } else if (entered == '0' && !placeholder) {
+      placeholder = true;
+
+    } else if (entered.length == 1 && placeholder) {
+      entered = '0';
+      placeholder = true;
+
+    } else if (entered == '0.0' && placeholder) {
+      entered = '0';
+
+    } else if (entered.slice(-2) == '.0' && placeholder) {
+      entered = entered.slice(0, -2);
+      placeholder = false;
+
+    } else if (entered.slice(-2, -1) == '.' && !placeholder) {
+      entered = entered.slice(0,-1) + '0';
+      placeholder = true;
+
+    } else {
+      entered = entered.slice(0, -1) || '0';
+    }
+
+    value.entered = entered;
+    update();
+    clearCurrencyCache();
+  };
+
+}]);
+
+'use strict';
+
+/**
+ * Replaces img tag with its svg content to allow for CSS styling of the svg.
+ */
+angular.module('owsWalletPluginClient.directives').directive('svg', ['$http', '$timeout', function($http, $timeout) {
+  return {
+    restrict: 'A',
+    link: function(scope, element, attrs) {
+      var imgId = attrs.id;
+      var imgClass = attrs.class;
+      var imgUrl = attrs.src || attrs.ngSrc;
+      var loadedUrl;
+      var svg;
+
+      element.addClass('ng-hide');
+      loadSVG(imgUrl);
+
+      scope.$watch(function() {
+          return element.attr('ng-src');
+      }, function(imgUrl) {
+        loadSVG(imgUrl);
+      });
+
+      scope.$on('$destroy', function() {
+        if (svg) {
+          svg.remove();
+        }
+      });
+
+      function loadSVG(imgUrl) {
+        // If the controller has not yet loaded an image then force load a blank image.
+        // This prevents a 404 fetch error on a bad image url (the expression).
+        if (imgUrl) {
+          // Don't load the same image more than once.
+          if (loadedUrl != imgUrl) {
+            loadedUrl = imgUrl;
+            $http.get(imgUrl).success(function(data, status) {
+              doLoad(data);
             });
           }
+        } else {
+          doLoad(blankSVG);
+        }
 
-          // Set custom attributes on the svg.
-          var elem;
-          var groups = svg.find('g');
-          for (var i = 0; i < groups.length; i++) {
-            elem = angular.element(groups[i]);
-            for (var j = 0; j < svgAttrs.length; j++) {
-              if (elem.attr(svgAttrs[j].key)) {
-                elem.attr(svgAttrs[j].key, svgAttrs[j].value);
-              }
-            }
-          }
-
-          // Remove invalid attributes.
-          svg = svg.removeAttr('xmlns:a');
-
-          // Replace img tag with svg.
-          element.replaceWith(svg);
-        });
-
-        scope.$on('$destroy', function() {
+        function doLoad(data) {
           if (svg) {
             svg.remove();
           }
-        });
-      }
-    };
-  });
-    
+
+          // Allow possible svg to be removed from DOM.
+          $timeout(function() {
+            svg = angular.element(data);
+            for (var i = svg.length - 1; i >= 0; i--) {
+              if (svg[i].constructor == SVGSVGElement) {
+                svg = angular.element(svg[i]);
+                break;
+              }
+            }
+
+            if (typeof imgId !== 'undefined') {
+              svg.attr('id', imgId);
+            }
+
+            if (typeof imgClass !== 'undefined') {
+              svg.attr('class', imgClass);
+            }
+
+            // Custom attributes
+            // Allows attribute values to be set dynamically (e.g., fill color).
+            //
+            // Get key value pairs for svg attrs.
+            var svgAttrs = [];
+            var pairs = attrs.svg.split(';');
+            for (var i = 0; i < pairs.length; i++) {
+              var a = pairs[i].split(':');
+              svgAttrs.push({
+                key: a[0],
+                value: a[1]
+              });
+            }
+
+            // Set custom attributes on the svg.
+            var elem;
+            var groups = svg.find('g');
+            for (var i = 0; i < groups.length; i++) {
+              elem = angular.element(groups[i]);
+              for (var j = 0; j < svgAttrs.length; j++) {
+                if (elem.attr(svgAttrs[j].key)) {
+                  elem.attr(svgAttrs[j].key, svgAttrs[j].value);
+                }
+              }
+            }
+
+            // Remove invalid attributes.
+            svg = svg.removeAttr('xmlns:a');
+
+            // Add svg after the img tag.
+            element.after(svg);
+          });
+        };
+
+        function blankSVG() {
+          return '\
+            <?xml version="1.0" encoding="UTF-8"?>\
+            <svg width="80px" height="80px" viewBox="0 0 80 80" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\
+              <!-- Generator: sketchtool 47.1 (45422) - http://www.bohemiancoding.com/sketch -->\
+              <title>img/icon-blank</title>\
+              <desc>Created with sketchtool.</desc>\
+              <defs></defs>\
+              <g id="Applet-images" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">\
+                <g id="img/icon-blank">\
+                  <g id="blank"></g>\
+                </g>\
+              </g>\
+            </svg>\
+          '
+        };
+      };
+    }
+  };
+}]);
+  
 'use strict';
 
 angular.module('owsWalletPluginClient.filters', []).filter('orderObjectBy', function() {
@@ -2234,7 +2537,7 @@ angular.module('owsWalletPluginClient.filters', []).filter('orderObjectBy', func
 
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('externalLinkService', function(nodeWebkitService, popupService, gettextCatalog, $window, $log, $timeout) {
+angular.module('owsWalletPluginClient.services').service('externalLinkService', ['nodeWebkitService', 'popupService', 'gettextCatalog', '$window', '$log', '$timeout', function(nodeWebkitService, popupService, gettextCatalog, $window, $log, $timeout) {
 
 	var root = {};
   var isNodeWebKit;
@@ -2276,7 +2579,7 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
   };
 
   return root;
-});
+}]);
 
 'use strict';
 
@@ -2306,7 +2609,7 @@ angular.module('owsWalletPluginClient.services').service('nodeWebkitService', fu
 
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('popupService', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
+angular.module('owsWalletPluginClient.services').service('popupService', ['$log', '$ionicPopup', '$timeout', 'gettextCatalog', 'lodash', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
 
   var isCordova;
   
@@ -2464,4 +2767,132 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
     }
   };
 
-});
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.services').factory('stringUtils', ['owsWalletPluginClient.api.Constants', function(
+  /* @namespace owsWalletPluginClient.api */ Constants) {
+
+	var root = {};
+
+	root.float = function(val) {
+		val = val + '';
+	  return parseFloat(val.replace(/,/g,''));
+	};
+
+  // Return values are all strings regardless of specified 'num' type.
+  //
+  // return {
+  //   input: unaltered value of 'num'
+  //   entered: value of 'num' with fractional part clamped by decimals
+  //   entered_u: clamped value of 'num' with units
+  //   localized: localized number, no units
+  //   localized_u: localized number with units
+  // }
+  root.format = function(num, currency, opts) {
+    var decimals = Constants.currencyMap(currency, 'decimals') || opts.decimals;
+    var symbol = Constants.currencyMap(currency, 'symbol');
+    var isCrypto = Constants.currencyMap(currency, 'type') == 'crypto';
+
+    var numStr = num + '';
+    var enteredNum = numStr;
+
+    opts = opts || {};
+    opts.kind = opts.kind || 'currency';
+    opts.language = opts.language || 'en';
+    opts.noZeroDecimals = opts.noZeroDecimals || false;
+    opts.symbol = opts.symbol || !isCrypto;
+
+    if (typeof num == 'string') {
+      // Make the string a positive number.
+      num = root.float(num);
+      numStr.replace('-', '');
+    }
+
+    // Use an english language string to detect presence of decimal.
+    var hasFraction = enteredNum.indexOf('.') >= 0;
+    if (opts.noZeroDecimals && !hasFraction) {
+      decimals = 0;
+    }
+
+    switch (opts.kind) {
+      case 'currency': return formatCurrency(); break;
+      case 'percent': return formatPercent(); break;
+    }
+
+    function formatCurrency() {
+      if (isCrypto) {
+        numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: 0, maximumFractionDigits: decimals});
+      } else {
+        numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+      }
+
+      // Clamp the number of fractional digits to the currency decimals.
+      var enteredNumD = enteredNum;
+      if (hasFraction) {
+        var fractionalPart = enteredNumD.substring(enteredNumD.indexOf('.')+1);
+        var significantPart = enteredNumD.substring(0, enteredNumD.indexOf('.'));
+        if (fractionalPart.length > decimals) {
+          enteredNumD = root.float(significantPart).toLocaleString(opts.language) + '.' + fractionalPart.slice(0, decimals);
+        }
+      } else {
+        enteredNumD = root.float(enteredNumD).toLocaleString(opts.language);
+      }
+
+      var entered_u_p = {
+        sign: (num < 0 ? '-' : ''),
+        symbol: (opts.symbol ? symbol : ''),
+        number: enteredNumD,
+        currency: (isCrypto && !opts.symbol ? ' ' + currency : '')
+      };
+
+      var localized_u_p = {
+        sign: (num < 0 ? '-' : ''),
+        symbol: (opts.symbol ? symbol : ''),
+        number: numStr,
+        currency: (isCrypto && !opts.symbol ? ' ' + currency : '')
+      };
+
+      return {
+        input: enteredNum,
+        entered: enteredNumD,
+        entered_u: entered_u_p.sign + entered_u_p.symbol + entered_u_p.number + entered_u_p.currency,
+        entered_u_p: entered_u_p,
+        localized: localized_u_p.sign + localized_u_p.number,
+        localized_u: localized_u_p.sign + localized_u_p.symbol + localized_u_p.number + localized_u_p.currency,
+        localized_u_p: localized_u_p
+      };
+    };
+
+    function formatPercent() {
+      numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+      return {
+        input: enteredNum,
+        entered: enteredNum,
+        entered_u: (num < 0 ? '-' : '') + enteredNum + '%',
+        localized: (num < 0 ? '-' : '') + numStr,
+        localized_u: (num < 0 ? '-' : '') + numStr + '%'
+      };
+    };
+  };
+
+  // Trim a string to n (25 default) chars max.
+  root.trim = function(str, opts) {
+    if (!str || str.length == 0) {
+      return;
+    }
+
+    opts = opts || {};
+    opts.n = opts.n || 25;
+
+    var pos = (opts.n - 3) / 2;
+
+    if (str.length > opts.n) {
+      str = str.slice(0, pos) + '...' + str.slice(-pos-1);
+    }
+    return str;
+  };
+
+	return root;
+}]);

@@ -1,0 +1,50 @@
+$v-keypad-bg:              none !default;
+$v-keypad-color:           #444455 !default;
+$v-keypad-digit-bg:        none !default;
+$v-keypad-digit-active-bg: rgba(255, 255, 255, 0.05) !default;
+$v-keypad-border-color:    rgba(255, 255, 255, 0.05) !default;
+
+#keypad {
+  .keypad {
+    background: $v-keypad-bg;
+    color: $v-keypad-color;
+    text-align: center;
+    font-size: 28px;
+    width: 100%;
+
+    @media(max-height: 480px) {
+      font-size: 12px;
+    }
+
+    .row {
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    .col {
+      line-height: 45px;
+    }
+
+    .digit {
+      cursor: pointer;
+      background: $v-keypad-digit-bg;
+      border-top: 1px solid $v-keypad-border-color;
+      border-left: 1px solid $v-keypad-border-color;
+
+      &:active {
+        background: $v-keypad-digit-active-bg;
+      }
+
+      svg {
+		    height: 30px;
+		    position: relative;
+		    top: 50%;
+		    transform: translateY(-50%);
+
+		    * {
+		    	fill: $v-keypad-color;
+		    }
+      }
+    }
+  }
+}

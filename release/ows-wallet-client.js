@@ -11584,6 +11584,9 @@ angular.module("gettext").factory("gettextPlurals", function () {
 	}
 })();
 
+/* big.js v5.1.2 https://github.com/MikeMcl/big.js/LICENCE */
+!function(e){"use strict";function r(){function e(n){var i=this;return i instanceof e?(n instanceof e?(i.s=n.s,i.e=n.e,i.c=n.c.slice()):t(i,n),void(i.constructor=e)):n===m?r():new e(n)}return e.prototype=v,e.DP=s,e.RM=f,e.NE=h,e.PE=l,e.version="5.0.2",e}function t(e,r){var t,n,i;if(0===r&&0>1/r)r="-0";else if(!E.test(r+=""))throw Error(g+"number");for(e.s="-"==r.charAt(0)?(r=r.slice(1),-1):1,(t=r.indexOf("."))>-1&&(r=r.replace(".","")),(n=r.search(/e/i))>0?(0>t&&(t=n),t+=+r.slice(n+1),r=r.substring(0,n)):0>t&&(t=r.length),i=r.length,n=0;i>n&&"0"==r.charAt(n);)++n;if(n==i)e.c=[e.e=0];else{for(;i>0&&"0"==r.charAt(--i););for(e.e=t-n-1,e.c=[],t=0;i>=n;)e.c[t++]=+r.charAt(n++)}return e}function n(e,r,t,n){var i=e.c,o=e.e+r+1;if(o<i.length){if(1===t)n=i[o]>=5;else if(2===t)n=i[o]>5||5==i[o]&&(n||0>o||i[o+1]!==m||1&i[o-1]);else if(3===t)n=n||i[o]!==m||0>o;else if(n=!1,0!==t)throw Error(w);if(1>o)i.length=1,n?(e.e=-r,i[0]=1):i[0]=e.e=0;else{if(i.length=o--,n)for(;++i[o]>9;)i[o]=0,o--||(++e.e,i.unshift(1));for(o=i.length;!i[--o];)i.pop()}}else if(0>t||t>3||t!==~~t)throw Error(w);return e}function i(e,r,t,i){var o,s,f=e.constructor,u=!e.c[0];if(t!==m){if(t!==~~t||(3==r)>t||t>c)throw Error(3==r?g+"precision":p);for(e=new f(e),t=i-e.e,e.c.length>++i&&n(e,t,f.RM),2==r&&(i=e.e+t+1);e.c.length<i;)e.c.push(0)}if(o=e.e,s=e.c.join(""),t=s.length,2!=r&&(1==r||3==r&&o>=i||o<=f.NE||o>=f.PE))s=s.charAt(0)+(t>1?"."+s.slice(1):"")+(0>o?"e":"e+")+o;else if(0>o){for(;++o;)s="0"+s;s="0."+s}else if(o>0)if(++o>t)for(o-=t;o--;)s+="0";else t>o&&(s=s.slice(0,o)+"."+s.slice(o));else t>1&&(s=s.charAt(0)+"."+s.slice(1));return e.s<0&&(!u||4==r)?"-"+s:s}var o,s=20,f=1,c=1e6,u=1e6,h=-7,l=21,a="[big.js] ",g=a+"Invalid ",p=g+"decimal places",w=g+"rounding mode",d=a+"Division by zero",v={},m=void 0,E=/^-?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;v.abs=function(){var e=new this.constructor(this);return e.s=1,e},v.cmp=function(e){var r,t=this,n=t.c,i=(e=new t.constructor(e)).c,o=t.s,s=e.s,f=t.e,c=e.e;if(!n[0]||!i[0])return n[0]?o:i[0]?-s:0;if(o!=s)return o;if(r=0>o,f!=c)return f>c^r?1:-1;for(s=(f=n.length)<(c=i.length)?f:c,o=-1;++o<s;)if(n[o]!=i[o])return n[o]>i[o]^r?1:-1;return f==c?0:f>c^r?1:-1},v.div=function(e){var r=this,t=r.constructor,i=r.c,o=(e=new t(e)).c,s=r.s==e.s?1:-1,f=t.DP;if(f!==~~f||0>f||f>c)throw Error(p);if(!o[0])throw Error(d);if(!i[0])return new t(0*s);var u,h,l,a,g,w=o.slice(),v=u=o.length,E=i.length,M=i.slice(0,u),P=M.length,b=e,D=b.c=[],R=0,A=f+(b.e=r.e-e.e)+1;for(b.s=s,s=0>A?0:A,w.unshift(0);P++<u;)M.push(0);do{for(l=0;10>l;l++){if(u!=(P=M.length))a=u>P?1:-1;else for(g=-1,a=0;++g<u;)if(o[g]!=M[g]){a=o[g]>M[g]?1:-1;break}if(!(0>a))break;for(h=P==u?o:w;P;){if(M[--P]<h[P]){for(g=P;g&&!M[--g];)M[g]=9;--M[g],M[P]+=10}M[P]-=h[P]}for(;!M[0];)M.shift()}D[R++]=a?l:++l,M[0]&&a?M[P]=i[v]||0:M=[i[v]]}while((v++<E||M[0]!==m)&&s--);return D[0]||1==R||(D.shift(),b.e--),R>A&&n(b,f,t.RM,M[0]!==m),b},v.eq=function(e){return!this.cmp(e)},v.gt=function(e){return this.cmp(e)>0},v.gte=function(e){return this.cmp(e)>-1},v.lt=function(e){return this.cmp(e)<0},v.lte=function(e){return this.cmp(e)<1},v.minus=v.sub=function(e){var r,t,n,i,o=this,s=o.constructor,f=o.s,c=(e=new s(e)).s;if(f!=c)return e.s=-c,o.plus(e);var u=o.c.slice(),h=o.e,l=e.c,a=e.e;if(!u[0]||!l[0])return l[0]?(e.s=-c,e):new s(u[0]?o:0);if(f=h-a){for((i=0>f)?(f=-f,n=u):(a=h,n=l),n.reverse(),c=f;c--;)n.push(0);n.reverse()}else for(t=((i=u.length<l.length)?u:l).length,f=c=0;t>c;c++)if(u[c]!=l[c]){i=u[c]<l[c];break}if(i&&(n=u,u=l,l=n,e.s=-e.s),(c=(t=l.length)-(r=u.length))>0)for(;c--;)u[r++]=0;for(c=r;t>f;){if(u[--t]<l[t]){for(r=t;r&&!u[--r];)u[r]=9;--u[r],u[t]+=10}u[t]-=l[t]}for(;0===u[--c];)u.pop();for(;0===u[0];)u.shift(),--a;return u[0]||(e.s=1,u=[a=0]),e.c=u,e.e=a,e},v.mod=function(e){var r,t=this,n=t.constructor,i=t.s,o=(e=new n(e)).s;if(!e.c[0])throw Error(d);return t.s=e.s=1,r=1==e.cmp(t),t.s=i,e.s=o,r?new n(t):(i=n.DP,o=n.RM,n.DP=n.RM=0,t=t.div(e),n.DP=i,n.RM=o,this.minus(t.times(e)))},v.plus=v.add=function(e){var r,t=this,n=t.constructor,i=t.s,o=(e=new n(e)).s;if(i!=o)return e.s=-o,t.minus(e);var s=t.e,f=t.c,c=e.e,u=e.c;if(!f[0]||!u[0])return u[0]?e:new n(f[0]?t:0*i);if(f=f.slice(),i=s-c){for(i>0?(c=s,r=u):(i=-i,r=f),r.reverse();i--;)r.push(0);r.reverse()}for(f.length-u.length<0&&(r=u,u=f,f=r),i=u.length,o=0;i;f[i]%=10)o=(f[--i]=f[i]+u[i]+o)/10|0;for(o&&(f.unshift(o),++c),i=f.length;0===f[--i];)f.pop();return e.c=f,e.e=c,e},v.pow=function(e){var r=this,t=new r.constructor(1),n=t,i=0>e;if(e!==~~e||-u>e||e>u)throw Error(g+"exponent");for(i&&(e=-e);1&e&&(n=n.times(r)),e>>=1,e;)r=r.times(r);return i?t.div(n):n},v.round=function(e,r){var t=this.constructor;if(e===m)e=0;else if(e!==~~e||0>e||e>c)throw Error(p);return n(new t(this),e,r===m?t.RM:r)},v.sqrt=function(){var e,r,t,i=this,o=i.constructor,s=i.s,f=i.e,c=new o(.5);if(!i.c[0])return new o(i);if(0>s)throw Error(a+"No square root");s=Math.sqrt(i.toString()),0===s||s===1/0?(r=i.c.join(""),r.length+f&1||(r+="0"),e=new o(Math.sqrt(r).toString()),e.e=((f+1)/2|0)-(0>f||1&f)):e=new o(s.toString()),f=e.e+(o.DP+=4);do t=e,e=c.times(t.plus(i.div(t)));while(t.c.slice(0,f).join("")!==e.c.slice(0,f).join(""));return n(e,o.DP-=4,o.RM)},v.times=v.mul=function(e){var r,t=this,n=t.constructor,i=t.c,o=(e=new n(e)).c,s=i.length,f=o.length,c=t.e,u=e.e;if(e.s=t.s==e.s?1:-1,!i[0]||!o[0])return new n(0*e.s);for(e.e=c+u,f>s&&(r=i,i=o,o=r,u=s,s=f,f=u),r=new Array(u=s+f);u--;)r[u]=0;for(c=f;c--;){for(f=0,u=s+c;u>c;)f=r[u]+o[c]*i[u-c-1]+f,r[u--]=f%10,f=f/10|0;r[u]=(r[u]+f)%10}for(f?++e.e:r.shift(),c=r.length;!r[--c];)r.pop();return e.c=r,e},v.toExponential=function(e){return i(this,1,e,e)},v.toFixed=function(e){return i(this,2,e,this.e+e)},v.toPrecision=function(e){return i(this,3,e,e-1)},v.toString=function(){return i(this)},v.valueOf=v.toJSON=function(){return i(this,4)},o=r(),o["default"]=o.Big=o,"function"==typeof define&&define.amd?define(function(){return o}):"undefined"!=typeof module&&module.exports?module.exports=o:e.Big=o}(this);
+//# sourceMappingURL=doc/big.js.map
 /**
  * @license
  * lodash 4.6.1 (Custom Build) <https://lodash.com/>
@@ -25206,7 +25209,7 @@ angular.module('ngLodash', []).constant('lodash', null).config([
  *
  * The following calls are equivalent.
  *
- *   owswallet.Plugin.readt(function(){});
+ *   owswallet.Plugin.ready(function(){});
  *   owswallet.Plugin.openForBusiness(null, function(){});
  *
  *
@@ -25299,7 +25302,7 @@ var owswallet = {};
     },
 
     onEvent: function(name, cb) {
-      // Event callbacks are organized by event name. The call must specify an event name in order to recieve an event, see notify(event).
+      // Event callbacks are organized by event name. The call must specify an event name in order to receive an event, see notify(event).
       eventCallbacks[name] = eventCallbacks[name] || [];
       eventCallbacks[name].push({
         callback: cb
@@ -25307,7 +25310,10 @@ var owswallet = {};
     },
 
     notify: function(event) {
-      var indexes = [];
+      if (!eventCallbacks[event.name]) {
+        return;
+      }
+
       for (var x = 0; x < eventCallbacks[event.name].length; x++) {
         // Fire off all the event callbacks.
         eventCallbacks[event.name][x].callback(event);
@@ -25445,6 +25451,7 @@ var modules = [
 	'owsWalletPluginClient.impl.apiHandlers',
 	'owsWalletPluginClient.impl.services',
 	'owsWalletPluginClient.api',
+	'owsWalletPluginClient.controllers',
 	'owsWalletPluginClient.directives',
 	'owsWalletPluginClient.filters',
 	'owsWalletPluginClient.services'
@@ -25456,6 +25463,7 @@ angular.module('owsWalletPluginClient.impl.api', []);
 angular.module('owsWalletPluginClient.impl.apiHandlers', []);
 angular.module('owsWalletPluginClient.impl.services', []);
 angular.module('owsWalletPluginClient.api', []).namespace();
+angular.module('owsWalletPluginClient.controllers', []);
 angular.module('owsWalletPluginClient.directives', []);
 angular.module('owsWalletPluginClient.filters', []);
 angular.module('owsWalletPluginClient.services', []);
@@ -25640,6 +25648,73 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', functio
 
 'use strict';
 
+angular.module('owsWalletPluginClient.api').factory('BN', function () {
+
+  /**
+   * BN
+   *
+   * Provides a wrapper for big.js.
+   */
+
+  const zero = new Big('0');
+  const one = new Big('1');
+
+  /**
+   * Constructor.
+   * @constructor
+   */
+  function BN() {
+    throw new Error('BN is a static class');
+  };
+
+  BN.ensure = function (value) {
+    if (!(value instanceof Big)) {
+      if (typeof value == 'string') {
+        value = value.replace(/,/g, '');
+      }
+      return BN.make(value);
+    } else {
+      return value;
+    }
+  };
+
+  BN.make = function (value) {
+    return new Big(value);
+  };
+
+  BN.add = function (a, b) {
+    return BN.ensure(a).plus(BN.ensure(b));
+  };
+
+  BN.minus = function (a, b) {
+    return BN.ensure(a).minus(BN.ensure(b));
+  };
+
+  BN.multiply = function (a, b) {
+    return BN.ensure(a).times(BN.ensure(b));
+  };
+
+  BN.div = function (a, b) {
+    return BN.ensure(a).div(BN.ensure(b));
+  };
+
+  BN.sum = function (values) {
+    return values.reduce(function (current, value) {
+      return BN.ensure(current).plus(BN.ensure(value));
+    }, zero);
+  };
+
+  BN.product = function (values) {
+      return values.reduce(function (current, value) {
+          return BN.ensure(current).times(BN.ensure(value));
+      }, one);
+  };
+
+  return BN;
+});
+
+'use strict';
+
 angular.module('owsWalletPluginClient.api').factory('Constants', function () {
 
   /**
@@ -25671,181 +25746,185 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
     return currencyMap[code][property];
   };
 
-  var currencyMap = {
-    'AED': { symbol: 'د.إ', decimals: 2 },
-    'AFN': { symbol: '؋', decimals: 2 },
-    'ALL': { symbol: 'L', decimals: 2 },
-    'AMD': { symbol: '֏', decimals: 2 },
-    'ANG': { symbol: 'ƒ', decimals: 2 },
-    'AOA': { symbol: 'Kz', decimals: 2 },
-    'ARS': { symbol: '$', decimals: 2 },
-    'AUD': { symbol: '$', decimals: 2 },
-    'AWG': { symbol: 'ƒ', decimals: 2 },
-    'AZN': { symbol: '₼', decimals: 2 },
-    'BAM': { symbol: 'KM', decimals: 2 },
-    'BBD': { symbol: '$', decimals: 2 },
-    'BCH': { symbol: '฿', decimals: 8 },
-    'BDT': { symbol: '৳', decimals: 2 },
-    'BGN': { symbol: 'лв', decimals: 2 },
-    'BHD': { symbol: '.د.ب', decimals: 2 },
-    'BIF': { symbol: 'FBu', decimals: 2 },
-    'BMD': { symbol: '$', decimals: 2 },
-    'BND': { symbol: '$', decimals: 2 },
-    'BOB': { symbol: '$b', decimals: 2 },
-    'BRL': { symbol: 'R$', decimals: 2 },
-    'BSD': { symbol: '$', decimals: 2 },
-    'BTC': { symbol: '฿', decimals: 8 },
-    'BTN': { symbol: 'Nu.', decimals: 2 },
-    'BWP': { symbol: 'P', decimals: 2 },
-    'BYR': { symbol: 'Br', decimals: 2 },
-    'BYN': { symbol: 'Br', decimals: 2 },
-    'BZD': { symbol: 'BZ$', decimals: 2 },
-    'CAD': { symbol: '$', decimals: 2 },
-    'CDF': { symbol: 'FC', decimals: 2 },
-    'CHF': { symbol: 'CHF', decimals: 2 },
-    'CLP': { symbol: '$', decimals: 2 },
-    'CNY': { symbol: '¥', decimals: 2 },
-    'COP': { symbol: '$', decimals: 2 },
-    'CRC': { symbol: '₡', decimals: 2 },
-    'CUC': { symbol: '$', decimals: 2 },
-    'CUP': { symbol: '₱', decimals: 2 },
-    'CVE': { symbol: '$', decimals: 2 },
-    'CZK': { symbol: 'Kč', decimals: 2 },
-    'DJF': { symbol: 'Fdj', decimals: 2 },
-    'DKK': { symbol: 'kr', decimals: 2 },
-    'DOP': { symbol: 'RD$', decimals: 2 },
-    'DZD': { symbol: 'دج', decimals: 2 },
-    'EEK': { symbol: 'kr', decimals: 2 },
-    'EGP': { symbol: '£', decimals: 2 },
-    'ERN': { symbol: 'Nfk', decimals: 2 },
-    'ETB': { symbol: 'Br', decimals: 2 },
-    'ETH': { symbol: 'Ξ', decimals: 2 },
-    'EUR': { symbol: '€', decimals: 2 },
-    'FJD': { symbol: '$', decimals: 2 },
-    'FKP': { symbol: '£', decimals: 2 },
-    'GBP': { symbol: '£', decimals: 2 },
-    'GEL': { symbol: '₾', decimals: 2 },
-    'GGP': { symbol: '£', decimals: 2 },
-    'GHC': { symbol: '₵', decimals: 2 },
-    'GHS': { symbol: 'GH₵', decimals: 2 },
-    'GIP': { symbol: '£', decimals: 2 },
-    'GMD': { symbol: 'D', decimals: 2 },
-    'GNF': { symbol: 'FG', decimals: 2 },
-    'GTQ': { symbol: 'Q', decimals: 2 },
-    'GYD': { symbol: '$', decimals: 2 },
-    'HKD': { symbol: '$', decimals: 2 },
-    'HNL': { symbol: 'L', decimals: 2 },
-    'HRK': { symbol: 'kn', decimals: 2 },
-    'HTG': { symbol: 'G', decimals: 2 },
-    'HUF': { symbol: 'Ft', decimals: 2 },
-    'IDR': { symbol: 'Rp', decimals: 2 },
-    'ILS': { symbol: '₪', decimals: 2 },
-    'IMP': { symbol: '£', decimals: 2 },
-    'INR': { symbol: '₹', decimals: 2 },
-    'IQD': { symbol: 'ع.د', decimals: 2 },
-    'IRR': { symbol: '﷼', decimals: 2 },
-    'ISK': { symbol: 'kr', decimals: 2 },
-    'JEP': { symbol: '£', decimals: 2 },
-    'JMD': { symbol: 'J$', decimals: 2 },
-    'JOD': { symbol: 'JD', decimals: 2 },
-    'JPY': { symbol: '¥', decimals: 2 },
-    'KES': { symbol: 'KSh', decimals: 2 },
-    'KGS': { symbol: 'лв', decimals: 2 },
-    'KHR': { symbol: '៛', decimals: 2 },
-    'KMF': { symbol: 'CF', decimals: 2 },
-    'KPW': { symbol: '₩', decimals: 2 },
-    'KRW': { symbol: '₩', decimals: 2 },
-    'KWD': { symbol: 'KD', decimals: 2 },
-    'KYD': { symbol: '$', decimals: 2 },
-    'KZT': { symbol: 'лв', decimals: 2 },
-    'LAK': { symbol: '₭', decimals: 2 },
-    'LBP': { symbol: '£', decimals: 2 },
-    'LKR': { symbol: '₨', decimals: 2 },
-    'LRD': { symbol: '$', decimals: 2 },
-    'LSL': { symbol: 'M', decimals: 2 },
-    'LTC': { symbol: 'Ł', decimals: 2 },
-    'LTL': { symbol: 'Lt', decimals: 2 },
-    'LVL': { symbol: 'Ls', decimals: 2 },
-    'LYD': { symbol: 'LD', decimals: 2 },
-    'MAD': { symbol: 'MAD', decimals: 2 },
-    'MDL': { symbol: 'lei', decimals: 2 },
-    'MGA': { symbol: 'Ar', decimals: 2 },
-    'MKD': { symbol: 'ден', decimals: 2 },
-    'MMK': { symbol: 'K', decimals: 2 },
-    'MNT': { symbol: '₮', decimals: 2 },
-    'MOP': { symbol: 'MOP$', decimals: 2 },
-    'MRO': { symbol: 'UM', decimals: 2 },
-    'MRU': { symbol: 'UM', decimals: 2 },
-    'MUR': { symbol: '₨', decimals: 2 },
-    'MVR': { symbol: 'Rf', decimals: 2 },
-    'MWK': { symbol: 'MK', decimals: 2 },
-    'MXN': { symbol: '$', decimals: 2 },
-    'MYR': { symbol: 'RM', decimals: 2 },
-    'MZN': { symbol: 'MT', decimals: 2 },
-    'NAD': { symbol: '$', decimals: 2 },
-    'NGN': { symbol: '₦', decimals: 2 },
-    'NIO': { symbol: 'C$', decimals: 2 },
-    'NOK': { symbol: 'kr', decimals: 2 },
-    'NPR': { symbol: '₨', decimals: 2 },
-    'NZD': { symbol: '$', decimals: 2 },
-    'OMR': { symbol: '﷼', decimals: 2 },
-    'PAB': { symbol: 'B/.', decimals: 2 },
-    'PEN': { symbol: 'S/.', decimals: 2 },
-    'PGK': { symbol: 'K', decimals: 2 },
-    'PHP': { symbol: '₱', decimals: 2 },
-    'PKR': { symbol: '₨', decimals: 2 },
-    'PLN': { symbol: 'zł', decimals: 2 },
-    'PYG': { symbol: 'Gs', decimals: 2 },
-    'QAR': { symbol: '﷼', decimals: 2 },
-    'RMB': { symbol: '￥', decimals: 2 },
-    'RON': { symbol: 'lei', decimals: 2 },
-    'RSD': { symbol: 'Дин.', decimals: 2 },
-    'RUB': { symbol: '₽', decimals: 2 },
-    'RWF': { symbol: 'R₣', decimals: 2 },
-    'SAR': { symbol: '﷼', decimals: 2 },
-    'SBD': { symbol: '$', decimals: 2 },
-    'SCR': { symbol: '₨', decimals: 2 },
-    'SDG': { symbol: 'ج.س.', decimals: 2 },
-    'SEK': { symbol: 'kr', decimals: 2 },
-    'SGD': { symbol: '$', decimals: 2 },
-    'SHP': { symbol: '£', decimals: 2 },
-    'SLL': { symbol: 'Le', decimals: 2 },
-    'SOS': { symbol: 'S', decimals: 2 },
-    'SRD': { symbol: '$', decimals: 2 },
-    'SSP': { symbol: '£', decimals: 2 },
-    'STD': { symbol: 'Db', decimals: 2 },
-    'STN': { symbol: 'Db', decimals: 2 },
-    'SVC': { symbol: '$', decimals: 2 },
-    'SYP': { symbol: '£', decimals: 2 },
-    'SZL': { symbol: 'E', decimals: 2 },
-    'THB': { symbol: '฿', decimals: 2 },
-    'TJS': { symbol: 'SM', decimals: 2 },
-    'TMT': { symbol: 'T', decimals: 2 },
-    'TND': { symbol: 'د.ت', decimals: 2 },
-    'TOP': { symbol: 'T$', decimals: 2 },
-    'TRL': { symbol: '₤', decimals: 2 },
-    'TRY': { symbol: '₺', decimals: 2 },
-    'TTD': { symbol: 'TT$', decimals: 2 },
-    'TVD': { symbol: '$', decimals: 2 },
-    'TWD': { symbol: 'NT$', decimals: 2 },
-    'TZS': { symbol: 'TSh', decimals: 2 },
-    'UAH': { symbol: '₴', decimals: 2 },
-    'UGX': { symbol: 'USh', decimals: 2 },
-    'USD': { symbol: '$', decimals: 2 },
-    'UYU': { symbol: '$U', decimals: 2 },
-    'UZS': { symbol: 'лв', decimals: 2 },
-    'VEF': { symbol: 'Bs', decimals: 2 },
-    'VND': { symbol: '₫', decimals: 2 },
-    'VUV': { symbol: 'VT', decimals: 2 },
-    'WST': { symbol: 'WS$', decimals: 2 },
-    'XAF': { symbol: 'FCFA', decimals: 2 },
-    'XBT': { symbol: 'Ƀ', decimals: 2 },
-    'XCD': { symbol: '$', decimals: 2 },
-    'XOF': { symbol: 'CFA', decimals: 2 },
-    'XPF': { symbol: '₣', decimals: 2 },
-    'YER': { symbol: '﷼', decimals: 2 },
-    'ZAR': { symbol: 'R', decimals: 2 },
-    'ZWD': { symbol: 'Z$', decimals: 2}
+  Constants.isCryptoCurrency = function(currencyCode) {
+    return Constants.currencyMap(currencyCode, 'type') == 'crypto';
+  };
+
+  const currencyMap = {
+    'AED': { symbol: 'د.إ', decimals: 2, type: 'fiat' },
+    'AFN': { symbol: '؋', decimals: 2, type: 'fiat' },
+    'ALL': { symbol: 'L', decimals: 2, type: 'fiat' },
+    'AMD': { symbol: '֏', decimals: 2, type: 'fiat' },
+    'ANG': { symbol: 'ƒ', decimals: 2, type: 'fiat' },
+    'AOA': { symbol: 'Kz', decimals: 2, type: 'fiat' },
+    'ARS': { symbol: '$', decimals: 2, type: 'fiat' },
+    'AUD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'AWG': { symbol: 'ƒ', decimals: 2, type: 'fiat' },
+    'AZN': { symbol: '₼', decimals: 2, type: 'fiat' },
+    'BAM': { symbol: 'KM', decimals: 2, type: 'fiat' },
+    'BBD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'BCH': { symbol: '฿', decimals: 8, type: 'crypto' },
+    'BDT': { symbol: '৳', decimals: 2, type: 'fiat' },
+    'BGN': { symbol: 'лв', decimals: 2, type: 'fiat' },
+    'BHD': { symbol: '.د.ب', decimals: 2, type: 'fiat' },
+    'BIF': { symbol: 'FBu', decimals: 2, type: 'fiat' },
+    'BMD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'BND': { symbol: '$', decimals: 2, type: 'fiat' },
+    'BOB': { symbol: '$b', decimals: 2, type: 'fiat' },
+    'BRL': { symbol: 'R$', decimals: 2, type: 'fiat' },
+    'BSD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'BTC': { symbol: '฿', decimals: 8, type: 'crypto' },
+    'BTN': { symbol: 'Nu.', decimals: 2, type: 'fiat' },
+    'BWP': { symbol: 'P', decimals: 2, type: 'fiat' },
+    'BYR': { symbol: 'Br', decimals: 2, type: 'fiat' },
+    'BYN': { symbol: 'Br', decimals: 2, type: 'fiat' },
+    'BZD': { symbol: 'BZ$', decimals: 2, type: 'fiat' },
+    'CAD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'CDF': { symbol: 'FC', decimals: 2, type: 'fiat' },
+    'CHF': { symbol: 'CHF', decimals: 2, type: 'fiat' },
+    'CLP': { symbol: '$', decimals: 2, type: 'fiat' },
+    'CNY': { symbol: '¥', decimals: 2, type: 'fiat' },
+    'COP': { symbol: '$', decimals: 2, type: 'fiat' },
+    'CRC': { symbol: '₡', decimals: 2, type: 'fiat' },
+    'CUC': { symbol: '$', decimals: 2, type: 'fiat' },
+    'CUP': { symbol: '₱', decimals: 2, type: 'fiat' },
+    'CVE': { symbol: '$', decimals: 2, type: 'fiat' },
+    'CZK': { symbol: 'Kč', decimals: 2, type: 'fiat' },
+    'DJF': { symbol: 'Fdj', decimals: 2, type: 'fiat' },
+    'DKK': { symbol: 'kr', decimals: 2, type: 'fiat' },
+    'DOP': { symbol: 'RD$', decimals: 2, type: 'fiat' },
+    'DZD': { symbol: 'دج', decimals: 2, type: 'fiat' },
+    'EEK': { symbol: 'kr', decimals: 2, type: 'fiat' },
+    'EGP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'ERN': { symbol: 'Nfk', decimals: 2, type: 'fiat' },
+    'ETB': { symbol: 'Br', decimals: 2, type: 'fiat' },
+    'ETH': { symbol: 'Ξ', decimals: 2, type: 'crypto' },
+    'EUR': { symbol: '€', decimals: 2, type: 'fiat' },
+    'FJD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'FKP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'GBP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'GEL': { symbol: '₾', decimals: 2, type: 'fiat' },
+    'GGP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'GHC': { symbol: '₵', decimals: 2, type: 'fiat' },
+    'GHS': { symbol: 'GH₵', decimals: 2, type: 'fiat' },
+    'GIP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'GMD': { symbol: 'D', decimals: 2, type: 'fiat' },
+    'GNF': { symbol: 'FG', decimals: 2, type: 'fiat' },
+    'GTQ': { symbol: 'Q', decimals: 2, type: 'fiat' },
+    'GYD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'HKD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'HNL': { symbol: 'L', decimals: 2, type: 'fiat' },
+    'HRK': { symbol: 'kn', decimals: 2, type: 'fiat' },
+    'HTG': { symbol: 'G', decimals: 2, type: 'fiat' },
+    'HUF': { symbol: 'Ft', decimals: 2, type: 'fiat' },
+    'IDR': { symbol: 'Rp', decimals: 2, type: 'fiat' },
+    'ILS': { symbol: '₪', decimals: 2, type: 'fiat' },
+    'IMP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'INR': { symbol: '₹', decimals: 2, type: 'fiat' },
+    'IQD': { symbol: 'ع.د', decimals: 2, type: 'fiat' },
+    'IRR': { symbol: '﷼', decimals: 2, type: 'fiat' },
+    'ISK': { symbol: 'kr', decimals: 2, type: 'fiat' },
+    'JEP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'JMD': { symbol: 'J$', decimals: 2, type: 'fiat' },
+    'JOD': { symbol: 'JD', decimals: 2, type: 'fiat' },
+    'JPY': { symbol: '¥', decimals: 2, type: 'fiat' },
+    'KES': { symbol: 'KSh', decimals: 2, type: 'fiat' },
+    'KGS': { symbol: 'лв', decimals: 2, type: 'fiat' },
+    'KHR': { symbol: '៛', decimals: 2, type: 'fiat' },
+    'KMF': { symbol: 'CF', decimals: 2, type: 'fiat' },
+    'KPW': { symbol: '₩', decimals: 2, type: 'fiat' },
+    'KRW': { symbol: '₩', decimals: 2, type: 'fiat' },
+    'KWD': { symbol: 'KD', decimals: 2, type: 'fiat' },
+    'KYD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'KZT': { symbol: 'лв', decimals: 2, type: 'fiat' },
+    'LAK': { symbol: '₭', decimals: 2, type: 'fiat' },
+    'LBP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'LKR': { symbol: '₨', decimals: 2, type: 'fiat' },
+    'LRD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'LSL': { symbol: 'M', decimals: 2, type: 'fiat' },
+    'LTC': { symbol: 'Ł', decimals: 2, type: 'crypto' },
+    'LTL': { symbol: 'Lt', decimals: 2, type: 'fiat' },
+    'LVL': { symbol: 'Ls', decimals: 2, type: 'fiat' },
+    'LYD': { symbol: 'LD', decimals: 2, type: 'fiat' },
+    'MAD': { symbol: 'MAD', decimals: 2, type: 'fiat' },
+    'MDL': { symbol: 'lei', decimals: 2, type: 'fiat' },
+    'MGA': { symbol: 'Ar', decimals: 2, type: 'fiat' },
+    'MKD': { symbol: 'ден', decimals: 2, type: 'fiat' },
+    'MMK': { symbol: 'K', decimals: 2, type: 'fiat' },
+    'MNT': { symbol: '₮', decimals: 2, type: 'fiat' },
+    'MOP': { symbol: 'MOP$', decimals: 2, type: 'fiat' },
+    'MRO': { symbol: 'UM', decimals: 2, type: 'fiat' },
+    'MRU': { symbol: 'UM', decimals: 2, type: 'fiat' },
+    'MUR': { symbol: '₨', decimals: 2, type: 'fiat' },
+    'MVR': { symbol: 'Rf', decimals: 2, type: 'fiat' },
+    'MWK': { symbol: 'MK', decimals: 2, type: 'fiat' },
+    'MXN': { symbol: '$', decimals: 2, type: 'fiat' },
+    'MYR': { symbol: 'RM', decimals: 2, type: 'fiat' },
+    'MZN': { symbol: 'MT', decimals: 2, type: 'fiat' },
+    'NAD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'NGN': { symbol: '₦', decimals: 2, type: 'fiat' },
+    'NIO': { symbol: 'C$', decimals: 2, type: 'fiat' },
+    'NOK': { symbol: 'kr', decimals: 2, type: 'fiat' },
+    'NPR': { symbol: '₨', decimals: 2, type: 'fiat' },
+    'NZD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'OMR': { symbol: '﷼', decimals: 2, type: 'fiat' },
+    'PAB': { symbol: 'B/.', decimals: 2, type: 'fiat' },
+    'PEN': { symbol: 'S/.', decimals: 2, type: 'fiat' },
+    'PGK': { symbol: 'K', decimals: 2, type: 'fiat' },
+    'PHP': { symbol: '₱', decimals: 2, type: 'fiat' },
+    'PKR': { symbol: '₨', decimals: 2, type: 'fiat' },
+    'PLN': { symbol: 'zł', decimals: 2, type: 'fiat' },
+    'PYG': { symbol: 'Gs', decimals: 2, type: 'fiat' },
+    'QAR': { symbol: '﷼', decimals: 2, type: 'fiat' },
+    'RMB': { symbol: '￥', decimals: 2, type: 'fiat' },
+    'RON': { symbol: 'lei', decimals: 2, type: 'fiat' },
+    'RSD': { symbol: 'Дин.', decimals: 2, type: 'fiat' },
+    'RUB': { symbol: '₽', decimals: 2, type: 'fiat' },
+    'RWF': { symbol: 'R₣', decimals: 2, type: 'fiat' },
+    'SAR': { symbol: '﷼', decimals: 2, type: 'fiat' },
+    'SBD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'SCR': { symbol: '₨', decimals: 2, type: 'fiat' },
+    'SDG': { symbol: 'ج.س.', decimals: 2, type: 'fiat' },
+    'SEK': { symbol: 'kr', decimals: 2, type: 'fiat' },
+    'SGD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'SHP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'SLL': { symbol: 'Le', decimals: 2, type: 'fiat' },
+    'SOS': { symbol: 'S', decimals: 2, type: 'fiat' },
+    'SRD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'SSP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'STD': { symbol: 'Db', decimals: 2, type: 'fiat' },
+    'STN': { symbol: 'Db', decimals: 2, type: 'fiat' },
+    'SVC': { symbol: '$', decimals: 2, type: 'fiat' },
+    'SYP': { symbol: '£', decimals: 2, type: 'fiat' },
+    'SZL': { symbol: 'E', decimals: 2, type: 'fiat' },
+    'THB': { symbol: '฿', decimals: 2, type: 'fiat' },
+    'TJS': { symbol: 'SM', decimals: 2, type: 'fiat' },
+    'TMT': { symbol: 'T', decimals: 2, type: 'fiat' },
+    'TND': { symbol: 'د.ت', decimals: 2, type: 'fiat' },
+    'TOP': { symbol: 'T$', decimals: 2, type: 'fiat' },
+    'TRL': { symbol: '₤', decimals: 2, type: 'fiat' },
+    'TRY': { symbol: '₺', decimals: 2, type: 'fiat' },
+    'TTD': { symbol: 'TT$', decimals: 2, type: 'fiat' },
+    'TVD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'TWD': { symbol: 'NT$', decimals: 2, type: 'fiat' },
+    'TZS': { symbol: 'TSh', decimals: 2, type: 'fiat' },
+    'UAH': { symbol: '₴', decimals: 2, type: 'fiat' },
+    'UGX': { symbol: 'USh', decimals: 2, type: 'fiat' },
+    'USD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'UYU': { symbol: '$U', decimals: 2, type: 'fiat' },
+    'UZS': { symbol: 'лв', decimals: 2, type: 'fiat' },
+    'VEF': { symbol: 'Bs', decimals: 2, type: 'fiat' },
+    'VND': { symbol: '₫', decimals: 2, type: 'fiat' },
+    'VUV': { symbol: 'VT', decimals: 2, type: 'fiat' },
+    'WST': { symbol: 'WS$', decimals: 2, type: 'fiat' },
+    'XAF': { symbol: 'FCFA', decimals: 2, type: 'fiat' },
+    'XBT': { symbol: 'Ƀ', decimals: 2, type: 'fiat' },
+    'XCD': { symbol: '$', decimals: 2, type: 'fiat' },
+    'XOF': { symbol: 'CFA', decimals: 2, type: 'fiat' },
+    'XPF': { symbol: '₣', decimals: 2, type: 'fiat' },
+    'YER': { symbol: '﷼', decimals: 2, type: 'fiat' },
+    'ZAR': { symbol: 'R', decimals: 2, type: 'fiat' },
+    'ZWD': { symbol: 'Z$', decimals: 2, type: 'fiat' }
   };
 
   return Constants;
@@ -25991,15 +26070,99 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
    * @return {Http} An instance of Http.
    * @constructor
    */
-  function Http(url, config) {
+  function Http(url, config, recoveryHandler) {
     var self = this;
     this.url = url.toLowerCase();
     this.config = config;
 
+    var retries = [];
+
     validate();
 
-    // Private functions
-    //
+    /**
+     * Make an HTTP GET request.
+     * @param {String} endpoint - The URI to the resource.
+     * @return {Promise<Object>} A promise for the response.
+     */
+    this.get = function(endpoint) {
+      return new Promise(function(resolve, reject) {
+        var url = encodeURI(self.url + endpoint);
+
+        $log.debug('GET ' + url);
+
+        $http.get(url, self.config).then(function(response) {
+          $log.debug('GET SUCCESS: ' + JSON.stringify(response));
+          resolve(response);
+
+        }).catch(function(error) {
+          $log.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
+
+          var retryKey = 'GET' + endpoint;
+          if (recoveryHandler  && !retries.includes(retryKey)) {
+            // Execute the recoveryHandler and retry the GET request up to one time.
+            recoveryHandler(error).then(function() {
+
+              retries.push(retryKey);
+              return self.get(endpoint); // Retry request.
+
+            }).catch(function(error) {
+              lodash.pull(retries, retryKey);
+              reject(error);
+            });
+
+          } else {
+            reject(error);
+          }
+
+        });
+      });
+    };
+
+    /**
+     * Make an HTTP POST.
+     * @param {String} endpoint - The URI to the resource.
+     * @param {Object} data - The data object to post.
+     * @return {Promise<Object>} A promise for the response.
+     */
+    this.post = function(endpoint, data) {
+      var self = this;
+      return new Promise(function(resolve, reject) {
+        var url = encodeURI(self.url + endpoint);
+
+        $log.debug('POST ' + url + ' ' + JSON.stringify(data));
+
+        $http.post(url, data, self.config).then(function(response) {
+          $log.debug('POST SUCCESS: ' + url + ' ' + JSON.stringify(response));
+          resolve(response);
+
+        }).catch(function(error) {
+          $log.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
+
+          var retryKey = 'POST' + endpoint;
+          if (recoveryHandler && !retries.includes(retryKey)) {
+            // Execute the recoveryHandler and retry the POST request up to one time.
+            recoveryHandler(error).then(function() {
+              retries.push(retryKey);
+              return self.post(endpoint, data); // Retry request.
+
+            }).catch(function(error) {
+              lodash.pull(retries, retryKey);
+              reject(error);
+            });
+
+          } else {
+            lodash.pull(retries, retryKey);
+            reject(error);
+          }
+
+        });
+      });
+    };
+
+    /*
+     * Private functions
+     */
+
     function validate() {
     	// Check format for url.
       // Matches http(s)://<domain>.<tld>:<port>
@@ -26028,55 +26191,6 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
    */
   Http.guid = function() {
     return Date.now().toString();
-  };
-
-  /**
-   * Make an HTTP GET request.
-   * @param {String} endpoint - The URI to the resource.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  Http.prototype.get = function(endpoint) {
-    var self = this;
-  	return new Promise(function(resolve, reject) {
-      var url = encodeURI(self.url + endpoint);
-
-	    $log.debug('GET ' + url);
-
-	    $http.get(url, self.config).then(function(response) {
-	      $log.debug('GET SUCCESS: ' + JSON.stringify(response));
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      $log.error('GET ERROR: ' + url + ', ' + JSON.stringify(error));
-	      reject(error);
-
-	    });
-	  });
-  };
-
-  /**
-   * Make an HTTP POST.
-   * @param {String} endpoint - The URI to the resource.
-   * @param {Object} data - The data object to post.
-   * @return {Promise<Object>} A promise for the response.
-   */
-  Http.prototype.post = function(endpoint, data) {
-    var self = this;
-  	return new Promise(function(resolve, reject) {
-      var url = encodeURI(self.url + endpoint);
-
-	    $log.debug('POST ' + url + ' ' + JSON.stringify(data));
-
-	    $http.post(url, data, self.config).then(function(response) {
-	      $log.debug('POST SUCCESS: ' + url + ' '+ JSON.stringify(response));
-	      resolve(response);
-
-	    }).catch(function(error) {
-	      $log.error('POST ERROR: ' + url + ', ' + JSON.stringify(error));
-	      reject(error);
-
-	    });
-    });
   };
 
   return Http;
@@ -26335,7 +26449,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
   };
 
   /**
-   * Broadcast an event to any interesteed listener; either the host app or another plugin. For routingm this event is
+   * Broadcast an event to any interesteed listener; either the host app or another plugin. For routing, this event is
    * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
    * feedback about delivery.
    * @param {String} eventName - The name of the event being sent, should be listened for by receivers wanting to receive this event.
@@ -27007,8 +27121,8 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
       var data = JSON.parse(this.event.data);
       lodash.assign(this, data);
 
-      if (isRequest(this)) {
-        // Check the structure of the request.
+      if (isRequest(this) || isEvent(this)) {
+        // Check the structure of the request (events are requests).
         validateRequest();
 
         // Get and check our routing.
@@ -27034,7 +27148,7 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
       // Note: During startup and until the client is ready this class does not have the session object.
       var now = new Date();
       this.header = {
-        type: 'message',
+        type: (isEventUrl(request.url) ? 'event' : 'message'),
         sequence: sequence++,
         id: uuidv4(),
         timestamp: now,
@@ -27049,6 +27163,10 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
     /**
      * Private methods
      */
+
+    function isEventUrl(url) {
+      return url == '/event';
+    };
 
     function validateEvent() {
       if(lodash.isUndefined(self.event.data)) {
@@ -27177,6 +27295,7 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
         $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
         if (message.response.statusCode < 200 || message.response.statusCode > 299) {
+
           // Fail
           reject(new ApiError({
             code: message.response.statusCode,
@@ -27197,22 +27316,38 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
       if (ready || isStartMessage(self)) {
 
         if (isRequest(self)) {
-          // Set a communication timeout timer unless the caller overrides.
-          var timeoutTimer = {};
-          if (self.request.opts.timeout > 0) {
-            timeoutTimer = $timeout(function() {
-              timeout(self);
-            }, REQUEST_TIMEOUT);
+          // Set the messge completion handler for our request.
+          // For requests messages sourced from me use the onComplete() handler.
+          // Events do not provide a response; no handler is set.
+          var onReceived = onComplete;
+          if (self.header.type == 'event') {
+            onReceived = null;
           }
 
-          // Store the promise callback for execution when a response is received.
-          promises.push({
-            id: self.header.id,
-            onComplete: onComplete,
-            timer: timeoutTimer
-          });
+          if (onReceived) {
+            // Set a communication timeout timer unless the caller overrides.
+            var timeoutTimer = {};
+            if (self.request.opts.timeout > 0) {
+              timeoutTimer = $timeout(function() {
+                timeout(self);
+              }, REQUEST_TIMEOUT);
+            }
 
-          $log.debug('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
+            // Store the promise callback for execution when a response is received.
+            promises.push({
+              id: self.header.id,
+              onComplete: onReceived,
+              timer: timeoutTimer,
+              cancelOn: self.request.opts.cancelOn || []
+            });
+          }
+
+          if (self.header.type == 'event') {
+            $log.debug('EVENT OUT ' + self.header.sequence + ': ' + requestToJson(self));
+          } else {
+            $log.debug('REQUEST  ' + self.header.sequence + ': ' + requestToJson(self));
+          }
+
         } else {
           $log.debug('RESPONSE  ' + self.header.sequence + ': ' + messageToJson(self));
         }
@@ -27247,8 +27382,12 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
     });
   };
 
+  function isEvent(message) {
+    return message.header.type == 'event';
+  };
+
   function isRequest(message) {
-    return lodash.isEmpty(message.response);
+    return (message.header.type == 'message') && lodash.isEmpty(message.response);
   };
 
   function receiveMessage(event) {
@@ -27257,7 +27396,10 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
     try {
       message = new ApiMessage(event);
 
-      if (isRequest(message)) {
+      if (isEvent(message)) {
+        processEventMessage(message);
+
+      } else if (isRequest(message)) {
         processRequestMessage(message);
 
       } else {
@@ -27268,8 +27410,16 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
 
       // Not possible to notify client since the message is invalid.
       // The client will timeout if a valid response is not received.
-      $log.error('Could not process message, ' + ex.message + ' - '+ angular.toJson(event));
+      $log.error('Could not process message, ' + ex.message + ' - '+ angular.toJson(event.data));
     }
+  };
+
+  function processEventMessage(message) {
+    // Get the message handler and respond to the event.
+    var handler = $injector.get(message.route.handler);
+    handler.respond(message, function(message) {
+      // No response messages sent from events.
+    });
   };
 
   function processResponseMessage(message) {
@@ -27283,7 +27433,11 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
       // Deliver the response to the client.
       var promise = lodash.pullAt(promises, promiseIndex);
       $timeout.cancel(promise[0].timer);
-      promise[0].onComplete(message);
+
+      // Deliver the result if it should not be canceled.
+      if (promise[0].cancelOn.indexOf(message.response.statusCode) < 0) {
+        promise[0].onComplete(message);
+      }
 
     } else {
       // No promise callback, send the message normally.
@@ -27559,8 +27713,8 @@ angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', ['
         break;
 
       default:
-        // We're receiving an event.
-        owswallet.Plugin.onEvent(event);
+        // We're receiving an event; notify subscribers.
+        owswallet.Plugin.notify(event);
         break;
     }
 

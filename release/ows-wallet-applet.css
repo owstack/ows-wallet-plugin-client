@@ -9879,6 +9879,35 @@ ion-nav-bar.hide {
 .popup .button-secondary.button-clear {
   color: #444444 !important; }
 
+#keypad .keypad {
+  background: none;
+  color: #444455;
+  text-align: center;
+  font-size: 28px;
+  width: 100%; }
+  @media (max-height: 480px) {
+    #keypad .keypad {
+      font-size: 12px; } }
+  #keypad .keypad .row {
+    padding: 0 !important;
+    margin: 0 !important; }
+  #keypad .keypad .col {
+    line-height: 45px; }
+  #keypad .keypad .digit {
+    cursor: pointer;
+    background: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 1px solid rgba(255, 255, 255, 0.05); }
+    #keypad .keypad .digit:active {
+      background: rgba(255, 255, 255, 0.05); }
+    #keypad .keypad .digit svg {
+      height: 30px;
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%); }
+      #keypad .keypad .digit svg * {
+        fill: #444455; }
+
 /*
  * SCSS variables for OWS Wallet applet plugin client.
  */

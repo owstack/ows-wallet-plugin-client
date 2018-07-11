@@ -21,8 +21,8 @@ angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', fu
         break;
 
       default:
-        // We're receiving an event.
-        owswallet.Plugin.onEvent(event);
+        // We're receiving an event; notify subscribers.
+        owswallet.Plugin.notify(event);
         break;
     }
 

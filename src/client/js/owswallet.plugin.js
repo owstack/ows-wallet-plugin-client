@@ -113,7 +113,7 @@ var owswallet = {};
     },
 
     onEvent: function(name, cb) {
-      // Event callbacks are organized by event name. The call must specify an event name in order to recieve an event, see notify(event).
+      // Event callbacks are organized by event name. The call must specify an event name in order to receive an event, see notify(event).
       eventCallbacks[name] = eventCallbacks[name] || [];
       eventCallbacks[name].push({
         callback: cb
@@ -121,7 +121,10 @@ var owswallet = {};
     },
 
     notify: function(event) {
-      var indexes = [];
+      if (!eventCallbacks[event.name]) {
+        return;
+      }
+
       for (var x = 0; x < eventCallbacks[event.name].length; x++) {
         // Fire off all the event callbacks.
         eventCallbacks[event.name][x].callback(event);
