@@ -111,12 +111,12 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
    * @return {String | undefined} The value of the parameter, null if parameter not found in URL.
    * @static
    */
-  Utils.getUrlParameterByName = function(name, url) {
+  Utils.getUrlParameterByName = function(url, param) {
     if (!url) {
       return undefined;
     }
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    param = param.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + param + '(=([^&#]*)|&|#|$)');
     var results = regex.exec(url);
     if (!results) {
       return undefined;

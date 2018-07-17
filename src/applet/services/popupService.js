@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('popupService', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
+angular.module('owsWalletPluginClient.services').service('popupService', function($log, $ionicPopup, $timeout, $window, gettextCatalog, lodash) {
 
   var isCordova;
   
@@ -55,7 +55,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
     cb = cb || function() {};
     title = title || '';
     okText = okText || gettextCatalog.getString('OK');
-    navigator.notification.alert(message, cb, title, okText);
+    $window.top.navigator.notification.alert(message, cb, title, okText);
   };
 
   var _cordovaConfirm = function(title, message, okText, cancelText, cb) {
@@ -70,7 +70,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
     okText = okText || gettextCatalog.getString('OK');
     cancelText = cancelText || gettextCatalog.getString('Cancel');
     title = title || '';
-    navigator.notification.confirm(message, onConfirm, title, [cancelText, okText]);
+    $window.top.navigator.notification.confirm(message, onConfirm, title, [cancelText, okText]);
   };
 
   var _cordovaPrompt = function(title, message, opts, cb) {
@@ -85,7 +85,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', functio
     var okText = gettextCatalog.getString('OK');
     var cancelText = gettextCatalog.getString('Cancel');
     title = title || '';
-    navigator.notification.prompt(message, onPrompt, title, [okText, cancelText], opts.defaultText);
+    $window.top.navigator.notification.prompt(message, onPrompt, title, [okText, cancelText], opts.defaultText);
   };
 
   /**

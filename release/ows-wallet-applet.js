@@ -2547,9 +2547,9 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
   });
 
   root.open = function(url, optIn, title, message, okText, cancelText) {
-    var old = $window.handleOpenURL;
+    var old = $window.top.handleOpenURL;
 
-    $window.handleOpenURL = function(url) {
+    $window.top.handleOpenURL = function(url) {
       // Ignore external URLs
       $log.debug('Skip: ' + url);
     };
@@ -2561,12 +2561,12 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
       if (optIn) {
         popupService.showConfirm(title, message, okText, cancelText, function(res) {
           if (res) {
-            window.open(url, '_system');
+            $window.top.open(url, '_system');
           }
           restoreHandleOpenURL(old);
         });
       } else {
-        window.open(url, '_system');
+        $window.top.open(url, '_system');
         restoreHandleOpenURL(old);
       }
     }
@@ -2574,7 +2574,7 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
 
   function restoreHandleOpenURL(old) {
     $timeout(function() {
-      $window.handleOpenURL = old;
+      $window.top.handleOpenURL = old;
     }, 500);
   };
 
@@ -2609,7 +2609,7 @@ angular.module('owsWalletPluginClient.services').service('nodeWebkitService', fu
 
 'use strict';
 
-angular.module('owsWalletPluginClient.services').service('popupService', ['$log', '$ionicPopup', '$timeout', 'gettextCatalog', 'lodash', function($log, $ionicPopup, $timeout, gettextCatalog, lodash) {
+angular.module('owsWalletPluginClient.services').service('popupService', ['$log', '$ionicPopup', '$timeout', '$window', 'gettextCatalog', 'lodash', function($log, $ionicPopup, $timeout, $window, gettextCatalog, lodash) {
 
   var isCordova;
   
@@ -2664,7 +2664,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', ['$log'
     cb = cb || function() {};
     title = title || '';
     okText = okText || gettextCatalog.getString('OK');
-    navigator.notification.alert(message, cb, title, okText);
+    $window.top.navigator.notification.alert(message, cb, title, okText);
   };
 
   var _cordovaConfirm = function(title, message, okText, cancelText, cb) {
@@ -2679,7 +2679,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', ['$log'
     okText = okText || gettextCatalog.getString('OK');
     cancelText = cancelText || gettextCatalog.getString('Cancel');
     title = title || '';
-    navigator.notification.confirm(message, onConfirm, title, [cancelText, okText]);
+    $window.top.navigator.notification.confirm(message, onConfirm, title, [cancelText, okText]);
   };
 
   var _cordovaPrompt = function(title, message, opts, cb) {
@@ -2694,7 +2694,7 @@ angular.module('owsWalletPluginClient.services').service('popupService', ['$log'
     var okText = gettextCatalog.getString('OK');
     var cancelText = gettextCatalog.getString('Cancel');
     title = title || '';
-    navigator.notification.prompt(message, onPrompt, title, [okText, cancelText], opts.defaultText);
+    $window.top.navigator.notification.prompt(message, onPrompt, title, [okText, cancelText], opts.defaultText);
   };
 
   /**

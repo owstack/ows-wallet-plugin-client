@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http) {
+angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, $window) {
 
   /**
    * Http
@@ -33,7 +33,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
 
         $log.debug('GET ' + url);
 
-        $http.get(url, self.config).then(function(response) {
+        doGet(url, self.config).then(function(response) {
           $log.debug('GET SUCCESS: ' + JSON.stringify(response));
           resolve(response);
 
@@ -74,7 +74,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
 
         $log.debug('POST ' + url + ' ' + JSON.stringify(data));
 
-        $http.post(url, data, self.config).then(function(response) {
+        doPost(url, data, self.config).then(function(response) {
           $log.debug('POST SUCCESS: ' + url + ' ' + JSON.stringify(response));
           resolve(response);
 
@@ -106,6 +106,42 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
      * Private functions
      */
 
+    var doGet = $http.get;
+    var doPost = $http.post;
+
+    // On Cordova platform use the cordova-plugin-http to avoid WkWebView preflight.
+    // See https://github.com/ionic-team/cordova-plugin-ionic-webview/issues/70
+    //
+    // Promisify cordova-plugin-http calls and handle i/o to match Angular $http interface.
+    if (owswallet.Plugin.isCordova()) {
+
+      doGet = function(url, config) {
+        return new Promise(function(resolve, reject) {
+          $window.top.cordova.plugin.http.get(url, null, config.headers, function success(response) {
+            response.data = JSON.parse(response.data);
+            resolve(response);
+           }, function failure(response) {
+            response.data = JSON.parse(response.error);
+            reject(response);
+           });
+        });
+      };
+
+      doPost = function(url, data, config) {
+        return new Promise(function(resolve, reject) {
+          $window.top.cordova.plugin.http.setDataSerializer('json');
+          $window.top.cordova.plugin.http.post(url, data, config.headers, function success(response) {
+            response.data = JSON.parse(response.data);
+            resolve(response);
+           }, function failure(response) {
+            response.data = JSON.parse(response.error);
+            reject(response);
+           });
+        });
+      };
+
+    }
+
     function validate() {
     	// Check format for url.
       // Matches http(s)://<domain>.<tld>:<port>
@@ -133,7 +169,14 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
    * @return {String} A GUID string value.
    */
   Http.guid = function() {
-    return Date.now().toString();
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
+    return uuidv4();
   };
 
   return Http;

@@ -10,9 +10,9 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
   });
 
   root.open = function(url, optIn, title, message, okText, cancelText) {
-    var old = $window.handleOpenURL;
+    var old = $window.top.handleOpenURL;
 
-    $window.handleOpenURL = function(url) {
+    $window.top.handleOpenURL = function(url) {
       // Ignore external URLs
       $log.debug('Skip: ' + url);
     };
@@ -24,12 +24,12 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
       if (optIn) {
         popupService.showConfirm(title, message, okText, cancelText, function(res) {
           if (res) {
-            window.open(url, '_system');
+            $window.top.open(url, '_system');
           }
           restoreHandleOpenURL(old);
         });
       } else {
-        window.open(url, '_system');
+        $window.top.open(url, '_system');
         restoreHandleOpenURL(old);
       }
     }
@@ -37,7 +37,7 @@ angular.module('owsWalletPluginClient.services').service('externalLinkService', 
 
   function restoreHandleOpenURL(old) {
     $timeout(function() {
-      $window.handleOpenURL = old;
+      $window.top.handleOpenURL = old;
     }, 500);
   };
 

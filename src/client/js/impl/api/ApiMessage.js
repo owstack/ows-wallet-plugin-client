@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter,
+angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function ($rootScope,  $injector, $log, $timeout, $window, lodash, apiHelpers, ApiRouter,
   /* @namespace owsWalletPluginClient.api */ ApiError) {
 
-  var host = window.parent;
+  var host = $window.parent;
 
   var REQUEST_TIMEOUT = 3000; // milliseconds
 
@@ -16,7 +16,7 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function 
    */
 
   // When a message is received this listener routes the payload to process the message.
-  window.addEventListener('message', receiveMessage.bind(this));
+  $window.addEventListener('message', receiveMessage.bind(this));
 
   /**
    * Constructor

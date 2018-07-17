@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.services').service('launchService', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
+angular.module('owsWalletPluginClient.impl.services').service('launchService', function($rootScope, $injector, $window, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
   /* @namespace owsWalletPluginClient.api */ Session,
   /* @namespace owsWalletPluginClient.api */ Settings,
   /* @namespace owsWalletPluginClient.api */ Host) {
@@ -104,7 +104,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
       if (isApplet) {
         // Tells ionic that we are running in a Cordova container. Ionic doesn't add this class because we are not the root document.
         angular.element(document.querySelector('body')).addClass('platform-cordova');
-        angular.element(document.querySelector('ion-nav-view')).css('width', window.innerWidth + 'px');
+        angular.element(document.querySelector('ion-nav-view')).css('width', $window.innerWidth + 'px');
       }
     };
 
@@ -184,7 +184,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
         return new ApiMessage(request).send().then(function(response) {
           // We're ready to run!
           var event = new Event('plugin.ready');
-          window.dispatchEvent(event);
+          $window.dispatchEvent(event);
 
           $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
 

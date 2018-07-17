@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function() {
+angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function($window) {
 
 	var root = {};
 
@@ -10,10 +10,10 @@ angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function(
   // Get the sessionId from the URL.
   root.sessionId = function() {
     var sessionId = null;
-    var idxSessionId = window.location.search.indexOf('sessionId=');
+    var idxSessionId = $window.location.search.indexOf('sessionId=');
 
     if (idxSessionId >= 0) {
-      var sessionId = window.location.search.substring(idxSessionId + 10);
+      var sessionId = $window.location.search.substring(idxSessionId + 10);
       if (sessionId.indexOf('&') >= 0) {
         sessionId = sessionId.substring(0, sessionId.indexOf('&'));
       }

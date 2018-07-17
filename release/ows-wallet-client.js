@@ -26057,7 +26057,7 @@ angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', '
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '$http', function ($log, lodash, $http) {
+angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '$http', '$window', function ($log, lodash, $http, $window) {
 
   /**
    * Http
@@ -26090,7 +26090,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
 
         $log.debug('GET ' + url);
 
-        $http.get(url, self.config).then(function(response) {
+        doGet(url, self.config).then(function(response) {
           $log.debug('GET SUCCESS: ' + JSON.stringify(response));
           resolve(response);
 
@@ -26131,7 +26131,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
 
         $log.debug('POST ' + url + ' ' + JSON.stringify(data));
 
-        $http.post(url, data, self.config).then(function(response) {
+        doPost(url, data, self.config).then(function(response) {
           $log.debug('POST SUCCESS: ' + url + ' ' + JSON.stringify(response));
           resolve(response);
 
@@ -26163,6 +26163,42 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
      * Private functions
      */
 
+    var doGet = $http.get;
+    var doPost = $http.post;
+
+    // On Cordova platform use the cordova-plugin-http to avoid WkWebView preflight.
+    // See https://github.com/ionic-team/cordova-plugin-ionic-webview/issues/70
+    //
+    // Promisify cordova-plugin-http calls and handle i/o to match Angular $http interface.
+    if (owswallet.Plugin.isCordova()) {
+
+      doGet = function(url, config) {
+        return new Promise(function(resolve, reject) {
+          $window.top.cordova.plugin.http.get(url, null, config.headers, function success(response) {
+            response.data = JSON.parse(response.data);
+            resolve(response);
+           }, function failure(response) {
+            response.data = JSON.parse(response.error);
+            reject(response);
+           });
+        });
+      };
+
+      doPost = function(url, data, config) {
+        return new Promise(function(resolve, reject) {
+          $window.top.cordova.plugin.http.setDataSerializer('json');
+          $window.top.cordova.plugin.http.post(url, data, config.headers, function success(response) {
+            response.data = JSON.parse(response.data);
+            resolve(response);
+           }, function failure(response) {
+            response.data = JSON.parse(response.error);
+            reject(response);
+           });
+        });
+      };
+
+    }
+
     function validate() {
     	// Check format for url.
       // Matches http(s)://<domain>.<tld>:<port>
@@ -26190,7 +26226,14 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
    * @return {String} A GUID string value.
    */
   Http.guid = function() {
-    return Date.now().toString();
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    };
+
+    return uuidv4();
   };
 
   return Http;
@@ -26973,12 +27016,12 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
    * @return {String | undefined} The value of the parameter, null if parameter not found in URL.
    * @static
    */
-  Utils.getUrlParameterByName = function(name, url) {
+  Utils.getUrlParameterByName = function(url, param) {
     if (!url) {
       return undefined;
     }
-    name = name.replace(/[\[\]]/g, '\\$&');
-    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)');
+    param = param.replace(/[\[\]]/g, '\\$&');
+    var regex = new RegExp('[?&]' + param + '(=([^&#]*)|&|#|$)');
     var results = regex.exec(url);
     if (!results) {
       return undefined;
@@ -27046,7 +27089,7 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', functio
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function() {
+angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', ['$window', function($window) {
 
 	var root = {};
 
@@ -27056,10 +27099,10 @@ angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function(
   // Get the sessionId from the URL.
   root.sessionId = function() {
     var sessionId = null;
-    var idxSessionId = window.location.search.indexOf('sessionId=');
+    var idxSessionId = $window.location.search.indexOf('sessionId=');
 
     if (idxSessionId >= 0) {
-      var sessionId = window.location.search.substring(idxSessionId + 10);
+      var sessionId = $window.location.search.substring(idxSessionId + 10);
       if (sessionId.indexOf('&') >= 0) {
         sessionId = sessionId.substring(0, sessionId.indexOf('&'));
       }
@@ -27079,14 +27122,14 @@ angular.module('owsWalletPluginClient.impl.api').service('apiHelpers', function(
   };
 
   return root;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootScope', 'lodash', '$injector', '$timeout', 'apiHelpers', '$log', 'ApiRouter', 'owsWalletPluginClient.api.ApiError', function ($rootScope, lodash,  $injector, $timeout, apiHelpers, $log, ApiRouter,
+angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootScope', '$injector', '$log', '$timeout', '$window', 'lodash', 'apiHelpers', 'ApiRouter', 'owsWalletPluginClient.api.ApiError', function ($rootScope,  $injector, $log, $timeout, $window, lodash, apiHelpers, ApiRouter,
   /* @namespace owsWalletPluginClient.api */ ApiError) {
 
-  var host = window.parent;
+  var host = $window.parent;
 
   var REQUEST_TIMEOUT = 3000; // milliseconds
 
@@ -27099,7 +27142,7 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
    */
 
   // When a message is received this listener routes the payload to process the message.
-  window.addEventListener('message', receiveMessage.bind(this));
+  $window.addEventListener('message', receiveMessage.bind(this));
 
   /**
    * Constructor
@@ -27795,7 +27838,7 @@ angular.module('owsWalletPluginClient.impl.services').factory('historicLogServic
 
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.services').service('launchService', ['$rootScope', '$injector', 'lodash', 'apiHelpers', '$log', 'ApiMessage', 'ApiRouter', 'historicLogService', 'owsWalletPluginClient.api.Session', 'owsWalletPluginClient.api.Settings', 'owsWalletPluginClient.api.Host', function($rootScope, $injector, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
+angular.module('owsWalletPluginClient.impl.services').service('launchService', ['$rootScope', '$injector', '$window', 'lodash', 'apiHelpers', '$log', 'ApiMessage', 'ApiRouter', 'historicLogService', 'owsWalletPluginClient.api.Session', 'owsWalletPluginClient.api.Settings', 'owsWalletPluginClient.api.Host', function($rootScope, $injector, $window, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
   /* @namespace owsWalletPluginClient.api */ Session,
   /* @namespace owsWalletPluginClient.api */ Settings,
   /* @namespace owsWalletPluginClient.api */ Host) {
@@ -27899,7 +27942,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
       if (isApplet) {
         // Tells ionic that we are running in a Cordova container. Ionic doesn't add this class because we are not the root document.
         angular.element(document.querySelector('body')).addClass('platform-cordova');
-        angular.element(document.querySelector('ion-nav-view')).css('width', window.innerWidth + 'px');
+        angular.element(document.querySelector('ion-nav-view')).css('width', $window.innerWidth + 'px');
       }
     };
 
@@ -27979,7 +28022,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
         return new ApiMessage(request).send().then(function(response) {
           // We're ready to run!
           var event = new Event('plugin.ready');
-          window.dispatchEvent(event);
+          $window.dispatchEvent(event);
 
           $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
 
