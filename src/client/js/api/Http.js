@@ -109,7 +109,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
     var doGet = $http.get;
     var doPost = $http.post;
 
-    // On Cordova platform use the cordova-plugin-http to avoid WkWebView preflight.
+    // On Cordova platform use the cordova-plugin-advanced-http to avoid WkWebView preflight.
     // See https://github.com/ionic-team/cordova-plugin-ionic-webview/issues/70
     //
     // Promisify cordova-plugin-http calls and handle i/o to match Angular $http interface.
