@@ -2,7 +2,7 @@
   "name": "@owstack/ows-wallet-plugin-client",
   "description": "The client framework and API for OWS Wallet.",
   "author": "Open Wallet Stack",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "keywords": [
     "ows",
     "ows wallet",
@@ -21,9 +21,6 @@
   "dependencies": {
     "path-to-regexp": "^2.2.1"
   },
-  "scripts": {
-    "clean": "grunt clean"
-  },
   "devDependencies": {
     "grunt": "^1.0.1",
     "grunt-angular-gettext": "^2.2.3",
@@ -40,5 +37,8 @@
     "grunt-replace": "^0.11.0",
     "grunt-sass": "^1.2.0",
     "load-grunt-tasks": "^3.5.0"
+  },
+  "scripts": {
+    "clean": "grunt clean"
   }
 }

@@ -26,11 +26,19 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
       return '/' + this.plugin.id;
     };
 
-    // Return the configuration of the specified dependent plugin.
+    // Return the user configuration of the plugin.
     this.getConfig = function(configId) {
-      var config = Session.getInstance().plugin.dependencies[this.plugin.id][configId];
-      if (!config) {
-        throw new Error('Could not get dependant plugin configuration, check plugin.json');
+      // If no configId specified then use 'default'.
+      configId = configId || 'default';
+
+      var config = {};
+      var session = Session.getInstance();
+
+      if (session.plugin.userConfig &&
+        session.plugin.userConfig[this.plugin.id] &&
+        session.plugin.userConfig[this.plugin.id][configId]) {
+
+        config = session.plugin.userConfig[this.plugin.id][configId];
       }
       return config;
     };
