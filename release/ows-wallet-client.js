@@ -26062,7 +26062,7 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
   /**
    * Http
    *
-   * Provides a wrapper for $http.
+   * Provides a wrapper for $http and cordova.plugin.http.
    */
 
   /**
@@ -26078,6 +26078,16 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
     var retries = [];
 
     validate();
+
+    /**
+     * Set (or override existing) headers.
+     * @param {Object} headers - A collection of headers (key/value) to set.
+     */
+    this.setHeaders = function(headers) {
+      lodash.forEach(Object.keys(headers), function(h) {
+        self.config.headers[h] = headers[h];
+      });
+    };
 
     /**
      * Make an HTTP GET request.
@@ -26100,10 +26110,16 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
           var retryKey = 'GET' + endpoint;
           if (recoveryHandler  && !retries.includes(retryKey)) {
             // Execute the recoveryHandler and retry the GET request up to one time.
-            recoveryHandler(error).then(function() {
-
+            recoveryHandler(self, error).then(function() {
               retries.push(retryKey);
-              return self.get(endpoint); // Retry request.
+
+              // Retry request.
+              doGet(url, self.config).then(function(response) {
+                $log.debug('GET SUCCESS: ' + JSON.stringify(response));
+                resolve(response);
+              }).catch(function(error) {
+                reject(error);
+              });
 
             }).catch(function(error) {
               lodash.pull(retries, retryKey);
@@ -26141,9 +26157,16 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
           var retryKey = 'POST' + endpoint;
           if (recoveryHandler && !retries.includes(retryKey)) {
             // Execute the recoveryHandler and retry the POST request up to one time.
-            recoveryHandler(error).then(function() {
+            recoveryHandler(self, error).then(function() {
               retries.push(retryKey);
-              return self.post(endpoint, data); // Retry request.
+
+              // Retry request.
+              doPost(url, data, self.config).then(function(response) {
+                $log.debug('POST SUCCESS: ' + url + ' ' + JSON.stringify(response));
+                resolve(response);
+              }).catch(function(error) {
+                reject(error);
+              });
 
             }).catch(function(error) {
               lodash.pull(retries, retryKey);

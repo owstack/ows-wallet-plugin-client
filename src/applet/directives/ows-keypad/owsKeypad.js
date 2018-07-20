@@ -1,9 +1,9 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('keypad', function($log) {
+angular.module('owsWalletPluginClient.directives').directive('owsKeypad', function($log) {
 
   var template = '\
-		<div id="keypad" ng-controller="KeypadCtrl">\
+		<div id="ows-keypad" ng-controller="KeypadCtrl">\
 			<div class="keypad">\
 			  <div class="row">\
 			    <div class="col digit" ng-click="pushDigit(\'1\')">1</div>\
@@ -37,7 +37,7 @@ angular.module('owsWalletPluginClient.directives').directive('keypad', function(
     	buttonDelSrc: '@',
 	    config: '@'
     },
-    controller: 'KeypadCtrl',
+    controller: 'OWSKeypadCtrl',
     template: template,
     link: function (scope, element, attrs) {
       scope.$watch('config', function(value) {

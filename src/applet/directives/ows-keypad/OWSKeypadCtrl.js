@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.controllers').controller('KeypadCtrl', function($rootScope, $scope, $timeout, $log, lodash, stringUtils,
+angular.module('owsWalletPluginClient.controllers').controller('OWSKeypadCtrl', function($rootScope, $scope, $timeout, $log, lodash, stringUtils,
   /* @namespace owsWalletPluginClient.api */ BN,
   /* @namespace owsWalletPluginClient.api */ Constants) {
 

@@ -2139,10 +2139,10 @@ angular.module('monospaced.qrcode', [])
 
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('keypad', ['$log', function($log) {
+angular.module('owsWalletPluginClient.directives').directive('owsKeypad', ['$log', function($log) {
 
   var template = '\
-		<div id="keypad" ng-controller="KeypadCtrl">\
+		<div id="ows-keypad" ng-controller="KeypadCtrl">\
 			<div class="keypad">\
 			  <div class="row">\
 			    <div class="col digit" ng-click="pushDigit(\'1\')">1</div>\
@@ -2176,7 +2176,7 @@ angular.module('owsWalletPluginClient.directives').directive('keypad', ['$log', 
     	buttonDelSrc: '@',
 	    config: '@'
     },
-    controller: 'KeypadCtrl',
+    controller: 'OWSKeypadCtrl',
     template: template,
     link: function (scope, element, attrs) {
       scope.$watch('config', function(value) {
@@ -2188,7 +2188,7 @@ angular.module('owsWalletPluginClient.directives').directive('keypad', ['$log', 
 
 'use strict';
 
-angular.module('owsWalletPluginClient.controllers').controller('KeypadCtrl', ['$rootScope', '$scope', '$timeout', '$log', 'lodash', 'stringUtils', 'owsWalletPluginClient.api.BN', 'owsWalletPluginClient.api.Constants', function($rootScope, $scope, $timeout, $log, lodash, stringUtils,
+angular.module('owsWalletPluginClient.controllers').controller('OWSKeypadCtrl', ['$rootScope', '$scope', '$timeout', '$log', 'lodash', 'stringUtils', 'owsWalletPluginClient.api.BN', 'owsWalletPluginClient.api.Constants', function($rootScope, $scope, $timeout, $log, lodash, stringUtils,
   /* @namespace owsWalletPluginClient.api */ BN,
   /* @namespace owsWalletPluginClient.api */ Constants) {
 
@@ -2387,6 +2387,91 @@ angular.module('owsWalletPluginClient.controllers').controller('KeypadCtrl', ['$
     value.entered = entered;
     update();
     clearCurrencyCache();
+  };
+
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('owsSessionLog', ['$log', function($log) {
+
+  var template = '\
+	  <div id="ows-session-log">\
+	    <div ng-show="filteredLogs.length == 0" translate>\
+	      No Entries For this log level. Adjust setting in app at Settings > About > Session Log.\
+	    </div>\
+	    <ion-list ng-show="filteredLogs.length > 0">\
+	      <ion-item class="item-text-wrap enable_text_select log-entry">\
+	        <ul ng-show="filteredLogs.length > 0">\
+	          <li ng-repeat="l in filteredLogs">\
+	            <span ng-class="{\'warning\': l.level==\'warn\', \'debug\': l.level==\'debug\', \'info\': l.level==\'info\', \'error\': l.level==\'error\'}">\
+	              <span class="log-timestamp">[{{l.timestamp}}]</span>\
+	              <span class="log-level">[{{l.level}}]</span>\
+	              <span class="log-client" ng-if="!isCordova">[{{pluginName}}]</span>\
+	              {{l.msg}}\
+	            </span>\
+	          </li>\
+	        </ul>\
+	      </ion-item>\
+	    </ion-list>\
+    </div>\
+	';
+
+  return {
+    restrict: 'E',
+    scope: {},
+    controller: 'OWSSessionLogCtrl',
+    template: template,
+    link: function (scope, element, attrs) {}
+	};
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('OWSSessionLogCtrl', ['$scope', '$timeout', '$window', '$ionicScrollDelegate', 'historicLogService', 'lodash', 'gettextCatalog', 'owsWalletPluginClient.api.Session', function($scope, $timeout, $window, $ionicScrollDelegate, historicLogService, lodash, gettextCatalog,
+  /* @namespace owsWalletPluginClient.api */ Session) {
+
+  var session = Session.getInstance();
+  var pluginId = session.plugin.header.id + '@' + session.plugin.header.version;
+  $scope.pluginName = session.plugin.header.name + '@' + session.plugin.header.version;
+  $scope.isCordova = owswallet.Plugin.isCordova();
+
+  var logLevel = session.logLevel;
+  var logLevels = historicLogService.getLevels();
+
+  var selectedLevel = historicLogService.getLevel(logLevel);
+  filterLogs(selectedLevel.weight);
+
+  $timeout(function() {
+    $ionicScrollDelegate.scrollBottom();
+  }, 200);
+
+  $scope.prepareLogs = function() {
+    var log = pluginId + ' session logs\n Be careful, this could contain sensitive private data.\n\n';
+    log += historicLogService.get().map(function(v) {
+      return '[' + v.timestamp + '][' + v.level + ']' + v.msg;
+    }).join('\n');
+
+    return log;
+  };
+
+  $scope.sendLogs = function() {
+    var body = $scope.prepareLogs();
+
+    $window.top.plugins.socialsharing.shareViaEmail(
+      body,
+      pluginId + ' session logs',
+      null, // TO: must be null or an array
+      null, // CC: must be null or an array
+      null, // BCC: must be null or an array
+      null, // FILES: can be null, a string, or an array
+      function() {},
+      function() {}
+    );
+  };
+
+  function filterLogs(weight) {
+    $scope.filteredLogs = historicLogService.get(weight);
   };
 
 }]);

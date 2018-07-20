@@ -1,0 +1,40 @@
+$v-debug-color:   #444444 !default;
+$v-info-color:    #00afff !default;
+$v-warning-color: #ffa500 !default;
+$v-error-color:   #ff473a !default;
+
+#ows-session-log {
+  background: #f5f5f5;
+
+ .log-entry {
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 18px;
+    border: none;
+    background: transparent;
+
+   .log-timestamp {
+      font-weight: bold;
+    }
+
+   .log-level {
+      font-weight: bold;
+    }
+   
+    .debug {  
+      color: $v-debug-color;
+    }
+
+    .info {
+      color: $v-info-color;
+    }
+
+    .warning {
+      color: $v-warning-color;
+    }
+
+    .error {
+      color: $v-error-color;
+    }
+  }
+}
