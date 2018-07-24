@@ -4,9 +4,6 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash)
 
   /**
    * Servlet
-   *
-   * Provides access to servlet behavior. An instance of this class should be obtained from the
-   * Session instance.
    */
 
   /**

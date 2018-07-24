@@ -106,11 +106,11 @@ angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
     };
 
     function setKey(key, value) {
-      return session.set(key, value);
+      return session.setValue(key, value);
     };
 
     function removeKey(key) {
-      return session.remove(key);
+      return session.removeValue(key);
     };
 
     return this;

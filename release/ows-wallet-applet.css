@@ -9868,6 +9868,18 @@ ion-nav-bar.hide {
 /*
  * SASS for OWS Wallet applet plugin client.
  */
+.applet-splash {
+  background-size: cover !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 10; }
+  .applet-splash.fadeOut {
+    -webkit-animation: fadeOut 300ms;
+    animation: fadeOut 300ms; }
+
 .ellipsis {
   text-overflow: ellipsis;
   overflow: hidden;

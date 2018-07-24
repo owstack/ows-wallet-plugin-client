@@ -4,9 +4,6 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) 
 
   /**
    * Applet
-   *
-   * Provides access to applet behavior. An instance of this class should be obtained from the
-   * Session instance.
    */
 
    /**
@@ -32,22 +29,6 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) 
   function Applet(appletObj) {
     lodash.assign(this, appletObj);
     return this;
-  };
-
-  /**
-   * Hides the splash image after starting.
-   * @return {Promise} A promise at completion.
-   */
-  Applet.prototype.hideSplash = function() {
-    var request = {
-      method: 'POST',
-      url: '/applet/' + this.header.id + '/config',
-      data: {
-        showSplash: false
-      }
-    };
-
-    return new ApiMessage(request).send();
   };
 
   return Applet;

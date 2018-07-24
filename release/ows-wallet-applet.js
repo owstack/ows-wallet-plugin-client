@@ -2142,7 +2142,7 @@ angular.module('monospaced.qrcode', [])
 angular.module('owsWalletPluginClient.directives').directive('owsKeypad', ['$log', function($log) {
 
   var template = '\
-		<div id="ows-keypad" ng-controller="KeypadCtrl">\
+		<div id="ows-keypad" ng-controller="OWSKeypadCtrl">\
 			<div class="keypad">\
 			  <div class="row">\
 			    <div class="col digit" ng-click="pushDigit(\'1\')">1</div>\

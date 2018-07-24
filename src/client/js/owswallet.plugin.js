@@ -47,11 +47,15 @@ var owswallet = {};
   var NODEWEBKIT = 'nodewebkit';
 
   var platformName = null;
+  var pluginKind;
+  var session;
+
   var startCallback;
   var readyCallbacks = [];
   var openCallbacks = [];
   var eventCallbacks = [];
   var windowLoadListenderAttached;
+
 
   var self = owswallet.Plugin = {
 
@@ -61,7 +65,7 @@ var owswallet = {};
 
     start: function(cb) {
       if (self.isLoaded) {
-        cb();
+        cb(pluginKind);
       } else {
         startCallback = cb;
       }
@@ -179,6 +183,42 @@ var owswallet = {};
 
     userAgent: function() {
       return platform.userAgent;
+    },
+
+    setSession: function(sessionObj) {
+      session = sessionObj;
+    },
+
+    close: function(opts) {
+      session.close(opts);
+    },
+
+    showSplash: function() {
+      var splash = session.plugin.launch.splash;
+      var splashElem = angular.element('<div id="applet-splash" class="applet-splash"></div>');
+      splashElem.css({
+        background: 'url(\'' + splash.image + '\')',
+      });
+
+      angular.element(document.getElementsByTagName('ion-nav-view')[0]).prepend(splashElem);
+
+      if (splash.autoHide == true) {
+        setTimeout(function() {
+          self.hideSplash();
+        }, splash.delay);
+      }
+    },
+
+    hideSplash: function() {
+      var splashElem = angular.element(document.getElementById('applet-splash'));
+      splashElem.on('animationend', removeSplash);
+      splashElem.addClass('animated fadeOut');
+
+      function removeSplash() {
+        splashElem.addClass('ng-hide');
+        splashElem.removeClass('animated fadeOut');
+        splashElem.off('animationend', removeSplash);
+      };
     }
 
   };
@@ -205,8 +245,11 @@ var owswallet = {};
     // The plugin is loaded, init our own stuff then fire off our event.
     window.addEventListener('plugin.ready', onPluginReady, false);
 
+    // Read meta tag for plugin kind.
+    pluginKind = document.getElementsByName("ows-wallet-plugin-kind")[0].content;
+
     if (startCallback) {
-      startCallback();      
+      startCallback(pluginKind);      
     }
     startCallback = undefined;
   };

@@ -143,6 +143,7 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function 
         case 'PUT': validatePUT();
           break;
         case 'DELETE':
+          // Data payload is optional.
           break;
       }
     };

@@ -25,9 +25,9 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     if (instance) {
       return instance;
     }
-    instance = this;
+    instance = self;
 
-    getSession().then(function(response) {
+    return getSession().then(function(response) {
       // Assign the session data to ourself.
       lodash.assign(self, response.data);
 
@@ -37,6 +37,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       };
 
       $rootScope.$emit('Local/Initialized', 'session');
+      return self;
     
     }).catch(function(error) {
       $log.error('Session(): ' + error.message + ', ' + error.detail);
@@ -53,8 +54,6 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
 
       return new ApiMessage(request).send();
     };
-
-    return this;
   };
 
   /**
@@ -63,6 +62,34 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    */
   Session.getInstance = function() {
     return instance || new Session();
+  };
+
+ /**
+   * Close this session and necessarily shutdown the plugin.
+   * @param {Object} opts - Options during close.
+   * @return {Promise} A promise at completion.
+   *
+   * opts = {
+   *   confirm: <boolean>
+   * };
+   */
+  Session.prototype.close = function(opts) {
+    var request = {
+      method: 'DELETE',
+      url: '/session/' + this.header.id,
+      data: {
+        opts: opts
+      }
+    };
+
+    return new ApiMessage(request).send().then(function() {
+      // No response will be received or expected; the plugin will shutdown.
+
+    }).catch(function(error) {
+      $log.error('Session.close():' + error.message + ', ' + error.detail);
+      throw new Error(error.message);
+      
+    });
   };
 
   /**
@@ -140,7 +167,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * @param {Object} value - The data value to store.
    * @return {Promise} A promise at completion with param 'value' or an error.
    */
-  Session.prototype.set = function(name, value) {
+  Session.prototype.setValue = function(name, value) {
     var self = this;
     var request = {
       method: 'POST',
@@ -165,7 +192,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * @param {String} name - Location to store the specified value.
    * @return {Promise} A promise at completion.
    */
-  Session.prototype.remove = function(name) {
+  Session.prototype.removeValue = function(name) {
     var self = this;
     var request = {
       method: 'DELETE',
@@ -176,7 +203,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.remove(): ' + error.message + ', ' + error.detail);
+      $log.error('Session.removeValue(): ' + error.message + ', ' + error.detail);
       throw new Error(error.message);
       
     });

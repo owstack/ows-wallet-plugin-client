@@ -1,28 +1,17 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.impl.services').service('launchService', function($rootScope, $injector, $window, lodash, apiHelpers, $log, ApiMessage, ApiRouter, historicLogService,
+angular.module('owsWalletPluginClient.impl.services').service('launchService', function($rootScope, $injector, $log, $window, historicLogService, lodash, apiHelpers, ApiMessage, ApiRouter,
   /* @namespace owsWalletPluginClient.api */ Session,
   /* @namespace owsWalletPluginClient.api */ Settings,
   /* @namespace owsWalletPluginClient.api */ Host) {
 
-  owswallet.Plugin.start(function() {
+  owswallet.Plugin.start(function(pluginKind) {
 
-    // Setup based on the declared plugin kind.
-    var pluginKind = document.getElementsByName("ows-wallet-plugin-kind")[0].content;
+    var session;
     var isApplet = (pluginKind == 'applet');
     var isServlet = (pluginKind == 'servlet');
 
     validateStartup();
-
-    // Initialization depends on asynchronous messaging with the host app. The 'initialized' object is used to keep track of
-    // all items to be initialized.  When all items become true (initialized) the we notify the host and then the local client that
-    // we're ready.
-    var initializers = {
-      platformInfo: { fn: getPlatformInfo,     done: false },
-      hostInfo:     { fn: getHostInfo,         done: false },
-      settings:     { fn: getSettings,         done: false },
-      session:      { fn: Session.getInstance, done: false }
-    };
 
     /**
      * Applet specific initialization
@@ -46,22 +35,62 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
 
     if (isServlet) {
 
-      // Nothing to do.
+      // Nothing to do
 
     }
 
     /**
-     * Start the plugin and initialize ourself.
+     * Start up sequence
      */
 
     start().then(function() {
-      Object.keys(initializers).forEach(function(i) {
-        initializers[i].fn();
-      })
+      return Session.getInstance();
+
+    }).then(function(mySession) {
+      session = mySession;
+
+      // Set our client name and plugin ID.
+      apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
+      apiHelpers.pluginId(session.plugin.header.id);
+
+      initLog();
+      owswallet.Plugin.setSession(session);
+
+      // Will throw error if not valid.
+      return validateStartup();
+
+    }).then(function() {
+      if (isApplet) {
+        return presentUI();
+      }
+      return;
+
+    }).then(function() {
+      return getPlatformInfo();
+
+    }).then(function() {
+      return Host.get();
+
+    }).then(function() {
+      return Settings.get();
+
+    }).then(function() {
+      // Add client configured routes to our routing map.
+      return ApiRouter.applyRoutes(session);
+
+    }).then(function() {
+      return ready();
+
+    }).catch(function(error) {
+      throw new Error('PLUGIN START ERROR: ' + error.message);
 
     });
 
-    function validateStartup(session) {
+    /*
+     * Private functions
+     */
+
+    function validateStartup() {
       // The build process should prevent this, but just in case.
       if (lodash.isEmpty(pluginKind) || !(isApplet || isServlet)) {
         throw new Error('PLUGIN NOT VALID - the pluginKind <meta> in index.html is missing or invalid');
@@ -75,11 +104,9 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
     // Start communicating with the host app.
     function start() {
       var request = {
-        method: 'POST',
+        method: 'PUT',
         url: '/start',
-        data: {
-          sessionId: apiHelpers.sessionId()
-        }
+        data: {}
       };
 
       return new ApiMessage(request).send().then(function(response) {
@@ -104,14 +131,32 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
       if (isApplet) {
         // Tells ionic that we are running in a Cordova container. Ionic doesn't add this class because we are not the root document.
         angular.element(document.querySelector('body')).addClass('platform-cordova');
-        angular.element(document.querySelector('ion-nav-view')).css('width', $window.innerWidth + 'px');
+        angular.element(document.querySelector('ion-nav-view')).css('width', $window.top.innerWidth + 'px');
       }
     };
 
-    /**
-     * Initializers
-     * These functions are run during startup and are required to complete before notifying the plugin that we're ready.
-     */
+    // Start user interface presentation.
+    function presentUI() {
+      // Show splash image if configured.
+      if (lodash.get(session, 'plugin.launch.splash')) {
+        owswallet.Plugin.showSplash(session.plugin.launch.splash);
+      }
+
+      var request = {
+        method: 'PUT',
+        url: '/presentUI',
+        data: {
+          sessionId: session.id
+        }
+      };
+
+      return new ApiMessage(request).send().then(function() {
+        return;
+
+      }).catch(function(error) {
+        $log.error('PRESENT UI ERROR: ' + JSON.stringify(error));
+      });
+    };
 
     function getPlatformInfo() {
       var request = {
@@ -120,8 +165,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
       };
 
       return new ApiMessage(request).send().then(function(response) {
-        owswallet.Plugin.setPlatform(response.data);
-        $rootScope.$emit('Local/Initialized', 'platformInfo');
+        return owswallet.Plugin.setPlatform(response.data);
         
       }).catch(function(error) {
         $log.error('getPlatform(): ' + JSON.stringify(error));
@@ -129,77 +173,39 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
       });
     };
 
-    function getHostInfo() {
-      Host.get().then(function() {
-        $rootScope.$emit('Local/Initialized', 'hostInfo');
-      }).catch(function(error) {
-        $rootScope.$emit('Local/Initialized', 'hostInfo');
-      })
+    function initLog() {
+      // Add a prefix to identify our log entries.
+      historicLogService.prefix(apiHelpers.clientName() + '/' + pluginKind + ' ');
     };
 
-    function getSettings() {
-      Settings.get().then(function() {
-        $rootScope.$emit('Local/Initialized', 'settings');
+    function ready() {
+      // Tell the host app that we're ready.
+      var request = {
+        method: 'PUT',
+        url: '/ready',
+        data: {
+          sessionId: session.id
+        }
+      };
+
+      return new ApiMessage(request).send().then(function(response) {
+        // We're ready to run!
+        var event = new Event('plugin.ready');
+        $window.dispatchEvent(event);
+
+        $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
+
       }).catch(function(error) {
-        $rootScope.$emit('Local/Initialized', 'settings');
-      })
-    };
+        $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
 
-    $rootScope.$on('Local/Initialized', function(event, what) {
-      initializers[what].state = true;
-
-      $log.debug(what + ' initialized');
-
-      // Check if all items are initialized.
-      var done = true;
-      lodash.forEach(Object.keys(initializers), function(i) {
-        done = done && initializers[i].state;
       });
-
-      if (done) {
-        var session = Session.getInstance();
-
-        // Set our client name and plugin ID.
-        apiHelpers.clientName(session.plugin.header.name + '@' + session.plugin.header.version);
-        apiHelpers.pluginId(session.plugin.header.id);
-
-        // Add a prefix to identify our log entries.
-        historicLogService.prefix(apiHelpers.clientName() + '/' + pluginKind + ' ');
-
-        // Will throw error if not valid.
-        validateStartup(session);
-
-        // Add client configured routes to our routing map.
-        ApiRouter.applyRoutes(session);
-
-        // Tell the host app that we're ready.
-        var request = {
-          method: 'POST',
-          url: '/ready',
-          data: {
-            sessionId: session.id
-          }
-        };
-
-        return new ApiMessage(request).send().then(function(response) {
-          // We're ready to run!
-          var event = new Event('plugin.ready');
-          $window.dispatchEvent(event);
-
-          $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
-
-        }).catch(function(error) {
-          $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
-
-        });
-      }
-    });
+    };
 
     // The client may update its host app routes at any time.  When routes are changed this handler updates the host app.
     $rootScope.$on('Local/RoutesChanged', function(event, routes) {
       var request = {
         method: 'POST',
-        url: '/session/' + Session.getInstance().id + '/routes',
+        url: '/session/' + session.id + '/routes',
         data: {
           routes: routes
         }
