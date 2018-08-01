@@ -137,11 +137,6 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
 
     // Start user interface presentation.
     function presentUI() {
-      // Show splash image if configured.
-      if (lodash.get(session, 'plugin.launch.splash')) {
-        owswallet.Plugin.showSplash(session.plugin.launch.splash);
-      }
-
       var request = {
         method: 'PUT',
         url: '/presentUI',

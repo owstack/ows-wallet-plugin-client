@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Applet', function ($log, lodash, ApiMessage) {
 
   /**
    * Applet
@@ -22,13 +22,39 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash) 
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
-   * @param {Object} plugin - An internal Plugin object.
+   * @param {Object} appletObj - An internal Plugin object.
+   * @param {String} sessionId - This applets session id.
    * @return {Object} An instance of Applet.
    * @constructor
    */
-  function Applet(appletObj) {
+  function Applet(appletObj, sessionId) {
     lodash.assign(this, appletObj);
+    this.sessionId = sessionId;
     return this;
+  };
+
+  /**
+   * Hide the splash screen, if presented.
+   * @return {Promise} A promise at completion.
+   */
+  Applet.prototype.hideSplash = function() {
+    var request = {
+      method: 'PUT',
+      url: '/hideSplash',
+      data: {
+        sessionId: this.sessionId
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return;
+
+    }).catch(function(error) {
+      $log.error('Applet.hideSplash(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+
   };
 
   return Applet;

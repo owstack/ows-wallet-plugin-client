@@ -25382,32 +25382,8 @@ var owswallet = {};
       session.close(opts);
     },
 
-    showSplash: function() {
-      var splash = session.plugin.launch.splash;
-      var splashElem = angular.element('<div id="applet-splash" class="applet-splash"></div>');
-      splashElem.css({
-        background: 'url(\'' + splash.image + '\')',
-      });
-
-      angular.element(document.getElementsByTagName('ion-nav-view')[0]).prepend(splashElem);
-
-      if (splash.autoHide == true) {
-        setTimeout(function() {
-          self.hideSplash();
-        }, splash.delay);
-      }
-    },
-
     hideSplash: function() {
-      var splashElem = angular.element(document.getElementById('applet-splash'));
-      splashElem.on('animationend', removeSplash);
-      splashElem.addClass('animated fadeOut');
-
-      function removeSplash() {
-        splashElem.addClass('ng-hide');
-        splashElem.removeClass('animated fadeOut');
-        splashElem.off('animationend', removeSplash);
-      };
+      session.plugin.hideSplash();
     }
 
   };
@@ -25636,7 +25612,7 @@ angular.module('owsWalletPluginClient.api').factory('ApiError', ['lodash', funct
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Applet', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
 
   /**
    * Applet
@@ -25658,13 +25634,39 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', functio
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
-   * @param {Object} plugin - An internal Plugin object.
+   * @param {Object} appletObj - An internal Plugin object.
+   * @param {String} sessionId - This applets session id.
    * @return {Object} An instance of Applet.
    * @constructor
    */
-  function Applet(appletObj) {
+  function Applet(appletObj, sessionId) {
     lodash.assign(this, appletObj);
+    this.sessionId = sessionId;
     return this;
+  };
+
+  /**
+   * Hide the splash screen, if presented.
+   * @return {Promise} A promise at completion.
+   */
+  Applet.prototype.hideSplash = function() {
+    var request = {
+      method: 'PUT',
+      url: '/hideSplash',
+      data: {
+        sessionId: this.sessionId
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return;
+
+    }).catch(function(error) {
+      $log.error('Applet.hideSplash(): ' + error.message + ', detail:' + error.detail);
+      throw new Error(error.message);
+      
+    });
+
   };
 
   return Applet;
@@ -26347,12 +26349,14 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', functi
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
-   * @param {Object} plugin - An internal plugin object.
+   * @param {Object} servletObj - An internal Plugin object.
+   * @param {String} sessionId - This applets session id.
    * @return {Object} An instance of Servlet.
    * @constructor
    */
-  function Servlet(servletObj) {
+  function Servlet(servletObj, sessionId) {
     lodash.assign(this, servletObj);
+    this.sessionId = sessionId;
     return this;
   };
 
@@ -26393,8 +26397,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       lodash.assign(self, response.data);
 
       switch (self.plugin.header.kind) {
-        case 'applet': self.plugin = new Applet(self.plugin); break;
-        case 'servlet': self.plugin = new Servlet(self.plugin); break;
+        case 'applet': self.plugin = new Applet(self.plugin, self.id); break;
+        case 'servlet': self.plugin = new Servlet(self.plugin, self.id); break;
       };
 
       $rootScope.$emit('Local/Initialized', 'session');
@@ -28055,11 +28059,6 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
 
     // Start user interface presentation.
     function presentUI() {
-      // Show splash image if configured.
-      if (lodash.get(session, 'plugin.launch.splash')) {
-        owswallet.Plugin.showSplash(session.plugin.launch.splash);
-      }
-
       var request = {
         method: 'PUT',
         url: '/presentUI',

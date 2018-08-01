@@ -8,12 +8,14 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash)
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
-   * @param {Object} plugin - An internal plugin object.
+   * @param {Object} servletObj - An internal Plugin object.
+   * @param {String} sessionId - This applets session id.
    * @return {Object} An instance of Servlet.
    * @constructor
    */
-  function Servlet(servletObj) {
+  function Servlet(servletObj, sessionId) {
     lodash.assign(this, servletObj);
+    this.sessionId = sessionId;
     return this;
   };
 

@@ -193,32 +193,8 @@ var owswallet = {};
       session.close(opts);
     },
 
-    showSplash: function() {
-      var splash = session.plugin.launch.splash;
-      var splashElem = angular.element('<div id="applet-splash" class="applet-splash"></div>');
-      splashElem.css({
-        background: 'url(\'' + splash.image + '\')',
-      });
-
-      angular.element(document.getElementsByTagName('ion-nav-view')[0]).prepend(splashElem);
-
-      if (splash.autoHide == true) {
-        setTimeout(function() {
-          self.hideSplash();
-        }, splash.delay);
-      }
-    },
-
     hideSplash: function() {
-      var splashElem = angular.element(document.getElementById('applet-splash'));
-      splashElem.on('animationend', removeSplash);
-      splashElem.addClass('animated fadeOut');
-
-      function removeSplash() {
-        splashElem.addClass('ng-hide');
-        splashElem.removeClass('animated fadeOut');
-        splashElem.off('animationend', removeSplash);
-      };
+      session.plugin.hideSplash();
     }
 
   };

@@ -32,8 +32,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       lodash.assign(self, response.data);
 
       switch (self.plugin.header.kind) {
-        case 'applet': self.plugin = new Applet(self.plugin); break;
-        case 'servlet': self.plugin = new Servlet(self.plugin); break;
+        case 'applet': self.plugin = new Applet(self.plugin, self.id); break;
+        case 'servlet': self.plugin = new Servlet(self.plugin, self.id); break;
       };
 
       $rootScope.$emit('Local/Initialized', 'session');
