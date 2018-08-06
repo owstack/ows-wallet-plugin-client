@@ -122,7 +122,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
         return;
 
       }).catch(function(error) {
-        $log.error('START ERROR: ' + JSON.stringify(error));
+        $log.error('START ERROR');
 
       });
     };
@@ -149,7 +149,8 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
         return;
 
       }).catch(function(error) {
-        $log.error('PRESENT UI ERROR: ' + JSON.stringify(error));
+        // Error logged
+        $log.error('PRESENT UI ERROR');
       });
     };
 
@@ -163,7 +164,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
         return owswallet.Plugin.setPlatform(response.data);
         
       }).catch(function(error) {
-        $log.error('getPlatform(): ' + JSON.stringify(error));
+        // Error logged
         
       });
     };
@@ -191,7 +192,8 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
         $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
 
       }).catch(function(error) {
-        $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
+        // Error logged
+        $log.error('READY ERROR');
 
       });
     };
@@ -208,7 +210,9 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
 
       return new ApiMessage(request).send().then(function(response) {
       }).catch(function(error) {
-        $log.error('ROUTES ERROR: ' + JSON.stringify(error));
+        // Error logged
+        $log.error('ROUTES ERROR');
+
       });
     });
 

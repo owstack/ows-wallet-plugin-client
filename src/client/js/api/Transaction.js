@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, $log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Transaction', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Transaction
@@ -68,8 +69,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.create():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -97,8 +97,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -120,8 +119,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -143,8 +141,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.send():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -166,8 +163,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };

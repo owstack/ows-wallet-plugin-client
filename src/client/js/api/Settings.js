@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Settings', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Settings
@@ -38,7 +39,10 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
    * @constructor
    */
   function Settings() {
-    throw new Error('Settings is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Settings is a static class'
+    });
   };
 
   /**
@@ -56,8 +60,7 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function ($log, 
       return Settings;
 
     }).catch(function(error) {
-      $log.error('Settings.get(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };

@@ -102,7 +102,7 @@ angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
     };
 
     function getKey(key) {
-      return session.get(key);
+      return session.getValue(key);
     };
 
     function setKey(key, value) {

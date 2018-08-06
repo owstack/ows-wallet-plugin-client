@@ -1,7 +1,8 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, $log, ApiMessage,
+angular.module('owsWalletPluginClient.api').factory('Session', function ($rootScope, lodash, apiHelpers, ApiMessage,
   /* @namespace owsWalletPluginClient.api */ Applet,
+  /* @namespace owsWalletPluginClient.api */ ApiError,
   /* @namespace owsWalletPluginClient.api */ Servlet,
   /* @namespace owsWalletPluginClient.api */ Wallet) {
 
@@ -40,8 +41,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return self;
     
     }).catch(function(error) {
-      $log.error('Session(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
 
     });
 
@@ -86,8 +86,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       // No response will be received or expected; the plugin will shutdown.
 
     }).catch(function(error) {
-      $log.error('Session.close():' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -107,32 +106,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.flush():' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
-      
-    });
-  };
-
-  /**
-   * Retrieve session data by name.
-   * @param {String} name - User specified data name defined using set(name, value).
-   * @return {Promise<Object>} A promise for stored value.
-   */
-  Session.prototype.get = function(name) {
-    var self = this;
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/var/' + name
-    };
-
-    return new ApiMessage(request).send().then(function(response) {
-      self[name] = {};
-      lodash.assign(self[name], response.data);
-      return response.data;
-
-    }).catch(function(error) {
-      $log.error('Session.get(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -155,8 +129,30 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.restore(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Retrieve session data by name.
+   * @param {String} name - User specified data name defined using set(name, value).
+   * @return {Promise<Object>} A promise for stored value.
+   */
+  Session.prototype.getValue = function(name) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/var/' + name
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      self[name] = {};
+      lodash.assign(self[name], response.data);
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
       
     });
   };
@@ -181,8 +177,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.set(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -203,8 +198,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.removeValue(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -247,8 +241,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       return new Wallet(response.data);
 
     }).catch(function(error) {
-      $log.error('Session.chooseWallet(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };

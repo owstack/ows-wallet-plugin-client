@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('owsSessionLog', function($log) {
+angular.module('owsWalletPluginClient.directives').directive('owsSessionLog', function() {
 
   var template = '\
 	  <div id="ows-session-log">\

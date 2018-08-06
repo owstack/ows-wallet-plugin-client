@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, $window) {
+angular.module('owsWalletPluginClient.api').factory('Http', function ($log, lodash, $http, $window,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Http
@@ -175,7 +176,10 @@ angular.module('owsWalletPluginClient.api').factory('Http', function ($log, loda
       //   port - matches 1-5 numerals
       //   Does not match query params
 	    if (!self.url.match(/(http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,63}(:[0-9]{1,5})?(\/[a-z0-9\/]*)?/g)) {
-	    	throw new Error('Invalid URL for Http() \'' + self.url + '\'');
+	    	throw new ApiError({
+          message: 'VALIDATION_ERROR',
+          detail: 'Invalid URL for Http() \'' + self.url + '\''
+        });
 	    }
 
 	    // Append a '/' is not present.

@@ -25582,7 +25582,7 @@ angular.module('owsWalletPluginClient').run(['gettextCatalog', function (gettext
 }]);
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('ApiError', ['lodash', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('ApiError', ['$log', 'lodash', function ($log, lodash) {
 
   /**
    * ApiError
@@ -25601,9 +25601,15 @@ angular.module('owsWalletPluginClient.api').factory('ApiError', ['lodash', funct
    *   message: <string>
    *   detail: <string>
    * }
+   *
+   * code - a numeric error code, e.g., HTTP status code
+   * source - the source of the error, e.g., a url
+   * message - machine readable error message
+   * detail = human readable error message
    */
   function ApiError(errorObj) {
     lodash.assign(this, errorObj);
+    $log.error('(' + this.code + ') '+ this.source + ' - ' + this.message + ': \'' + this.detail + '\'');
     return this;
   };
 
@@ -25612,7 +25618,8 @@ angular.module('owsWalletPluginClient.api').factory('ApiError', ['lodash', funct
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Applet', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', 'ApiMessage', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Applet
@@ -25662,8 +25669,7 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['$log', 'lodash',
       return;
 
     }).catch(function(error) {
-      $log.error('Applet.hideSplash(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -25674,7 +25680,8 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['$log', 'lodash',
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('BN', function () {
+angular.module('owsWalletPluginClient.api').factory('BN', ['owsWalletPluginClient.api.ApiError', function (
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * BN
@@ -25690,7 +25697,10 @@ angular.module('owsWalletPluginClient.api').factory('BN', function () {
    * @constructor
    */
   function BN() {
-    throw new Error('BN is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'BN is a static class'
+    });
   };
 
   BN.ensure = function (value) {
@@ -25731,17 +25741,18 @@ angular.module('owsWalletPluginClient.api').factory('BN', function () {
   };
 
   BN.product = function (values) {
-      return values.reduce(function (current, value) {
-          return BN.ensure(current).times(BN.ensure(value));
-      }, one);
+    return values.reduce(function (current, value) {
+      return BN.ensure(current).times(BN.ensure(value));
+    }, one);
   };
 
   return BN;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Constants', function () {
+angular.module('owsWalletPluginClient.api').factory('Constants', ['owsWalletPluginClient.api.ApiError', function (
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Constants
@@ -25754,7 +25765,10 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
    * @constructor
    */
   function Constants() {
-    throw new Error('Constants is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENTATION_ERROR',
+      detail: 'Constants is a static class'
+    });
   };
 
   Constants.BITS_PER_BTC = 1e6;
@@ -25954,11 +25968,12 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
   };
 
   return Constants;
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessage', function ($log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Device', ['ApiMessage', 'owsWalletPluginClient.api.ApiError', function (ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Device
@@ -25971,7 +25986,10 @@ angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessa
    * @constructor
    */
   function Device() {
-    throw new Error('Device is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Device is a static class'
+    });
   };
 
   /**
@@ -25990,8 +26008,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessa
       return;
 
     }).catch(function(error) {
-      $log.error('Device.copyToClipboard(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -26013,8 +26030,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessa
       return;
 
     }).catch(function(error) {
-      $log.error('Device.socialShare(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -26025,7 +26041,8 @@ angular.module('owsWalletPluginClient.api').factory('Device', ['$log', 'ApiMessa
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Host', ['lodash', 'ApiMessage', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Host
@@ -26054,7 +26071,10 @@ angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', '
    * @constructor
    */
   function Host() {
-    throw new Error('Host is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Host is a static class'
+    });
   };
 
   /**
@@ -26072,8 +26092,7 @@ angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', '
       return Host;
 
     }).catch(function(error) {
-      $log.error('Host.get(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26083,7 +26102,8 @@ angular.module('owsWalletPluginClient.api').factory('Host', ['$log', 'lodash', '
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '$http', '$window', function ($log, lodash, $http, $window) {
+angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '$http', '$window', 'owsWalletPluginClient.api.ApiError', function ($log, lodash, $http, $window,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Http
@@ -26258,7 +26278,10 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
       //   port - matches 1-5 numerals
       //   Does not match query params
 	    if (!self.url.match(/(http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,63}(:[0-9]{1,5})?(\/[a-z0-9\/]*)?/g)) {
-	    	throw new Error('Invalid URL for Http() \'' + self.url + '\'');
+	    	throw new ApiError({
+          message: 'VALIDATION_ERROR',
+          detail: 'Invalid URL for Http() \'' + self.url + '\''
+        });
 	    }
 
 	    // Append a '/' is not present.
@@ -26290,11 +26313,11 @@ angular.module('owsWalletPluginClient.api').factory('Http', ['$log', 'lodash', '
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', ['owsWalletPluginClient.api.Session', function (
+angular.module('owsWalletPluginClient.api').factory('PluginApiHelper', ['owsWalletPluginClient.api.Session', function (
   /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
-   * PluginAPIHelper
+   * PluginApiHelper
    *
    * Provides plugin API help.
    */
@@ -26304,7 +26327,7 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', ['owsWall
    * @param {Object} plugin - A minimal plugin object providing only the plugin id.
    * @constructor
    */
-  function PluginAPIHelper(plugin) {
+  function PluginApiHelper(plugin) {
     this.plugin = plugin;
 
     /**
@@ -26336,7 +26359,7 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', ['owsWall
     return this;
   };
 
-    return PluginAPIHelper;
+    return PluginApiHelper;
 }]);
 
 'use strict';
@@ -26365,8 +26388,9 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', functi
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'lodash', 'apiHelpers', '$log', 'ApiMessage', 'owsWalletPluginClient.api.Applet', 'owsWalletPluginClient.api.Servlet', 'owsWalletPluginClient.api.Wallet', function ($rootScope, lodash, apiHelpers, $log, ApiMessage,
+angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'lodash', 'apiHelpers', 'ApiMessage', 'owsWalletPluginClient.api.Applet', 'owsWalletPluginClient.api.ApiError', 'owsWalletPluginClient.api.Servlet', 'owsWalletPluginClient.api.Wallet', function ($rootScope, lodash, apiHelpers, ApiMessage,
   /* @namespace owsWalletPluginClient.api */ Applet,
+  /* @namespace owsWalletPluginClient.api */ ApiError,
   /* @namespace owsWalletPluginClient.api */ Servlet,
   /* @namespace owsWalletPluginClient.api */ Wallet) {
 
@@ -26405,8 +26429,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return self;
     
     }).catch(function(error) {
-      $log.error('Session(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
 
     });
 
@@ -26451,8 +26474,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       // No response will be received or expected; the plugin will shutdown.
 
     }).catch(function(error) {
-      $log.error('Session.close():' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26472,32 +26494,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.flush():' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
-      
-    });
-  };
-
-  /**
-   * Retrieve session data by name.
-   * @param {String} name - User specified data name defined using set(name, value).
-   * @return {Promise<Object>} A promise for stored value.
-   */
-  Session.prototype.get = function(name) {
-    var self = this;
-    var request = {
-      method: 'GET',
-      url: '/session/' + this.id + '/var/' + name
-    };
-
-    return new ApiMessage(request).send().then(function(response) {
-      self[name] = {};
-      lodash.assign(self[name], response.data);
-      return response.data;
-
-    }).catch(function(error) {
-      $log.error('Session.get(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26520,8 +26517,30 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return response;
 
     }).catch(function(error) {
-      $log.error('Session.restore(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Retrieve session data by name.
+   * @param {String} name - User specified data name defined using set(name, value).
+   * @return {Promise<Object>} A promise for stored value.
+   */
+  Session.prototype.getValue = function(name) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/var/' + name
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      self[name] = {};
+      lodash.assign(self[name], response.data);
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
       
     });
   };
@@ -26546,8 +26565,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.set(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26568,8 +26586,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return response.data;
 
     }).catch(function(error) {
-      $log.error('Session.removeValue(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26612,8 +26629,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       return new Wallet(response.data);
 
     }).catch(function(error) {
-      $log.error('Session.chooseWallet(): ' + error.message + ', ' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26623,7 +26639,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Settings', ['$log', 'lodash', 'ApiMessage', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Settings', ['lodash', 'ApiMessage', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Settings
@@ -26661,7 +26678,10 @@ angular.module('owsWalletPluginClient.api').factory('Settings', ['$log', 'lodash
    * @constructor
    */
   function Settings() {
-    throw new Error('Settings is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Settings is a static class'
+    });
   };
 
   /**
@@ -26679,8 +26699,7 @@ angular.module('owsWalletPluginClient.api').factory('Settings', ['$log', 'lodash
       return Settings;
 
     }).catch(function(error) {
-      $log.error('Settings.get(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26792,7 +26811,7 @@ angular.module('owsWalletPluginClient.api').factory('Storage', ['lodash', 'owsWa
     };
 
     function getKey(key) {
-      return session.get(key);
+      return session.getValue(key);
     };
 
     function setKey(key, value) {
@@ -26811,7 +26830,8 @@ angular.module('owsWalletPluginClient.api').factory('Storage', ['lodash', 'owsWa
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$log', 'ApiMessage', function (lodash, $log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', 'ApiMessage', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Transaction
@@ -26879,8 +26899,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.create():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -26908,8 +26927,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26931,8 +26949,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.setWallet():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26954,8 +26971,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.send():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26977,8 +26993,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
       return response;
 
     }).catch(function(error) {
-      $log.error('Transaction.cancel():' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };
@@ -26988,7 +27003,8 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', '$
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWalletPluginClient.api.Session', function (lodash,
+angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWalletPluginClient.api.ApiError', 'owsWalletPluginClient.api.Session', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ ApiError,
   /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
@@ -27002,7 +27018,10 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
    * @constructor
    */
   function Utils() {
-    throw new Error('Utils is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Utils is a static class'
+    });
   };
 
 
@@ -27022,29 +27041,23 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
   };
 
   /**
-   * Assigns destObj the object properties of srcObj according to properties. Properties is an array of strings
-   * naming each property on srcObj. Deep property names may be specified, exmaple 'a.b'. Unresolved properties
-   * on srcObj are undefined on destObj. This function mutates destObj.
+   * Assigns destObj the object properties of srcObj according to properties. If the srcObj does not include a property
+   * in the propertyMap (i.e., srcObj[property] is undefined) then the destObj[property] is preserved (whether defined
+   * or undefined). Properties is an array of strings naming each property on srcObj. Deep property names may be specified,
+   * exmaple 'a.b'. Unresolved properties on srcObj are undefined on destObj. This function mutates destObj.
    * @return {Object} The desination object.
    * @static
    */
-  Utils.assign = function(destObj, srcObj, properties) {
-    lodash.forEach(properties, function(property) {
-      lodash.set(destObj, property, lodash.get(srcObj, property, undefined));
-    });
-    return destObj;
-  };
-
   Utils.assign = function(destObj, srcObj, propertyMap) {
     lodash.forEach(Object.keys(propertyMap), function(property) {
 
       if (typeof propertyMap[property] == 'string') {
-        lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, undefined));
+        lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, destObj[property]));
 
       } else {
         var destProperty = propertyMap[property].property;
         var destType = propertyMap[property].type;
-        var srcValue = lodash.get(srcObj, property, undefined);
+        var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
         var value;
 
         switch (destType) {
@@ -27089,7 +27102,10 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
   Utils.getDependentPluginConfig = function(pluginId, configId) {
     var config = Session.getInstance().plugin.dependencies[pluginId][configId];
     if (!config) {
-      throw new Error('Could not get dependant plugin configuration, check plugin.json');
+      throw new ApiError({
+        message: 'VALIDATION_ERROR',
+        detail: 'Could not get dependant plugin configuration, check plugin.json',
+      });
     }
     return config;
   };
@@ -28044,7 +28060,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
         return;
 
       }).catch(function(error) {
-        $log.error('START ERROR: ' + JSON.stringify(error));
+        $log.error('START ERROR');
 
       });
     };
@@ -28071,7 +28087,8 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
         return;
 
       }).catch(function(error) {
-        $log.error('PRESENT UI ERROR: ' + JSON.stringify(error));
+        // Error logged
+        $log.error('PRESENT UI ERROR');
       });
     };
 
@@ -28085,7 +28102,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
         return owswallet.Plugin.setPlatform(response.data);
         
       }).catch(function(error) {
-        $log.error('getPlatform(): ' + JSON.stringify(error));
+        // Error logged
         
       });
     };
@@ -28113,7 +28130,8 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
         $log.info(session.plugin.header.name + '@' + session.plugin.header.version + ' ' + session.plugin.header.kind + ' is ready!');
 
       }).catch(function(error) {
-        $log.error('READY ERROR: (unexpected status) ' + JSON.stringify(error));
+        // Error logged
+        $log.error('READY ERROR');
 
       });
     };
@@ -28130,7 +28148,9 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
 
       return new ApiMessage(request).send().then(function(response) {
       }).catch(function(error) {
-        $log.error('ROUTES ERROR: ' + JSON.stringify(error));
+        // Error logged
+        $log.error('ROUTES ERROR');
+
       });
     });
 

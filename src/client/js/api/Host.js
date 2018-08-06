@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Host', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Host', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Host
@@ -29,7 +30,10 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
    * @constructor
    */
   function Host() {
-    throw new Error('Host is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Host is a static class'
+    });
   };
 
   /**
@@ -47,8 +51,7 @@ angular.module('owsWalletPluginClient.api').factory('Host', function ($log, loda
       return Host;
 
     }).catch(function(error) {
-      $log.error('Host.get(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
   };

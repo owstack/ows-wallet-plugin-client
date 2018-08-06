@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('owsKeypad', function($log) {
+angular.module('owsWalletPluginClient.directives').directive('owsKeypad', function() {
 
   var template = '\
 		<div id="ows-keypad" ng-controller="OWSKeypadCtrl">\

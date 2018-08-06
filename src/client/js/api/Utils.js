@@ -1,6 +1,7 @@
 'use strict';
 
 angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ ApiError,
   /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
@@ -14,7 +15,10 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
    * @constructor
    */
   function Utils() {
-    throw new Error('Utils is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Utils is a static class'
+    });
   };
 
 
@@ -34,29 +38,23 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
   };
 
   /**
-   * Assigns destObj the object properties of srcObj according to properties. Properties is an array of strings
-   * naming each property on srcObj. Deep property names may be specified, exmaple 'a.b'. Unresolved properties
-   * on srcObj are undefined on destObj. This function mutates destObj.
+   * Assigns destObj the object properties of srcObj according to properties. If the srcObj does not include a property
+   * in the propertyMap (i.e., srcObj[property] is undefined) then the destObj[property] is preserved (whether defined
+   * or undefined). Properties is an array of strings naming each property on srcObj. Deep property names may be specified,
+   * exmaple 'a.b'. Unresolved properties on srcObj are undefined on destObj. This function mutates destObj.
    * @return {Object} The desination object.
    * @static
    */
-  Utils.assign = function(destObj, srcObj, properties) {
-    lodash.forEach(properties, function(property) {
-      lodash.set(destObj, property, lodash.get(srcObj, property, undefined));
-    });
-    return destObj;
-  };
-
   Utils.assign = function(destObj, srcObj, propertyMap) {
     lodash.forEach(Object.keys(propertyMap), function(property) {
 
       if (typeof propertyMap[property] == 'string') {
-        lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, undefined));
+        lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, destObj[property]));
 
       } else {
         var destProperty = propertyMap[property].property;
         var destType = propertyMap[property].type;
-        var srcValue = lodash.get(srcObj, property, undefined);
+        var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
         var value;
 
         switch (destType) {
@@ -101,7 +99,10 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
   Utils.getDependentPluginConfig = function(pluginId, configId) {
     var config = Session.getInstance().plugin.dependencies[pluginId][configId];
     if (!config) {
-      throw new Error('Could not get dependant plugin configuration, check plugin.json');
+      throw new ApiError({
+        message: 'VALIDATION_ERROR',
+        detail: 'Could not get dependant plugin configuration, check plugin.json',
+      });
     }
     return config;
   };

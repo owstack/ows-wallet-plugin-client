@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('BN', function () {
+angular.module('owsWalletPluginClient.api').factory('BN', function (
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * BN
@@ -16,7 +17,10 @@ angular.module('owsWalletPluginClient.api').factory('BN', function () {
    * @constructor
    */
   function BN() {
-    throw new Error('BN is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'BN is a static class'
+    });
   };
 
   BN.ensure = function (value) {
@@ -57,9 +61,9 @@ angular.module('owsWalletPluginClient.api').factory('BN', function () {
   };
 
   BN.product = function (values) {
-      return values.reduce(function (current, value) {
-          return BN.ensure(current).times(BN.ensure(value));
-      }, one);
+    return values.reduce(function (current, value) {
+      return BN.ensure(current).times(BN.ensure(value));
+    }, one);
   };
 
   return BN;

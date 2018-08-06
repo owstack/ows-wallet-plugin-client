@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Constants', function () {
+angular.module('owsWalletPluginClient.api').factory('Constants', function (
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Constants
@@ -13,7 +14,10 @@ angular.module('owsWalletPluginClient.api').factory('Constants', function () {
    * @constructor
    */
   function Constants() {
-    throw new Error('Constants is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENTATION_ERROR',
+      detail: 'Constants is a static class'
+    });
   };
 
   Constants.BITS_PER_BTC = 1e6;

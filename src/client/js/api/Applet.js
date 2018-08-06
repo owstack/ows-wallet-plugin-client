@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Applet', function ($log, lodash, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Applet', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Applet
@@ -50,8 +51,7 @@ angular.module('owsWalletPluginClient.api').factory('Applet', function ($log, lo
       return;
 
     }).catch(function(error) {
-      $log.error('Applet.hideSplash(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 

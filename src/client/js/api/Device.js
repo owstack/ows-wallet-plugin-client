@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Device', function ($log, ApiMessage) {
+angular.module('owsWalletPluginClient.api').factory('Device', function (ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Device
@@ -13,7 +14,10 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
    * @constructor
    */
   function Device() {
-    throw new Error('Device is a static class');
+    throw new ApiError({
+      message: 'IMPLEMENATION_ERROR',
+      detail: 'Device is a static class'
+    });
   };
 
   /**
@@ -32,8 +36,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
       return;
 
     }).catch(function(error) {
-      $log.error('Device.copyToClipboard(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 
@@ -55,8 +58,7 @@ angular.module('owsWalletPluginClient.api').factory('Device', function ($log, Ap
       return;
 
     }).catch(function(error) {
-      $log.error('Device.socialShare(): ' + error.message + ', detail:' + error.detail);
-      throw new Error(error.message);
+      throw new ApiError(error);
       
     });
 

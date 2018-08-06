@@ -1,10 +1,10 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function (
+angular.module('owsWalletPluginClient.api').factory('PluginApiHelper', function (
   /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
-   * PluginAPIHelper
+   * PluginApiHelper
    *
    * Provides plugin API help.
    */
@@ -14,7 +14,7 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
    * @param {Object} plugin - A minimal plugin object providing only the plugin id.
    * @constructor
    */
-  function PluginAPIHelper(plugin) {
+  function PluginApiHelper(plugin) {
     this.plugin = plugin;
 
     /**
@@ -46,5 +46,5 @@ angular.module('owsWalletPluginClient.api').factory('PluginAPIHelper', function 
     return this;
   };
 
-    return PluginAPIHelper;
+    return PluginApiHelper;
 });

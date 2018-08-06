@@ -58,12 +58,13 @@ angular.module('owsWalletPluginClient.services').factory('stringUtils', function
       }
 
       // Clamp the number of fractional digits to the currency decimals.
+      // Rounds decimal value when removing precision.
       var enteredNumD = enteredNum;
       if (hasFraction) {
-        var fractionalPart = enteredNumD.substring(enteredNumD.indexOf('.')+1);
+        var fractionalPart = enteredNumD.substring(enteredNumD.indexOf('.'));
         var significantPart = enteredNumD.substring(0, enteredNumD.indexOf('.'));
-        if (fractionalPart.length > decimals) {
-          enteredNumD = root.float(significantPart).toLocaleString(opts.language) + '.' + fractionalPart.slice(0, decimals);
+        if (fractionalPart.length-1 > decimals) {
+          enteredNumD = root.float(significantPart).toLocaleString(opts.language) + parseFloat(fractionalPart).toFixed(decimals).slice(1);
         }
       } else {
         enteredNumD = root.float(enteredNumD).toLocaleString(opts.language);
@@ -72,7 +73,7 @@ angular.module('owsWalletPluginClient.services').factory('stringUtils', function
       var entered_u_p = {
         sign: (num < 0 ? '-' : ''),
         symbol: (opts.symbol ? symbol : ''),
-        number: enteredNumD,
+        number: (num < 0 ? enteredNumD.slice(1) : enteredNumD),
         currency: (isCrypto && !opts.symbol ? ' ' + currency : '')
       };
 
