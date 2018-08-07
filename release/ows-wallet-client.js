@@ -25653,13 +25653,34 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', 'ApiMes
   };
 
   /**
+   * Show the applet. This call starts visible presentation.
+   * @return {Promise} A promise at completion.
+   */
+  Applet.prototype.show = function() {
+    var request = {
+      method: 'PUT',
+      url: '/applet/show',
+      data: {
+        sessionId: this.sessionId
+      }
+    };
+
+    return new ApiMessage(request).send().then(function() {
+      return;
+
+    }).catch(function(error) {
+      // Error logged
+    });
+  };
+
+  /**
    * Hide the splash screen, if presented.
    * @return {Promise} A promise at completion.
    */
   Applet.prototype.hideSplash = function() {
     var request = {
-      method: 'PUT',
-      url: '/hideSplash',
+      method: 'DELETE',
+      url: '/applet/splash',
       data: {
         sessionId: this.sessionId
       }
@@ -25672,7 +25693,6 @@ angular.module('owsWalletPluginClient.api').factory('Applet', ['lodash', 'ApiMes
       throw new ApiError(error);
       
     });
-
   };
 
   return Applet;
@@ -26627,6 +26647,29 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
 
     return new ApiMessage(request).send().then(function(response) {
       return new Wallet(response.data);
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Prompts the user to scan a QR code.
+   * @return {String} The result of the QR code scan.
+   */
+  Session.prototype.scanQrCode = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/scanqr',
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
 
     }).catch(function(error) {
       throw new ApiError(error);
@@ -27999,7 +28042,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
 
     }).then(function() {
       if (isApplet) {
-        return presentUI();
+        return showApplet();
       }
       return;
 
@@ -28074,22 +28117,9 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', [
     };
 
     // Start user interface presentation.
-    function presentUI() {
-      var request = {
-        method: 'PUT',
-        url: '/presentUI',
-        data: {
-          sessionId: session.id
-        }
-      };
-
-      return new ApiMessage(request).send().then(function() {
-        return;
-
-      }).catch(function(error) {
-        // Error logged
-        $log.error('PRESENT UI ERROR');
-      });
+    function showApplet() {
+      var applet = session.plugin;
+      return applet.show();
     };
 
     function getPlatformInfo() {

@@ -61,7 +61,7 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
 
     }).then(function() {
       if (isApplet) {
-        return presentUI();
+        return showApplet();
       }
       return;
 
@@ -136,22 +136,9 @@ angular.module('owsWalletPluginClient.impl.services').service('launchService', f
     };
 
     // Start user interface presentation.
-    function presentUI() {
-      var request = {
-        method: 'PUT',
-        url: '/presentUI',
-        data: {
-          sessionId: session.id
-        }
-      };
-
-      return new ApiMessage(request).send().then(function() {
-        return;
-
-      }).catch(function(error) {
-        // Error logged
-        $log.error('PRESENT UI ERROR');
-      });
+    function showApplet() {
+      var applet = session.plugin;
+      return applet.show();
     };
 
     function getPlatformInfo() {

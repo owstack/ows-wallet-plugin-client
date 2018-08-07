@@ -246,5 +246,28 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     });
   };
 
+  /**
+   * Prompts the user to scan a QR code.
+   * @return {String} The result of the QR code scan.
+   */
+  Session.prototype.scanQrCode = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/scanqr',
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
   return Session;
 });

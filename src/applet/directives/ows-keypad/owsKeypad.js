@@ -24,7 +24,7 @@ angular.module('owsWalletPluginClient.directives').directive('owsKeypad', functi
 			    <div class="col digit" ng-click="pushDigit(\'.\')">.</div>\
 			    <div class="col digit" ng-click="pushDigit(\'0\')">0</div>\
 			    <div class="col digit" ng-click="removeDigit()">\
-			      <img svg src="{{buttonDelSrc}}">\
+			      <img svg ng-src="{{buttonDelSrc}}">\
 			    </div>\
 			  </div>\
 			</div>\
