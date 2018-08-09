@@ -2142,7 +2142,7 @@ angular.module('monospaced.qrcode', [])
 angular.module('owsWalletPluginClient.directives').directive('owsKeypad', function() {
 
   var template = '\
-		<div id="ows-keypad" ng-controller="OWSKeypadCtrl">\
+		<div id="ows-keypad">\
 			<div class="keypad">\
 			  <div class="row">\
 			    <div class="col digit" ng-click="pushDigit(\'1\')">1</div>\
@@ -2475,6 +2475,187 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSSessionLogCtr
   };
 
 }]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('owsWalletTransactions', function() {
+
+  var template = '\
+    <ion-list id="ows-wallet-transactions">\
+			<ion-item class="has-click item-icon-left icon-left-lg" ng-repeat="tx in transactions track by $index" ng-click="{{onClick}}(tx)">\
+			  <!-- Icon -->\
+			  <i class="icon lg-icon left-icon">\
+			    <span ng-if="isUnconfirmed(tx)">\
+			      <div class="tx-icon confirming" style="{{styleIconConfirming}}"></div>\
+			    </span>\
+			    <span ng-if="!isUnconfirmed(tx)">\
+			      <div class="tx-icon received" style="{{styleIconReceived}}" ng-if="tx.action == \'received\'"></div>\
+			      <div class="tx-icon sent" style="{{styleIconSent}}" ng-if="tx.action == \'sent\'"></div>\
+			      <div class="tx-icon moved" style="{{styleIconMoved}}" ng-if="tx.action == \'moved\'"></div>\
+			    </span>\
+			  </i>\
+			  <!-- Amount (right side) -->\
+			  <div class="tx-detail">\
+			    <span ng-class="{\'tx-amount recent\': tx.recent, \'tx-amount received\': tx.action == \'received\', \'tx-amount sent\': tx.action == \'sent\',\
+			      \'tx-amount moved\': tx.action == \'moved\'}">\
+			      <span ng-if="tx.action == \'sent\'">–</span>\
+			      <span ng-if="tx.action == \'invalid\'" translate>\
+			        (possible double spend)\
+			      </span>\
+			      <span ng-if="tx.action != \'invalid\'">\
+			        {{tx.amountStr}}\
+			      </span>\
+			    </span>\
+			    <div class="tx-time">\
+			      <time ng-if="tx.time && createdWithinPastDay(tx.time * 1000)">\
+			        {{tx.time * 1000 | amTimeAgo}}\
+			      </time>\
+			      <time ng-if="tx.time && !createdWithinPastDay(tx.time * 1000)">\
+			        {{tx.time * 1000 | amDateFormat:\'MMM D, YYYY\'}}\
+			      </time>\
+			    </div>\
+			  </div>\
+			  <!-- Confirmed -->\
+			  <div class="tx-description" ng-if="!isUnconfirmed(tx)">\
+			    <!-- Received -->\
+			    <div ng-show="tx.action == \'received\'">\
+			      <span ng-if="tx.note.body" class="ellipsis">\
+			        {{tx.note.body}}\
+			      </span>\
+			      <span ng-if="!tx.note.body" translate>\
+			        Received\
+			      </span>\
+			      <span ng-if="tx.lowFees || tx.lowAmount">\
+			        <i class="ion-alert-circled"></i>\
+			      </span>\
+			    </div>\
+			    <!-- Sent -->\
+			    <div ng-show="tx.action == \'sent\'">\
+			      <div ng-if="tx.message" class="ellipsis">\
+			        {{tx.message}}\
+			      </div>\
+			      <div ng-if="!tx.message && tx.note.body" class="ellipsis">\
+			        {{tx.note.body}}\
+			      </div>\
+			      <div ng-if="!tx.message && !tx.note.body && addressbook[tx.addressTo]" class="ellipsis">\
+			        {{addressbook[tx.addressTo].name || addressbook[tx.addressTo]}}\
+			      </div>\
+			      <div ng-if="!tx.message && !tx.note.body && !addressbook[tx.addressTo]" translate>\
+			        Sent\
+			      </div>\
+			    </div>\
+			    <!-- Moved -->\
+			    <div ng-show="tx.action == \'moved\'">\
+			      <div ng-if="tx.note.body" class="ellipsis">\
+			        {{tx.note.body}}\
+			      </div>\
+			      <div ng-if="!tx.note.body" translate>\
+			        Moved\
+			      </div>\
+			    </div>\
+			    <!-- Invalid -->\
+			    <span ng-if="tx.action == \'invalid\'" translate>\
+			      Invalid\
+			    </span>\
+			  </div>\
+			  <!-- Unconfirmed -->\
+			  <div ng-if="isUnconfirmed(tx)">\
+			    <span ng-if="tx.action == \'sent\' || tx.action == \'moved\'" class="ellipsis">\
+			      {{addressbook[tx.addressTo].name || addressbook[tx.addressTo] || \'Sending\'|translate}}\
+			    </span>\
+			    <span ng-if="tx.action == \'received\'" translate>\
+			      Receiving\
+			    </span>\
+			  </div>\
+			</ion-item>\
+    </ion-list>\
+	';
+
+	// Transactions binding must be two-way. see http://davidcai.github.io/blog/posts/directive-at-vs-equal/ and
+	// https://stackoverflow.com/questions/16646607/how-to-use-ng-repeat-within-template-of-a-directive-in-angular-js
+
+  return {
+    restrict: 'E',
+    scope: {
+    	transactions: '=',
+    	styleIconConfirming: '@',
+    	styleIconReceived: '@',
+    	styleIconSent: '@',
+    	styleIconMoved: '@',
+    	onClick: '@'
+    },
+    controller: 'OWSWalletTransactionsCtrl',
+    template: template,
+    link: function (scope, element, attrs) {
+      scope.$watch('transactions', function(value) {
+      	scope.transactions = value;
+      });
+    }
+	};
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('OWSWalletTransactionsCtrl', function() {
+
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('owsWallets', ['gettextCatalog', function(gettextCatalog) {
+
+  var template = '\
+    <ion-list id="ows-wallets">\
+      <div class="item item-divider" ng-show="title" translate>\
+        {{title}}\
+      </div>\
+      <a class="item item-icon-left item-icon-right" ng-class="{\'has-detail\': wallet.error}" ng-click="onClick(wallet)"\
+        ng-repeat="wallet in wallets track by wallet.id">\
+        <img svg="fill: {{wallet.color}}" ng-src="img/icon-{{wallet.currency.toLowerCase()}}.svg">\
+        <span class="item-description">\
+	        <h2>{{wallet.name}}</h2>\
+	        <div class="item-detail">\
+	          <p class="error" ng-show="wallet.error" translate>Wallet Error</p>\
+	        </div>\
+        </span>\
+        <span class="item-note" ng-class="{\'two-lines\': wallet.status.alternativeIsoCode != wallet.currency}">\
+          <h2>\
+            {{wallet.format().balance}}\
+          </h2>\
+          <p ng-if="wallet.status.alternativeIsoCode != wallet.currency">\
+            {{wallet.format().balanceAlternative}}\
+          </p>\
+        </span>\
+        <i class="icon ion-ios-arrow-right"></i>\
+      </a>\
+    </ion-list>\
+	';
+
+	// Wallets binding must be two-way. see http://davidcai.github.io/blog/posts/directive-at-vs-equal/ and
+	// https://stackoverflow.com/questions/16646607/how-to-use-ng-repeat-within-template-of-a-directive-in-angular-js
+
+  return {
+    restrict: 'E',
+    scope: {
+    	wallets: '=',
+    	title: '@',
+    	onClick: '='
+    },
+    controller: 'OWSWalletsCtrl',
+    template: template,
+    link: function (scope, element, attrs) {
+      scope.$watch('wallets', function(value) {
+      	scope.wallets = value;
+      });
+    }
+	};
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('OWSWalletsCtrl', function() {
+
+});
 
 'use strict';
 
@@ -2852,133 +3033,4 @@ angular.module('owsWalletPluginClient.services').service('popupService', ['$log'
     }
   };
 
-}]);
-
-'use strict';
-
-angular.module('owsWalletPluginClient.services').factory('stringUtils', ['owsWalletPluginClient.api.Constants', function(
-  /* @namespace owsWalletPluginClient.api */ Constants) {
-
-	var root = {};
-
-	root.float = function(val) {
-		val = val + '';
-	  return parseFloat(val.replace(/,/g,''));
-	};
-
-  // Return values are all strings regardless of specified 'num' type.
-  //
-  // return {
-  //   input: unaltered value of 'num'
-  //   entered: value of 'num' with fractional part clamped by decimals
-  //   entered_u: clamped value of 'num' with units
-  //   localized: localized number, no units
-  //   localized_u: localized number with units
-  // }
-  root.format = function(num, currency, opts) {
-    var decimals = Constants.currencyMap(currency, 'decimals') || opts.decimals;
-    var symbol = Constants.currencyMap(currency, 'symbol');
-    var isCrypto = Constants.currencyMap(currency, 'type') == 'crypto';
-
-    var numStr = num + '';
-    var enteredNum = numStr;
-
-    opts = opts || {};
-    opts.kind = opts.kind || 'currency';
-    opts.language = opts.language || 'en';
-    opts.noZeroDecimals = opts.noZeroDecimals || false;
-    opts.symbol = opts.symbol || !isCrypto;
-
-    if (typeof num == 'string') {
-      // Make the string a positive number.
-      num = root.float(num);
-      numStr.replace('-', '');
-    }
-
-    // Use an english language string to detect presence of decimal.
-    var hasFraction = enteredNum.indexOf('.') >= 0;
-    if (opts.noZeroDecimals && !hasFraction) {
-      decimals = 0;
-    }
-
-    switch (opts.kind) {
-      case 'currency': return formatCurrency(); break;
-      case 'percent': return formatPercent(); break;
-    }
-
-    function formatCurrency() {
-      if (isCrypto) {
-        numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: 0, maximumFractionDigits: decimals});
-      } else {
-        numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
-      }
-
-      // Clamp the number of fractional digits to the currency decimals.
-      // Rounds decimal value when removing precision.
-      var enteredNumD = enteredNum;
-      if (hasFraction) {
-        var fractionalPart = enteredNumD.substring(enteredNumD.indexOf('.'));
-        var significantPart = enteredNumD.substring(0, enteredNumD.indexOf('.'));
-        if (fractionalPart.length-1 > decimals) {
-          enteredNumD = root.float(significantPart).toLocaleString(opts.language) + parseFloat(fractionalPart).toFixed(decimals).slice(1);
-        }
-      } else {
-        enteredNumD = root.float(enteredNumD).toLocaleString(opts.language);
-      }
-
-      var entered_u_p = {
-        sign: (num < 0 ? '-' : ''),
-        symbol: (opts.symbol ? symbol : ''),
-        number: (num < 0 ? enteredNumD.slice(1) : enteredNumD),
-        currency: (isCrypto && !opts.symbol ? ' ' + currency : '')
-      };
-
-      var localized_u_p = {
-        sign: (num < 0 ? '-' : ''),
-        symbol: (opts.symbol ? symbol : ''),
-        number: numStr,
-        currency: (isCrypto && !opts.symbol ? ' ' + currency : '')
-      };
-
-      return {
-        input: enteredNum,
-        entered: enteredNumD,
-        entered_u: entered_u_p.sign + entered_u_p.symbol + entered_u_p.number + entered_u_p.currency,
-        entered_u_p: entered_u_p,
-        localized: localized_u_p.sign + localized_u_p.number,
-        localized_u: localized_u_p.sign + localized_u_p.symbol + localized_u_p.number + localized_u_p.currency,
-        localized_u_p: localized_u_p
-      };
-    };
-
-    function formatPercent() {
-      numStr = Math.abs(num).toLocaleString(opts.language, {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
-      return {
-        input: enteredNum,
-        entered: enteredNum,
-        entered_u: (num < 0 ? '-' : '') + enteredNum + '%',
-        localized: (num < 0 ? '-' : '') + numStr,
-        localized_u: (num < 0 ? '-' : '') + numStr + '%'
-      };
-    };
-  };
-
-  // Trim a string to n (25 default) chars max.
-  root.trim = function(str, opts) {
-    if (!str || str.length == 0) {
-      return;
-    }
-
-    opts = opts || {};
-    opts.n = opts.n || 25;
-
-    var pos = (opts.n - 3) / 2;
-
-    if (str.length > opts.n) {
-      str = str.slice(0, pos) + '...' + str.slice(-pos-1);
-    }
-    return str;
-  };
-
-	return root;
 }]);

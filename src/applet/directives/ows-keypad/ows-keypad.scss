@@ -1,10 +1,10 @@
-$v-keypad-bg:              none !default;
-$v-keypad-color:           #444455 !default;
-$v-keypad-digit-bg:        none !default;
-$v-keypad-digit-active-bg: rgba(255, 255, 255, 0.05) !default;
-$v-keypad-border-color:    rgba(255, 255, 255, 0.05) !default;
-
 #ows-keypad {
+  $v-keypad-bg:              none !default;
+  $v-keypad-color:           #444455 !default;
+  $v-keypad-digit-bg:        none !default;
+  $v-keypad-digit-active-bg: rgba(255, 255, 255, 0.05) !default;
+  $v-keypad-border-color:    rgba(255, 255, 255, 0.05) !default;
+
   .keypad {
     background: $v-keypad-bg;
     color: $v-keypad-color;

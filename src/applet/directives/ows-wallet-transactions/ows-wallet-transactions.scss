@@ -1,0 +1,54 @@
+#ows-wallet-transactions {
+  $v-tx-received-color:      #0EC286 !default;
+  $v-tx-sent-color:          #ff473a !default;
+  $v-tx-moved-color:         #444455 !default;
+  $v-tx-time-color:          #444455 !default;
+  $v-tx-description-color:   #444455 !default;
+  $v-tx-detail-color:        #444455 !default;
+
+  .item:first-child {
+    border-top: none;
+  }
+
+  .tx-description {
+    color: $v-tx-description-color;
+    font-weight: 500;
+    top: 50%;
+    position: absolute;
+    transform: translateY(-50%);
+  }
+
+  .tx-amount {
+    &-recent {
+      font-weight: bold;
+    }
+
+    &-received {
+      color: $v-tx-received-color;
+    }
+
+    &-sent {
+      color: $v-tx-sent-color;
+    }
+
+    &-moved {
+      color: $v-tx-moved-color;
+    }
+  }
+
+  .tx-time {
+    color: $v-tx-time-color;
+  }
+
+  .tx-detail {
+    color: $v-tx-detail-color;
+    font-size: 14px;
+    line-height: 22px;
+    float: right;
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    text-align: right;
+    transform: translateY(-50%);
+  }
+}

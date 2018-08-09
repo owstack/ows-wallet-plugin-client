@@ -9932,6 +9932,68 @@ body {
     #ows-session-log .log-entry .error {
       color: #ff473a; }
 
+#ows-wallet-transactions .item:first-child {
+  border-top: none; }
+
+#ows-wallet-transactions .tx-description {
+  color: #444455;
+  font-weight: 500;
+  top: 50%;
+  position: absolute;
+  transform: translateY(-50%); }
+
+#ows-wallet-transactions .tx-amount-recent {
+  font-weight: bold; }
+
+#ows-wallet-transactions .tx-amount-received {
+  color: #0EC286; }
+
+#ows-wallet-transactions .tx-amount-sent {
+  color: #ff473a; }
+
+#ows-wallet-transactions .tx-amount-moved {
+  color: #444455; }
+
+#ows-wallet-transactions .tx-time {
+  color: #444455; }
+
+#ows-wallet-transactions .tx-detail {
+  color: #444455;
+  font-size: 14px;
+  line-height: 22px;
+  float: right;
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  text-align: right;
+  transform: translateY(-50%); }
+
+#ows-wallets .list {
+  padding: 0; }
+
+#ows-wallets a.item {
+  height: 81px; }
+  #ows-wallets a.item.item-icon-left {
+    padding-left: 57px; }
+  #ows-wallets a.item > .item-description {
+    color: #444455;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%); }
+  #ows-wallets a.item > .item-note {
+    color: #9b9bab;
+    font-size: 14px;
+    text-align: right;
+    line-height: 22px;
+    float: right;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 48px; }
+  #ows-wallets a.item .error {
+    color: #ff0000;
+    font-weight: 500; }
+
 /*
  * SCSS variables for OWS Wallet applet plugin client.
  */

@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.services').factory('stringUtils', function(
+angular.module('owsWalletPluginClient.impl.services').factory('stringUtils', function(
   /* @namespace owsWalletPluginClient.api */ Constants) {
 
 	var root = {};

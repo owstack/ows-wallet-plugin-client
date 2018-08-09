@@ -1,0 +1,41 @@
+#ows-wallets {
+	$v-description-color:  #444455 !default;
+	$v-note-color:         #9b9bab !default;
+	$v-error-color:        #ff0000 !default;
+
+	.list {
+		padding: 0;
+	}
+
+	a.item {
+		height: 81px;
+
+		&.item-icon-left {
+	    padding-left: 57px;
+		}
+
+	 	>.item-description {
+			color: $v-description-color;
+	 		position: absolute;
+	 		top: 50%;
+	 		transform: translateY(-50%);
+	 	}
+
+	 	>.item-note {
+			color: $v-note-color;
+			font-size: 14px;
+	 		text-align: right;
+	 		line-height: 22px;
+	 		float: right;
+	 		position: absolute;
+	 		top: 50%;
+	 		transform: translateY(-50%);
+	 		right: 48px;
+		}
+
+		.error {
+	    color: $v-error-color;
+	    font-weight: 500;
+	  }
+	}
+}

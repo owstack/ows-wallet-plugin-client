@@ -26,7 +26,9 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
     if (instance) {
       return instance;
     }
-    instance = self;
+    instance = this;
+
+    this.wallets = [];
 
     return getSession().then(function(response) {
       // Assign the session data to ourself.
@@ -227,11 +229,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
    * @return {Wallet} An instance of the chosen Wallet.
    */
-  Session.prototype.chooseWallet = function() {
+  Session.prototype.chooseWallet = function(picker, title) {
     var self = this;
+    picker = picker || 'action-sheet';
+
     var request = {
       method: 'GET',
-      url: '/session/' + this.id + '/choosewallet',
+      url: '/session/' + this.id + '/wallets/' + picker + (title ? '/' + title : ''),
       opts: {
         timeout: -1
       }
@@ -239,6 +243,53 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
 
     return new ApiMessage(request).send().then(function(response) {
       return new Wallet(response.data);
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Returns a single wallet.
+   * @return {Wallet} A Wallet object.
+   */
+  Session.prototype.getWalletById = function(id) {
+    return lodash.find(this.wallets, function(w) {
+      return w.id == id;
+    });
+  };
+
+  /**
+   * Returns a collection of all the host app wallets.
+   * @return {array} A collection of wallets.
+   */
+  Session.prototype.getWallets = function() {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/wallets',
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (response.data) {
+        var walletObjs = response.data;
+        self.wallets = [];
+
+        lodash.forEach(walletObjs, function(wallet) {
+          self.wallets.push(new Wallet(wallet, self));
+        });
+
+        // Perform a sort by wallet name.
+        self.wallets = lodash.sortBy(self.wallets, function(w) {
+          return w.name;
+        });
+      }
+
+      return self.wallets;
 
     }).catch(function(error) {
       throw new ApiError(error);
