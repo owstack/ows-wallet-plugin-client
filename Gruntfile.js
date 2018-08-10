@@ -18,8 +18,8 @@ module.exports = function(grunt) {
       },
       main: {
         files: [
-          'src/js/api/**/*.js',
-          'src/js/impl/**/*.js'
+          'src/api/**/*.js',
+          'src/impl/**/*.js'
         ],
         tasks: ['concat:js']
       }
@@ -56,12 +56,12 @@ module.exports = function(grunt) {
           'bower_components/angular-moment/angular-moment.js',
           'bower_components/big.js/big.min.js',
           'bower_components/ng-lodash/build/ng-lodash.js',
-          'src/client/js/owswallet.plugin.js',
-          'src/client/js/pluginClient.module.js',
-          'src/client/js/pluginClient.init.js',
-          'src/client/js/translations.js',
-          'src/client/js/api/**/*.js',
-          'src/client/js/impl/**/*.js'
+          'src/client/owswallet.plugin.js',
+          'src/client/pluginClient.module.js',
+          'src/client/pluginClient.init.js',
+          'src/client/translations.js',
+          'src/client/api/**/*.js',
+          'src/client/impl/**/*.js'
         ],
         dest: 'release/ows-wallet-client.js'
       },
@@ -117,8 +117,10 @@ module.exports = function(grunt) {
       pot: {
         files: {
           'i18n/po/template.pot': [
-            'src/js/api/*.js',
-            'src/js/impl/*.js'
+            'src/api/*.js',
+            'src/impl/*.js',
+            'src/applet/**/*.js',
+            'src/servlet/**/*.js'
           ]
         }
       },
@@ -129,7 +131,7 @@ module.exports = function(grunt) {
           module: 'owsWalletPluginClient'
         },
         files: {
-          'src/js/translations.js': ['i18n/po/*.po']
+          'src/client/translations.js': ['i18n/po/*.po']
         }
       }
     },
