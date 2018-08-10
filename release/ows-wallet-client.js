@@ -26617,17 +26617,23 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
    * Broadcast an event to any interesteed listener; either the host app or another plugin. For routing, this event is
    * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
    * feedback about delivery.
-   * @param {String} eventName - The name of the event being sent, should be listened for by receivers wanting to receive this event.
-   * @param {Object} value - The event data payload.
+   * @param {Object} event - The event payload.
+   *
+   * event = {
+   *   name <string> - The event name.
+   *   target <string> [optional] - The event target; a plugin ID or wildcard '*' (targets any plugin). If target is set to a specific
+   *   plugin ID then the event will only be delivered to that plugin.
+   *   data <object> [optional] - The senders event data payload.
+   * }
    */
-  Session.prototype.broadcastEvent = function(eventName, eventData) {
+  Session.prototype.broadcastEvent = function(event) {
+    event.target = event.target || '*';
+    event.data = event.data || {};
+
     var request = {
       method: 'POST',
       url: '/event',
-      data: {
-        name: eventName,
-        data: eventData
-      }
+      data: event
     };
 
     return new ApiMessage(request).send();
@@ -27624,20 +27630,24 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
       var onComplete = function(message) {
         $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
-        if (message.response.statusCode < 200 || message.response.statusCode > 299) {
+        // If the message is an event and the event does not target this plugin then do not deliver it.
+        if (!isEvent(message) || isEvent(message) && eventTargetsMe(message)) {
+          
+          if (message.response.statusCode < 200 || message.response.statusCode > 299) {
 
-          // Fail
-          reject(new ApiError({
-            code: message.response.statusCode,
-            source: message.request.url,
-            message: message.response.statusText,
-            detail: message.response.data.message
-          }));
+            // Fail
+            reject(new ApiError({
+              code: message.response.statusCode,
+              source: message.request.url,
+              message: message.response.statusText,
+              detail: message.response.data.message
+            }));
 
-        } else {
-          // Success
-          resolve(message.response);
+          } else {
+            // Success
+            resolve(message.response);
 
+          }
         }
       };
 
@@ -27718,6 +27728,11 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', ['$rootSc
 
   function isRequest(message) {
     return (message.header.type == 'message') && lodash.isEmpty(message.response);
+  };
+
+  function eventTargetsMe() {
+    var target = message.response.data.target;
+    return (target == '*' || target == apiHelpers.pluginId());
   };
 
   function receiveMessage(event) {
@@ -28039,7 +28054,7 @@ angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', ['
     switch (event.name) {
       case 'ready':
         // We're being told another plugin is ready.
-        owswallet.Plugin.setOpen(event.pluginId);
+        owswallet.Plugin.setOpen(event.data.pluginId);
         break;
 
       default:

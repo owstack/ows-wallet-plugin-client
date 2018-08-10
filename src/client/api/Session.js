@@ -209,17 +209,23 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * Broadcast an event to any interesteed listener; either the host app or another plugin. For routing, this event is
    * re-broadcast to all plugins from from the host app. This function does not return any value; sent events do not provide
    * feedback about delivery.
-   * @param {String} eventName - The name of the event being sent, should be listened for by receivers wanting to receive this event.
-   * @param {Object} value - The event data payload.
+   * @param {Object} event - The event payload.
+   *
+   * event = {
+   *   name <string> - The event name.
+   *   target <string> [optional] - The event target; a plugin ID or wildcard '*' (targets any plugin). If target is set to a specific
+   *   plugin ID then the event will only be delivered to that plugin.
+   *   data <object> [optional] - The senders event data payload.
+   * }
    */
-  Session.prototype.broadcastEvent = function(eventName, eventData) {
+  Session.prototype.broadcastEvent = function(event) {
+    event.target = event.target || '*';
+    event.data = event.data || {};
+
     var request = {
       method: 'POST',
       url: '/event',
-      data: {
-        name: eventName,
-        data: eventData
-      }
+      data: event
     };
 
     return new ApiMessage(request).send();

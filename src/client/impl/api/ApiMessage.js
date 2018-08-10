@@ -212,20 +212,24 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function 
       var onComplete = function(message) {
         $log.debug('RESPONSE  ' + message.header.sequence + ': ' + messageToJson(message));
 
-        if (message.response.statusCode < 200 || message.response.statusCode > 299) {
+        // If the message is an event and the event does not target this plugin then do not deliver it.
+        if (!isEvent(message) || isEvent(message) && eventTargetsMe(message)) {
+          
+          if (message.response.statusCode < 200 || message.response.statusCode > 299) {
 
-          // Fail
-          reject(new ApiError({
-            code: message.response.statusCode,
-            source: message.request.url,
-            message: message.response.statusText,
-            detail: message.response.data.message
-          }));
+            // Fail
+            reject(new ApiError({
+              code: message.response.statusCode,
+              source: message.request.url,
+              message: message.response.statusText,
+              detail: message.response.data.message
+            }));
 
-        } else {
-          // Success
-          resolve(message.response);
+          } else {
+            // Success
+            resolve(message.response);
 
+          }
         }
       };
 
@@ -306,6 +310,11 @@ angular.module('owsWalletPluginClient.impl.api').factory('ApiMessage', function 
 
   function isRequest(message) {
     return (message.header.type == 'message') && lodash.isEmpty(message.response);
+  };
+
+  function eventTargetsMe() {
+    var target = message.response.data.target;
+    return (target == '*' || target == apiHelpers.pluginId());
   };
 
   function receiveMessage(event) {

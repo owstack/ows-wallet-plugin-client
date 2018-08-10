@@ -17,7 +17,7 @@ angular.module('owsWalletPluginClient.impl.apiHandlers').service('hostEvent', fu
     switch (event.name) {
       case 'ready':
         // We're being told another plugin is ready.
-        owswallet.Plugin.setOpen(event.pluginId);
+        owswallet.Plugin.setOpen(event.data.pluginId);
         break;
 
       default:
