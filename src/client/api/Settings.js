@@ -29,7 +29,6 @@ angular.module('owsWalletPluginClient.api').factory('Settings', function (lodash
    * Examples:
    *
    *   'livenet/btc' - The Bitcoin livenet
-   *   'testnet/btc' - The Bitcoin testnet
    *   'livenet/bch' - The Bitcoin Cash livenet
    *   'livenet/ltc' - The Litecoin livenet
    */
