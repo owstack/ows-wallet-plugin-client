@@ -26844,7 +26844,6 @@ angular.module('owsWalletPluginClient.api').factory('Settings', ['lodash', 'ApiM
    * Examples:
    *
    *   'livenet/btc' - The Bitcoin livenet
-   *   'testnet/btc' - The Bitcoin testnet
    *   'livenet/bch' - The Bitcoin Cash livenet
    *   'livenet/ltc' - The Litecoin livenet
    */
@@ -27496,6 +27495,45 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMes
    * Get this wallet transaction history from the host app.
    * @param {string} txId [optional] - A transaction id (hash). If not specified then complete wallet tx history is returned.
    * @return {Array} One or a collection of transactions.
+   *
+   * transaction = {
+   *   txid: '19ee0941fa499114ac6629c5891056b3c3661b4b09512be2bf4b66248856e63b',
+   *   action: 'moved',
+   *   amount: 157455919,
+   *   fees: 24600,
+   *   time: 1533840902,
+   *   addressTo: 'N/A',
+   *   confirmations: 26,
+   *   feePerKb: 128796,
+   *   outputs: [{
+   *     amount: 157455919,
+   *     address: 'LUC8WSzyePe7d5WcD7f8AF5Hfr3V2wY5UW',
+   *     message: null,
+   *     encryptedMessage: null,
+   *     amountStr: '1.574559 LTC',
+   *     alternativeAmountStr: '1,184.25 USD'
+   *   }],
+   *   createdOn: 1533840871,
+   *   proposalId: 'aeecce44-b0f4-471a-9e4e-e259a1f99462',
+   *   creatorName: 'me',
+   *   message: null,
+   *   actions: [{
+   *     createdOn: 1533840871,
+   *     type: 'accept',
+   *     copayerId: '003d10bdf7fac30674dcc66b86cfbba391b903adb9029ca257a3a7c952cbe658',
+   *     copayerName: 'me',
+   *     comment: ''
+   *   }],
+   *   customData: null,
+   *   encryptedMessage: null,
+   *   hasUnconfirmedInputs: false,
+   *   amountStr: '1.574559 LTC',
+   *   alternativeAmountStr: '10,184.25 USD',
+   *   feeStr: '0.000246 LTC',
+   *   amountValueStr: '1.574559',
+   *   amountAtomicStr: 'LTC',
+   *   safeConfirmed: '6+'
+   * }
    */
   Wallet.prototype.getTransactions = function(txId) {
     var self = this;
