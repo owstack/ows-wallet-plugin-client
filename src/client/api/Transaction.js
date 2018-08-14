@@ -77,7 +77,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
   };
 
   /**
-   * Set the wallet for the transaction.
+   * Set the fee for the transaction.
    * @return {Promise} A promise at completion.
    */
   Transaction.prototype.setFee = function(level, rate, isCustomRate) {
@@ -133,7 +133,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', function (lod
       method: 'PUT',
       url: '/transactions/' + this.guid,
       data: {
-        status: 'approve'
+        status: 'approved'
       }
     };
 

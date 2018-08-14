@@ -25,8 +25,8 @@ angular.module('owsWalletPluginClient.api').factory('Storage', function (lodash,
    *
    * Namespace.
    *
-   * Using a namespace is helpful when storing the same data (using the same keys) for multiple 'environments' (e.g., network types, or wallets).
-   * A namespace can effectively create an abstraction for the storage user.
+   * Using a namespace is helpful when storing the same data (using the same keys) for multiple 'environments' (e.g., network types,
+   * or wallets). A namespace can effectively create an abstraction for the storage user.
    *
    * Each key may be associated with a namespace provided to the contructor. The namespace applies to all accessors created for
    * the instance. The presence or absence of a namespace does not affect accessor naming. The namespace is prepended to the key name

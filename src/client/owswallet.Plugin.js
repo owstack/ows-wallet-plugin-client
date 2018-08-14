@@ -193,8 +193,16 @@ var owswallet = {};
       session.close(opts);
     },
 
+    runInBackground: function(state) {
+      if (session.plugin.runInBackground) {
+        session.plugin.runInBackground(state);
+      }
+    },
+
     hideSplash: function() {
-      session.plugin.hideSplash();
+      if (session.plugin.hideSplash) {
+        session.plugin.hideSplash();
+      }
     }
 
   };

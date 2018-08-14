@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
-  /* @namespace owsWalletPluginClient.api */ ApiError,
-  /* @namespace owsWalletPluginClient.api */ Session) {
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
+//  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * Utils
@@ -43,6 +43,11 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
    * or undefined). Properties is an array of strings naming each property on srcObj. Deep property names may be specified,
    * exmaple 'a.b'. Unresolved properties on srcObj are undefined on destObj. This function mutates destObj.
    * @return {Object} The desination object.
+   *
+   * Assignment may be one of the following:
+   * direct - the source value is directly assigned to the destination.
+   * type - the source value is converted by applying a consistent transform based on the specified type.
+   * transform - the source value is transformed by a user specified function.
    * @static
    */
   Utils.assign = function(destObj, srcObj, propertyMap) {
@@ -51,7 +56,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
       if (typeof propertyMap[property] == 'string') {
         lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, destObj[property]));
 
-      } else {
+      } else if (propertyMap[property].type) {
         var destProperty = propertyMap[property].property;
         var destType = propertyMap[property].type;
         var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
@@ -71,6 +76,14 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
             value = map[srcValue];
             break;
         }
+
+        lodash.set(destObj, destProperty, value);
+
+      } else if (propertyMap[property].transform) {
+        var destProperty = propertyMap[property].property;
+        var destTransform = propertyMap[property].transform;
+        var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
+        var value = destTransform(srcValue);
 
         lodash.set(destObj, destProperty, value);
       }
@@ -96,6 +109,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
    * @return {Object} The plugin configuration.
    * @static
    */
+/*
   Utils.getDependentPluginConfig = function(pluginId, configId) {
     var config = Session.getInstance().plugin.dependencies[pluginId][configId];
     if (!config) {
@@ -106,7 +120,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', function (lodash,
     }
     return config;
   };
-
+*/
   /**
    * Return the value of a URL parameter by name.
    * @return {String | undefined} The value of the parameter, null if parameter not found in URL.

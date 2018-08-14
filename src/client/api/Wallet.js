@@ -1,7 +1,8 @@
 'use strict';
 
 angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash, ApiMessage, $filter, gettextCatalog, stringUtils,
-  /* @namespace owsWalletPluginClient.api */ ApiError) {
+  /* @namespace owsWalletPluginClient.api */ ApiError,
+  /* @namespace owsWalletPluginClient.api */ Utils) {
 
   /**
    * Wallet
@@ -17,7 +18,10 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash, 
    *   name: 'Personal Wallet',
    *   needsBackup: true,
    *   balanceHidden: false,
+   *   keyDerivationOk: true,
    *   error: null,
+   *   isValid: true,
+   *   color: '#ff0000',
    *   cachedBalance: '0.00 BTC',
    *   cachedBalanceUpdatedOn: 1526591574,
    *   cachedActivity: {
@@ -76,6 +80,24 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash, 
    *   safeConfirmed: '6+'
    * }
    */
+  var propertyMap = {
+    'id': 'id',
+    'network': 'network',
+    'currency': {property: 'currency', transform: function(value) { return value.toUpperCase(); }},
+    'm': 'm',
+    'n': 'n',
+    'name': 'name',
+    'needsBackup': 'needsBackup',
+    'balanceHidden': 'balanceHidden',
+    'keyDerivationOk': 'keyDerivationOk',
+    'error': 'error',
+    'isValid': 'isValid',
+    'color': 'color',
+    'cachedBalance': 'cachedBalance',
+    'cachedBalanceUpdatedOn': 'cachedBalanceUpdatedOn',
+    'cachedActivity': 'cachedActivity',
+    'transactions': 'transactions'
+  };
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
@@ -84,7 +106,8 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash, 
    * @constructor
    */
   function Wallet(walletObj) {
-    lodash.assign(this, walletObj);
+    var self = this;
+    Utils.assign(this, walletObj, propertyMap);
 
     this.getTransactions();
 
@@ -92,14 +115,67 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', function (lodash, 
   };
 
   /**
-   * Get this wallet transaction history from the host app.
-   * @return {Array} A collection of transactions.
+   * Get an address for this wallet.
+   * @return {String} An address.
    */
-  Wallet.prototype.getTransactions = function() {
+  Wallet.prototype.getAddress = function() {
     var self = this;
     var request = {
       method: 'GET',
-      url: '/wallet/' + this.id + '/transactions',
+      url: '/wallet/' + this.id + '/address',
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Get the fee to send a transaction.
+   * @param {string} level - The fee level.
+   * @return {Object} Fee amount per kb expressed in both atomic and standard units.
+   *
+   * return = {
+   *   atomic: <number>,
+   *   standard: <number> 
+   * }
+   */
+  Wallet.prototype.getFee = function(level) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/wallet/' + this.id + '/fee/' + level,
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Get this wallet transaction history from the host app.
+   * @param {string} txId [optional] - A transaction id (hash). If not specified then complete wallet tx history is returned.
+   * @return {Array} One or a collection of transactions.
+   */
+  Wallet.prototype.getTransactions = function(txId) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/wallet/' + this.id + '/transactions/' + txId,
       opts: {
         timeout: -1
       }

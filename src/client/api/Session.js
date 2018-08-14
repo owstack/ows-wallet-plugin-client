@@ -241,9 +241,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
 
     var request = {
       method: 'GET',
-      url: '/session/' + this.id + '/wallets/' + picker + (title ? '/' + title : ''),
+      url: '/session/' + this.id + '/wallets',
       opts: {
         timeout: -1
+      },
+      data: {
+        picker: picker,
+        title: (title ? '/' + title : '')
       }
     };
 
@@ -261,8 +265,48 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
    * @return {Wallet} A Wallet object.
    */
   Session.prototype.getWalletById = function(id) {
-    return lodash.find(this.wallets, function(w) {
-      return w.id == id;
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/wallets',
+      opts: {
+        timeout: -1
+      },
+      data: {
+        walletId: id
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (response.data) {
+        var walletObj = response.data;
+        self.wallets = self.wallets || [];
+
+        // Find and remove a possible existing entry.
+        var index = lodash.findIndex(self.wallets, function(w) {
+          return w.id == id;
+        });
+
+        if (index >= 0) {
+          lodash.pullAt(self.wallets, index);
+        }
+
+        // Add the new wallet.
+        self.wallets.push(new Wallet(walletObj, self));
+
+        // Perform a sort by wallet name.
+        self.wallets = lodash.sortBy(self.wallets, function(w) {
+          return w.name;
+        });
+      }
+
+      return lodash.find(self.wallets, function(w) {
+        return w.id == id;
+      });
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
     });
   };
 
@@ -277,7 +321,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', function ($rootSc
       url: '/session/' + this.id + '/wallets',
       opts: {
         timeout: -1
-      }
+      },
+      data: {}
     };
 
     return new ApiMessage(request).send().then(function(response) {

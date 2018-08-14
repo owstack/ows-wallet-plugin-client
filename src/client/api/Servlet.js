@@ -1,6 +1,7 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Servlet
@@ -17,6 +18,28 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', function (lodash)
     lodash.assign(this, servletObj);
     this.sessionId = sessionId;
     return this;
+  };
+
+  /**
+   * Set the run-in-background state for th servlet.
+   * @return {Promise} A promise at completion.
+   */
+  Servlet.prototype.runInBackground = function(state) {
+    var request = {
+      method: 'POST',
+      url: '/plugin/preferences',
+      data: {
+        runInBackground: state
+      }
+    };
+
+    return new ApiMessage(request).send().then(function() {
+      return;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+
+    });
   };
 
   return Servlet;

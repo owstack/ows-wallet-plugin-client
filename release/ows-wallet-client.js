@@ -25382,8 +25382,16 @@ var owswallet = {};
       session.close(opts);
     },
 
+    runInBackground: function(state) {
+      if (session.plugin.runInBackground) {
+        session.plugin.runInBackground(state);
+      }
+    },
+
     hideSplash: function() {
-      session.plugin.hideSplash();
+      if (session.plugin.hideSplash) {
+        session.plugin.hideSplash();
+      }
     }
 
   };
@@ -26384,7 +26392,8 @@ angular.module('owsWalletPluginClient.api').factory('PluginApiHelper', ['owsWall
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', function (lodash) {
+angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', 'ApiMessage', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
 
   /**
    * Servlet
@@ -26401,6 +26410,28 @@ angular.module('owsWalletPluginClient.api').factory('Servlet', ['lodash', functi
     lodash.assign(this, servletObj);
     this.sessionId = sessionId;
     return this;
+  };
+
+  /**
+   * Set the run-in-background state for th servlet.
+   * @return {Promise} A promise at completion.
+   */
+  Servlet.prototype.runInBackground = function(state) {
+    var request = {
+      method: 'POST',
+      url: '/plugin/preferences',
+      data: {
+        runInBackground: state
+      }
+    };
+
+    return new ApiMessage(request).send().then(function() {
+      return;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+
+    });
   };
 
   return Servlet;
@@ -26649,9 +26680,13 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
 
     var request = {
       method: 'GET',
-      url: '/session/' + this.id + '/wallets/' + picker + (title ? '/' + title : ''),
+      url: '/session/' + this.id + '/wallets',
       opts: {
         timeout: -1
+      },
+      data: {
+        picker: picker,
+        title: (title ? '/' + title : '')
       }
     };
 
@@ -26669,8 +26704,48 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
    * @return {Wallet} A Wallet object.
    */
   Session.prototype.getWalletById = function(id) {
-    return lodash.find(this.wallets, function(w) {
-      return w.id == id;
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/session/' + this.id + '/wallets',
+      opts: {
+        timeout: -1
+      },
+      data: {
+        walletId: id
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      if (response.data) {
+        var walletObj = response.data;
+        self.wallets = self.wallets || [];
+
+        // Find and remove a possible existing entry.
+        var index = lodash.findIndex(self.wallets, function(w) {
+          return w.id == id;
+        });
+
+        if (index >= 0) {
+          lodash.pullAt(self.wallets, index);
+        }
+
+        // Add the new wallet.
+        self.wallets.push(new Wallet(walletObj, self));
+
+        // Perform a sort by wallet name.
+        self.wallets = lodash.sortBy(self.wallets, function(w) {
+          return w.name;
+        });
+      }
+
+      return lodash.find(self.wallets, function(w) {
+        return w.id == id;
+      });
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
     });
   };
 
@@ -26685,7 +26760,8 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       url: '/session/' + this.id + '/wallets',
       opts: {
         timeout: -1
-      }
+      },
+      data: {}
     };
 
     return new ApiMessage(request).send().then(function(response) {
@@ -26834,8 +26910,8 @@ angular.module('owsWalletPluginClient.api').factory('Storage', ['lodash', 'owsWa
    *
    * Namespace.
    *
-   * Using a namespace is helpful when storing the same data (using the same keys) for multiple 'environments' (e.g., network types, or wallets).
-   * A namespace can effectively create an abstraction for the storage user.
+   * Using a namespace is helpful when storing the same data (using the same keys) for multiple 'environments' (e.g., network types,
+   * or wallets). A namespace can effectively create an abstraction for the storage user.
    *
    * Each key may be associated with a namespace provided to the contructor. The namespace applies to all accessors created for
    * the instance. The presence or absence of a namespace does not affect accessor naming. The namespace is prepended to the key name
@@ -27007,7 +27083,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', 'A
   };
 
   /**
-   * Set the wallet for the transaction.
+   * Set the fee for the transaction.
    * @return {Promise} A promise at completion.
    */
   Transaction.prototype.setFee = function(level, rate, isCustomRate) {
@@ -27063,7 +27139,7 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', 'A
       method: 'PUT',
       url: '/transactions/' + this.guid,
       data: {
-        status: 'approve'
+        status: 'approved'
       }
     };
 
@@ -27103,9 +27179,9 @@ angular.module('owsWalletPluginClient.api').factory('Transaction', ['lodash', 'A
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWalletPluginClient.api.ApiError', 'owsWalletPluginClient.api.Session', function (lodash,
-  /* @namespace owsWalletPluginClient.api */ ApiError,
-  /* @namespace owsWalletPluginClient.api */ Session) {
+angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWalletPluginClient.api.ApiError', function (lodash,
+  /* @namespace owsWalletPluginClient.api */ ApiError) {
+//  /* @namespace owsWalletPluginClient.api */ Session) {
 
   /**
    * Utils
@@ -27146,6 +27222,11 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
    * or undefined). Properties is an array of strings naming each property on srcObj. Deep property names may be specified,
    * exmaple 'a.b'. Unresolved properties on srcObj are undefined on destObj. This function mutates destObj.
    * @return {Object} The desination object.
+   *
+   * Assignment may be one of the following:
+   * direct - the source value is directly assigned to the destination.
+   * type - the source value is converted by applying a consistent transform based on the specified type.
+   * transform - the source value is transformed by a user specified function.
    * @static
    */
   Utils.assign = function(destObj, srcObj, propertyMap) {
@@ -27154,7 +27235,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
       if (typeof propertyMap[property] == 'string') {
         lodash.set(destObj, propertyMap[property], lodash.get(srcObj, property, destObj[property]));
 
-      } else {
+      } else if (propertyMap[property].type) {
         var destProperty = propertyMap[property].property;
         var destType = propertyMap[property].type;
         var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
@@ -27174,6 +27255,14 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
             value = map[srcValue];
             break;
         }
+
+        lodash.set(destObj, destProperty, value);
+
+      } else if (propertyMap[property].transform) {
+        var destProperty = propertyMap[property].property;
+        var destTransform = propertyMap[property].transform;
+        var srcValue = lodash.get(srcObj, property, destObj[destProperty]);
+        var value = destTransform(srcValue);
 
         lodash.set(destObj, destProperty, value);
       }
@@ -27199,6 +27288,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
    * @return {Object} The plugin configuration.
    * @static
    */
+/*
   Utils.getDependentPluginConfig = function(pluginId, configId) {
     var config = Session.getInstance().plugin.dependencies[pluginId][configId];
     if (!config) {
@@ -27209,7 +27299,7 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
     }
     return config;
   };
-
+*/
   /**
    * Return the value of a URL parameter by name.
    * @return {String | undefined} The value of the parameter, null if parameter not found in URL.
@@ -27236,8 +27326,9 @@ angular.module('owsWalletPluginClient.api').factory('Utils', ['lodash', 'owsWall
 
 'use strict';
 
-angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMessage', '$filter', 'gettextCatalog', 'stringUtils', 'owsWalletPluginClient.api.ApiError', function (lodash, ApiMessage, $filter, gettextCatalog, stringUtils,
-  /* @namespace owsWalletPluginClient.api */ ApiError) {
+angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMessage', '$filter', 'gettextCatalog', 'stringUtils', 'owsWalletPluginClient.api.ApiError', 'owsWalletPluginClient.api.Utils', function (lodash, ApiMessage, $filter, gettextCatalog, stringUtils,
+  /* @namespace owsWalletPluginClient.api */ ApiError,
+  /* @namespace owsWalletPluginClient.api */ Utils) {
 
   /**
    * Wallet
@@ -27253,7 +27344,10 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMes
    *   name: 'Personal Wallet',
    *   needsBackup: true,
    *   balanceHidden: false,
+   *   keyDerivationOk: true,
    *   error: null,
+   *   isValid: true,
+   *   color: '#ff0000',
    *   cachedBalance: '0.00 BTC',
    *   cachedBalanceUpdatedOn: 1526591574,
    *   cachedActivity: {
@@ -27312,6 +27406,24 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMes
    *   safeConfirmed: '6+'
    * }
    */
+  var propertyMap = {
+    'id': 'id',
+    'network': 'network',
+    'currency': {property: 'currency', transform: function(value) { return value.toUpperCase(); }},
+    'm': 'm',
+    'n': 'n',
+    'name': 'name',
+    'needsBackup': 'needsBackup',
+    'balanceHidden': 'balanceHidden',
+    'keyDerivationOk': 'keyDerivationOk',
+    'error': 'error',
+    'isValid': 'isValid',
+    'color': 'color',
+    'cachedBalance': 'cachedBalance',
+    'cachedBalanceUpdatedOn': 'cachedBalanceUpdatedOn',
+    'cachedActivity': 'cachedActivity',
+    'transactions': 'transactions'
+  };
 
   /**
    * Constructor.  An instance of this class must be obtained from Session.
@@ -27320,7 +27432,8 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMes
    * @constructor
    */
   function Wallet(walletObj) {
-    lodash.assign(this, walletObj);
+    var self = this;
+    Utils.assign(this, walletObj, propertyMap);
 
     this.getTransactions();
 
@@ -27328,14 +27441,67 @@ angular.module('owsWalletPluginClient.api').factory('Wallet', ['lodash', 'ApiMes
   };
 
   /**
-   * Get this wallet transaction history from the host app.
-   * @return {Array} A collection of transactions.
+   * Get an address for this wallet.
+   * @return {String} An address.
    */
-  Wallet.prototype.getTransactions = function() {
+  Wallet.prototype.getAddress = function() {
     var self = this;
     var request = {
       method: 'GET',
-      url: '/wallet/' + this.id + '/transactions',
+      url: '/wallet/' + this.id + '/address',
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Get the fee to send a transaction.
+   * @param {string} level - The fee level.
+   * @return {Object} Fee amount per kb expressed in both atomic and standard units.
+   *
+   * return = {
+   *   atomic: <number>,
+   *   standard: <number> 
+   * }
+   */
+  Wallet.prototype.getFee = function(level) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/wallet/' + this.id + '/fee/' + level,
+      opts: {
+        timeout: -1
+      }
+    };
+
+    return new ApiMessage(request).send().then(function(response) {
+      return response.data;
+
+    }).catch(function(error) {
+      throw new ApiError(error);
+      
+    });
+  };
+
+  /**
+   * Get this wallet transaction history from the host app.
+   * @param {string} txId [optional] - A transaction id (hash). If not specified then complete wallet tx history is returned.
+   * @return {Array} One or a collection of transactions.
+   */
+  Wallet.prototype.getTransactions = function(txId) {
+    var self = this;
+    var request = {
+      method: 'GET',
+      url: '/wallet/' + this.id + '/transactions/' + txId,
       opts: {
         timeout: -1
       }
