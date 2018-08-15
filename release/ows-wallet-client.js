@@ -26672,10 +26672,18 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
 
   /**
    * Prompts the user to choose a wallet from a wallet chooser UI. The selected wallet is returned as a new Wallet instance.
+   * @param {Object} filter - Allow selection from wallets the match these attributes, default is no filter.
+   * @param {String} picker - The style of UX for selecting a wallet; 'action-sheet' (default).
+   * @param {String} title - The title applied to the 'picker' UI.
    * @return {Wallet} An instance of the chosen Wallet.
+   *
+   * filter = {
+   *   currencies: [<String>] - An array of currency codes; e.g., ['BTC','BCH'].
+   * }
    */
-  Session.prototype.chooseWallet = function(picker, title) {
+  Session.prototype.chooseWallet = function(filter, picker, title) {    
     var self = this;
+    filter = filter || {};
     picker = picker || 'action-sheet';
 
     var request = {
@@ -26685,6 +26693,7 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
         timeout: -1
       },
       data: {
+        filter: filter,
         picker: picker,
         title: (title ? '/' + title : '')
       }
@@ -26751,9 +26760,14 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
 
   /**
    * Returns a collection of all the host app wallets.
+   * @param {Object} filter - Allow selection from wallets the match these attributes; default is no filter.
    * @return {array} A collection of wallets.
+   *
+   * filter = {
+   *   currencies: [<String>] - An array of currency codes; e.g., ['BTC','BCH'].
+   * }
    */
-  Session.prototype.getWallets = function() {
+  Session.prototype.getWallets = function(filter) {
     var self = this;
     var request = {
       method: 'GET',
@@ -26761,7 +26775,9 @@ angular.module('owsWalletPluginClient.api').factory('Session', ['$rootScope', 'l
       opts: {
         timeout: -1
       },
-      data: {}
+      data: {
+        filter: filter
+      }
     };
 
     return new ApiMessage(request).send().then(function(response) {
