@@ -25225,6 +25225,10 @@ angular.module('ngLodash', []).constant('lodash', null).config([
  * var isIPhoneX = owswallet.Plugin.isIPhoneX();
  *
  * var userAgent = owswallet.Plugin.userAgent();
+ *
+ * var safeAreaInsets = owswallet.Plugin.safeAreaInsets(); 
+ * safeAreaInsets.top - top of view safe area
+ * safeAreaInsets.bottom - bottom of view safe area
  */
 
 var owswallet = {};
@@ -25372,6 +25376,10 @@ var owswallet = {};
 
     userAgent: function() {
       return platform.userAgent;
+    },
+
+    safeAreaInsets: function() {
+      return platform.ui.safeAreaInsets;
     },
 
     setSession: function(sessionObj) {
@@ -28740,8 +28748,10 @@ angular.module('owsWalletPluginClient.impl.services').factory('stringUtils', ['o
   //   input: unaltered value of 'num'
   //   entered: value of 'num' with fractional part clamped by decimals
   //   entered_u: clamped value of 'num' with units
+  //   entered_u_p: clamped value of 'num' with units as separate parts
   //   localized: localized number, no units
   //   localized_u: localized number with units
+  //   localized_u_p: localized number with units as separate parts
   // }
   root.format = function(num, currency, opts) {
     var decimals = Constants.currencyMap(currency, 'decimals') || opts.decimals;

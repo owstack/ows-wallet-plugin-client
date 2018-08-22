@@ -37,7 +37,22 @@ module.exports = function(grunt) {
           expand: true,
           flatten: true,
           src: ['src/applet/sass/main.scss'],
-          dest: 'build/applet/css/',
+          dest: 'build/applet/css/minimal/',
+          ext: '.css'
+        }]
+      },
+      dist_bundle: {
+        options: {
+          style: 'compact',
+          sourcemap: 'none'
+        },
+        files: [{
+          expand: true,
+          flatten: true,
+          src: [
+            'src/applet/sass/main-bundle.scss',
+            ],
+          dest: 'build/applet/css/bundle/',
           ext: '.css'
         }]
       }
@@ -77,9 +92,15 @@ module.exports = function(grunt) {
       },
       css_applet: {
         src: [
-          'build/applet/css/**/*.css'
+          'build/applet/css/minimal/**/*.css'
         ],
         dest: 'release/ows-wallet-applet.css'
+      },
+      css_applet_bundle: {
+        src: [
+          'build/applet/css/bundle/**/*.css'
+        ],
+        dest: 'release/ows-wallet-applet-bundle.css'
       },
       js_servlet: {
         src: [

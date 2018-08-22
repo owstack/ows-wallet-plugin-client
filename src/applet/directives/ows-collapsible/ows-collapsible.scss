@@ -1,0 +1,51 @@
+#ows-collapsible {
+
+  $v-hovering-box-shadow: 0px 12px 12px 0px rgba(0, 0, 0, 0.3) !default;
+
+  //////////
+  //
+  // Values must match those in OWSCollapsibleCtrl.
+  //
+  $nav-bar-height: 44px;
+  //
+  //////////
+
+  &.view-content {
+    height: 100%;
+    position: relative;
+  }
+
+  ion-content {
+    padding-top: 0;
+    top: 0;
+    bottom: #{$nav-bar-height};
+    bottom: calc(constant(safe-area-inset-bottom) + constant(safe-area-inset-top)) + #{$nav-bar-height};
+    bottom: calc(env(safe-area-inset-bottom) + env(safe-area-inset-top)) + #{$nav-bar-height};
+
+    .scroll {
+      min-height: 300px;
+    }
+  }
+
+  .scrollable-ows-collapsible-content {
+    position: relative;
+  }
+
+  .head-wrapper {
+    position: relative;
+  }
+
+  .head-content {
+    width: 100%;
+
+    &.is-collapsing {
+      box-shadow: $v-hovering-box-shadow;
+    }
+
+    .scalable {
+      transform-origin: left top;
+      -webkit-transform: scale3d(1, 1, 1) translateY(20px);
+      transform: scale3d(1, 1, 1) translateY(20px);
+    }
+  }
+}

@@ -2139,6 +2139,211 @@ angular.module('monospaced.qrcode', [])
 
 'use strict';
 
+angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', function() {
+
+  var collapsible = '\
+		<div class="head-content" ng-style="{\'height\': collapsibleItemHeight}"\
+		  ng-class="{\'collapsible\': headerIsCollapsible, \'is-collapsing\': isCollapsing}">\
+      <div ng-transclude="header"></div>\
+    </div>\
+  ';
+
+  var template = '\
+  <div id="ows-collapsible" class="view-content has-header">\
+    <!-- Header -->\
+    <div class="head-wrapper ng-hide" ng-show="headerIsCollapsible">' +
+      collapsible + '\
+    </div>\
+    <ion-content delegate-handle="owsCollapsibleScroll" on-scroll="getScrollPosition()"\
+      ng-style="{\'margin-top\': contentMargin, \'height\': contentHeight}"\
+      ng-class="{\'collapsible\': headerIsCollapsible}" class="ion-content-ows-collapsible">\
+      <div class="scrollable-ows-collapsible-content" ng-style="{\'transform\': contentTransform, \'padding-bottom\': contentPaddingBottom}">\
+        <!-- -->\
+        <!-- -->\
+        <!-- -->\
+        <!-- Start header duplicate (for Android compatibility) -->\
+        <div class="head-wrapper ng-hide" ng-show="!headerIsCollapsible">' +
+          collapsible + '\
+        </div>\
+        <!-- End header duplicate (for Android compatibility) -->\
+        <!-- -->\
+        <!-- -->\
+        <div ng-transclude="body"></div>\
+      </div>\
+    </ion-content>\
+  </div>\
+	';
+
+  return {
+    restrict: 'E',
+		transclude: {
+      'header': 'owsCollapsibleHeader',
+      'body': 'owsCollapsibleBody'
+    },
+    scope: {
+      maxHeight: '@',
+      minHeight: '@',
+      topStart: '@',
+      topEnd: '@'
+    },
+    controller: 'OWSCollapsibleCtrl',
+    template: template,
+    link: function (scope, element, attrs) {
+      scope.$watch('maxHeight', function(height) {
+        scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
+        scope.contentMargin = scope.headerMaxHeight + 'px';
+        scope.collapsibleItemHeight = scope.headerMaxHeight + 'px';
+      });
+
+      scope.$watch('minHeight', function(height) {
+        scope.headerMinHeight = parseInt(height) || scope.headerMinHeight;
+      });
+
+      scope.$watch('topStart', function(top) {
+        scope.headerTop = parseInt(top) || scope.headerTop;
+      });
+
+      scope.$watch('topEnd', function(top) {
+        scope.headerTopFinal = parseInt(top) || scope.headerTopFinal;
+      });
+    }
+	};
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCtrl', ['$scope', '$window', '$ionicScrollDelegate', '$timeout', function($scope, $window, $ionicScrollDelegate, $timeout) {
+
+  // Defaults for managing collapsible view.
+  var NAV_BAR_HEIGHT = 44; // app nav bar content height
+  var CONTENT_INSET_TOP = owswallet.Plugin.safeAreaInsets().top + NAV_BAR_HEIGHT;
+  var CONTENT_INSET_BOTTOM = owswallet.Plugin.safeAreaInsets().bottom;
+  var HEADER_MAX_HEIGHT = 80; // Maximum total height of header
+  var HEADER_MIN_HEIGHT = 44; // Minimum (collapsed) height of header
+  var HEADER_TOP = 20; // Initial top position of the scaled content inside the header
+  var HEADER_TOP_FINAL = 15; // Final top position of the scaled content inside the header
+  var HEADER_CONTENT_MIN_SCALE = 0.5; // Smallest scaling of fullsize content
+
+  // Set a default values which can be overridden by the directive link.
+  $scope.headerMaxHeight = HEADER_MAX_HEIGHT;
+  $scope.headerMinHeight = HEADER_MIN_HEIGHT;
+  $scope.headerTop = HEADER_TOP;
+  $scope.headerTopFinal = HEADER_TOP_FINAL;
+
+  $scope.contentMargin = $scope.headerMaxHeight + 'px';
+  $scope.collapsibleItemHeight = $scope.headerMaxHeight + 'px';
+
+  // The most padding necessary to allow for header collapse when there is no view content.
+  var paddingMax = $window.screen.height - CONTENT_INSET_TOP - $scope.headerMinHeight;
+
+  var lastScrollPos = undefined;
+
+  $scope.headerIsCollapsible = !owswallet.Plugin.isAndroid();
+
+  $scope.getScrollPosition = function() {
+    var position = $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').getScrollPosition().top;
+    refreshHeader(position);
+    refreshSubscribers();
+  };
+
+  function refreshHeader(scrollPos) {
+    if (!$scope.headerIsCollapsible) {
+      return;
+    }
+
+    if (scrollPos == undefined && lastScrollPos == undefined) {
+      lastScrollPos = 0;
+    }
+
+    if (scrollPos == undefined) {
+      scrollPos = lastScrollPos;
+    }
+    lastScrollPos = scrollPos;
+
+    function outerHeight(el) {
+      var height = el.offsetHeight;
+      var style = getComputedStyle(el);
+
+      height -= parseInt(style.paddingBottom);
+      height += parseInt(style.marginTop) + parseInt(style.marginBottom);
+      return height;
+    };
+
+    // Set collapsed header height.
+    var collapsibleItemHeight = $scope.headerMaxHeight - scrollPos;
+    if (collapsibleItemHeight < $scope.headerMinHeight) {
+      collapsibleItemHeight = $scope.headerMinHeight;
+    }
+    if (collapsibleItemHeight > $scope.headerMaxHeight) {
+      collapsibleItemHeight = $scope.headerMaxHeight;
+    }
+
+    // Calculate percentage collapsed.
+    $scope.collapsibleItemPercent = (collapsibleItemHeight - $scope.headerMinHeight) / ($scope.headerMaxHeight - $scope.headerMinHeight);
+
+    // Set the scaled size of the header content based on current scale.
+    var collapsibleItemContentScale = HEADER_CONTENT_MIN_SCALE + ($scope.collapsibleItemPercent * (1 - HEADER_CONTENT_MIN_SCALE));
+
+    // Set the top of the view content below the header.
+    var contentMargin = collapsibleItemHeight;
+
+    // Set the top position for the header.
+    var headerTop = $scope.headerTopFinal - ($scope.collapsibleItemPercent * ($scope.headerTopFinal - $scope.headerTop));
+
+    // Vary opacity for elements displayed when header is collapsed.
+    $scope.elementOpacity = $scope.collapsibleItemPercent;
+    $scope.elementOpacityInverse = 1 - $scope.elementOpacity;
+
+    // Compute the amount of bottom padding needed to allow content that does not fill the view to collapse the header.
+    var contentPaddingBottom = paddingMax - outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]);
+    if (contentPaddingBottom < 0) {
+      contentPaddingBottom = 0;
+    }
+
+    // Apply results to view.
+    $window.requestAnimationFrame(function() {
+      $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
+      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin + 'px';
+
+      // Apply bottom margin to the scroll container to prevent the scroll container from moving down on resize events (margin takes up the space).
+      // Only apply if the content is larger than the visible space.
+      if (outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]) >= parseInt($scope.contentHeight)) {
+        document.querySelector('.ion-content-ows-collapsible .scroll').style.marginBottom = $scope.headerMaxHeight + 'px';
+      }
+  
+      $scope.contentMargin = contentMargin + 'px';
+      $scope.contentTransform = 'translateY(' + ($scope.headerMaxHeight - collapsibleItemHeight) + 'px)';
+      $scope.collapsibleItemScale = 'scale3d(' + collapsibleItemContentScale + ',' + collapsibleItemContentScale + ',' + collapsibleItemContentScale + ') translateY(' + headerTop + 'px)';
+      $scope.isCollapsing = collapsibleItemHeight < $scope.headerMaxHeight;
+      $scope.contentPaddingBottom = contentPaddingBottom + 'px';
+      $scope.$digest();
+    });
+  };
+
+  function refreshSubscribers() {
+    // Apply scale to subscribers.
+    var scalable = document.querySelectorAll('[ows-collapsible="scale"]');
+    for (var i=0; i < scalable.length; i++) {
+      angular.element(scalable[i]).css('transform', $scope.collapsibleItemScale);
+    }
+
+    // Apply opacity to subscribers.
+    var opacity = document.querySelectorAll('[ows-collapsible="opacity"]');
+    for (var i=0; i < opacity.length; i++) {
+      angular.element(opacity[i]).css('opacity', $scope.elementOpacity);
+    }
+
+    // Apply inverse opacity to subscribers.
+    var opacityInverse = document.querySelectorAll('[ows-collapsible="opacityInverse"]');
+    for (var i=0; i < opacityInverse.length; i++) {
+      angular.element(opacityInverse[i]).css('opacity', $scope.elementOpacityInverse);
+    }
+  };
+
+}]);
+
+'use strict';
+
 angular.module('owsWalletPluginClient.directives').directive('owsKeypad', function() {
 
   var template = '\
@@ -2473,6 +2678,83 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSSessionLogCtr
   function filterLogs(weight) {
     $scope.filteredLogs = historicLogService.get(weight);
   };
+
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('owsTransactions', function() {
+
+  var template = '\
+    <ion-list id="ows-transactions">\
+      <ion-item class="item-divider" ng-class="{\'has-label\': listName}">\
+        {{listName}}\
+      </ion-item>\
+			<ion-item class="item-icon-left icon-left-lg" ng-class="{\'has-click\': onClick, \'has-detail\': tx.subtitle}"\
+				ng-repeat="tx in transactions track by $index" ng-click="{{onClick}}(tx)">\
+			  <!-- Icon (left side) -->\
+			  <i class="icon lg-icon left-icon">\
+		      <div class="tx-icon received" style="{{styleIconReceived}}" ng-if="tx.type == \'received\'"></div>\
+		      <div class="tx-icon sent" style="{{styleIconSent}}" ng-if="tx.type == \'sent\'"></div>\
+			  </i>\
+			  <!-- Amount (right side) -->\
+			  <div class="tx-note">\
+			    <span class="tx-amount" ng-class="{\'recent\': tx.type == \'recent\', \'received\': tx.type == \'received\', \'sent\': tx.type == \'sent\'}">\
+		        {{format(tx.amount, tx.currency).localized_u}}\
+			    </span>\
+			    <div class="tx-time">\
+			      <time ng-if="tx.time && createdWithinPastDay(tx.time * 1000)">\
+			        {{tx.time * 1000 | amTimeAgo}}\
+			      </time>\
+			      <time ng-if="tx.time && !createdWithinPastDay(tx.time * 1000)">\
+			        {{tx.time * 1000 | amDateFormat:\'MMM D, YYYY\'}}\
+			      </time>\
+			    </div>\
+			  </div>\
+			  <!-- Description -->\
+			  <div class="tx-description">\
+		      <span ng-if="tx.title" class="tx-title ellipsis">\
+		        {{tx.title}}\
+		      </span>\
+	        <div ng-if="tx.subtitle" class="tx-subtitle ellipsis">\
+	        	{{tx.subtitle}}\
+	        </div>\
+		      <span ng-if="!tx.title" translate>\
+						<span ng-show="tx.type == \'received\'" translate>Received</span>\
+						<span ng-show="tx.type == \'sent\'" translate>Sent</span>\
+		      </span>\
+			  </div>\
+			</ion-item>\
+    </ion-list>\
+	';
+
+	// Transactions binding must be two-way. see http://davidcai.github.io/blog/posts/directive-at-vs-equal/ and
+	// https://stackoverflow.com/questions/16646607/how-to-use-ng-repeat-within-template-of-a-directive-in-angular-js
+
+  return {
+    restrict: 'E',
+    scope: {
+    	listName: '@',
+    	transactions: '=',
+    	styleIconReceived: '@',
+    	styleIconSent: '@',
+    	onClick: '@'
+    },
+    controller: 'OWSTransactionsCtrl',
+    template: template,
+    link: function (scope, element, attrs) {
+      scope.$watch('transactions', function(value) {
+      	scope.transactions = value;
+      });
+    }
+	};
+});
+
+'use strict';
+
+angular.module('owsWalletPluginClient.controllers').controller('OWSTransactionsCtrl', ['$scope', 'stringUtils', function($scope, stringUtils) {
+
+	$scope.format = stringUtils.format;
 
 }]);
 

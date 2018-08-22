@@ -36,6 +36,10 @@
  * var isIPhoneX = owswallet.Plugin.isIPhoneX();
  *
  * var userAgent = owswallet.Plugin.userAgent();
+ *
+ * var safeAreaInsets = owswallet.Plugin.safeAreaInsets(); 
+ * safeAreaInsets.top - top of view safe area
+ * safeAreaInsets.bottom - bottom of view safe area
  */
 
 var owswallet = {};
@@ -183,6 +187,10 @@ var owswallet = {};
 
     userAgent: function() {
       return platform.userAgent;
+    },
+
+    safeAreaInsets: function() {
+      return platform.ui.safeAreaInsets;
     },
 
     setSession: function(sessionObj) {

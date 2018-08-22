@@ -1,0 +1,60 @@
+#ows-transactions {
+  $v-tx-received-color:      #0EC286 !default;
+  $v-tx-sent-color:          #ff473a !default;
+  $v-tx-title-color:         #ffffff !default;
+  $v-tx-subtitle-color:      rgba(255, 255, 255, 0.5) !default;
+  $v-tx-time-color:          rgba(255, 255, 255, 0.5) !default;
+  $v-item-divider-color:     rgba(255, 255, 255, 0.5) !default;
+
+  .list:first-child {
+    border-top: none;
+  }
+
+  .list .item.item-divider {
+    color: $v-item-divider-color;
+  }
+
+  .tx-description {
+    top: 50%;
+    position: absolute;
+    transform: translateY(-50%);
+
+    .tx-title {
+      color: $v-tx-title-color;
+    }
+
+    .tx-subtitle {
+      color: $v-tx-subtitle-color;
+      font-size: 14px;
+    }
+  }
+
+  .tx-amount {
+    &.recent {
+      font-weight: bold;
+    }
+
+    &.received {
+      color: $v-tx-received-color;
+    }
+
+    &.sent {
+      color: $v-tx-sent-color;
+    }
+  }
+
+  .tx-time {
+    color: $v-tx-time-color;
+  }
+
+  .tx-note {
+    font-size: 14px;
+    line-height: 22px;
+    float: right;
+    right: 16px;
+    text-align: right;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
