@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCtrl', function($scope, $window, $ionicScrollDelegate, $timeout) {
+angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCtrl', function($rootScope, $scope, $window, $ionicScrollDelegate, $timeout) {
 
   // Defaults for managing collapsible view.
   var NAV_BAR_HEIGHT = 44; // app nav bar content height
@@ -11,6 +11,7 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
   var HEADER_TOP = 20; // Initial top position of the scaled content inside the header
   var HEADER_TOP_FINAL = 15; // Final top position of the scaled content inside the header
   var HEADER_CONTENT_MIN_SCALE = 0.5; // Smallest scaling of fullsize content
+  var TAB_BAR_HEIGHT = 49; // Height of a visible tab bar.
 
   // Set a default values which can be overridden by the directive link.
   $scope.headerMaxHeight = HEADER_MAX_HEIGHT;
@@ -91,7 +92,9 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
     // Apply results to view.
     $window.requestAnimationFrame(function() {
       $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
-      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin + 'px';
+
+      var tabBarOffset = ($rootScope.hideTabs == '' ? TAB_BAR_HEIGHT : 0);
+      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin - tabBarOffset + 'px';
 
       // Apply bottom margin to the scroll container to prevent the scroll container from moving down on resize events (margin takes up the space).
       // Only apply if the content is larger than the visible space.

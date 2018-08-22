@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', function() {
+angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', function($rootScope, $timeout) {
 
   var collapsible = '\
 		<div class="head-content" ng-style="{\'height\': collapsibleItemHeight}"\
@@ -50,6 +50,7 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
     controller: 'OWSCollapsibleCtrl',
     template: template,
     link: function (scope, element, attrs) {
+      
       scope.$watch('maxHeight', function(height) {
         scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
         scope.contentMargin = scope.headerMaxHeight + 'px';

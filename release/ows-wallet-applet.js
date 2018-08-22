@@ -2139,7 +2139,23 @@ angular.module('monospaced.qrcode', [])
 
 'use strict';
 
-angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', function() {
+angular.module('owsWalletPluginClient.directives').directive('hideTabs', ['$rootScope', function($rootScope) {
+  return {
+    link: function(scope, elem, attrs, ctrl) {
+      scope.$on("$ionicView.beforeEnter", function(event, data) {
+        if (!attrs.hideTabs || (attrs.hideTabs == 'true')) {
+          $rootScope.hideTabs = 'tabs-item-hide';
+        } else {
+          $rootScope.hideTabs = '';
+        }
+      });
+    }
+  };
+}]);
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', ['$rootScope', '$timeout', function($rootScope, $timeout) {
 
   var collapsible = '\
 		<div class="head-content" ng-style="{\'height\': collapsibleItemHeight}"\
@@ -2189,6 +2205,7 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
     controller: 'OWSCollapsibleCtrl',
     template: template,
     link: function (scope, element, attrs) {
+      
       scope.$watch('maxHeight', function(height) {
         scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
         scope.contentMargin = scope.headerMaxHeight + 'px';
@@ -2208,11 +2225,11 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
       });
     }
 	};
-});
+}]);
 
 'use strict';
 
-angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCtrl', ['$scope', '$window', '$ionicScrollDelegate', '$timeout', function($scope, $window, $ionicScrollDelegate, $timeout) {
+angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCtrl', ['$rootScope', '$scope', '$window', '$ionicScrollDelegate', '$timeout', function($rootScope, $scope, $window, $ionicScrollDelegate, $timeout) {
 
   // Defaults for managing collapsible view.
   var NAV_BAR_HEIGHT = 44; // app nav bar content height
@@ -2223,6 +2240,7 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
   var HEADER_TOP = 20; // Initial top position of the scaled content inside the header
   var HEADER_TOP_FINAL = 15; // Final top position of the scaled content inside the header
   var HEADER_CONTENT_MIN_SCALE = 0.5; // Smallest scaling of fullsize content
+  var TAB_BAR_HEIGHT = 49; // Height of a visible tab bar.
 
   // Set a default values which can be overridden by the directive link.
   $scope.headerMaxHeight = HEADER_MAX_HEIGHT;
@@ -2303,7 +2321,9 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
     // Apply results to view.
     $window.requestAnimationFrame(function() {
       $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
-      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin + 'px';
+
+      var tabBarOffset = ($rootScope.hideTabs == '' ? TAB_BAR_HEIGHT : 0);
+      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin - tabBarOffset + 'px';
 
       // Apply bottom margin to the scroll container to prevent the scroll container from moving down on resize events (margin takes up the space).
       // Only apply if the content is larger than the visible space.
@@ -2938,6 +2958,22 @@ angular.module('owsWalletPluginClient.directives').directive('owsWallets', ['get
 angular.module('owsWalletPluginClient.controllers').controller('OWSWalletsCtrl', function() {
 
 });
+
+'use strict';
+
+angular.module('owsWalletPluginClient.directives').directive('showTabs', ['$rootScope', function($rootScope) {
+  return {
+    link: function(scope, elem, attrs, ctrl) {
+      scope.$on("$ionicView.enter", function(event, data) {
+        if (!attrs.showTabs || (attrs.showTabs == 'true')) {
+          $rootScope.hideTabs = '';
+        } else {
+          $rootScope.hideTabs = 'tabs-item-hide';
+        }
+      });
+    }
+  };
+}]);
 
 'use strict';
 
