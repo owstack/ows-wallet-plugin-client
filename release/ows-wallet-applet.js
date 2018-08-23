@@ -2329,6 +2329,13 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
       // Only apply if the content is larger than the visible space.
       if (outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]) >= parseInt($scope.contentHeight)) {
         document.querySelector('.ion-content-ows-collapsible .scroll').style.marginBottom = $scope.headerMaxHeight + 'px';
+/*
+        $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').freezeScroll(false);
+      } else {
+        $scope.contentHeight = outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]) + 'px';
+        contentPaddingBottom = 0;
+        $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').freezeScroll(true);
+*/
       }
   
       $scope.contentMargin = contentMargin + 'px';
@@ -2337,6 +2344,10 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
       $scope.isCollapsing = collapsibleItemHeight < $scope.headerMaxHeight;
       $scope.contentPaddingBottom = contentPaddingBottom + 'px';
       $scope.$digest();
+
+      $rootScope.$emit('owsCollapsibleChange', {
+        percentage: $scope.collapsibleItemPercent
+      });
     });
   };
 
