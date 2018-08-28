@@ -2171,9 +2171,9 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', [
       collapsible + '\
     </div>\
     <ion-content delegate-handle="owsCollapsibleScroll" on-scroll="getScrollPosition()"\
-      ng-style="{\'margin-top\': contentMargin, \'height\': contentHeight}"\
+      ng-style="{\'margin-top\': contentMargin, \'height\': visibleContentHeight}"\
       ng-class="{\'collapsible\': headerIsCollapsible}" class="ion-content-ows-collapsible">\
-      <div class="scrollable-ows-collapsible-content" ng-style="{\'transform\': contentTransform, \'padding-bottom\': contentPaddingBottom}">\
+      <div class="content-wrapper" ng-style="{\'transform\': contentTransform, \'padding-bottom\': contentPaddingBottom}">\
         <!-- -->\
         <!-- -->\
         <!-- -->\
@@ -2200,11 +2200,18 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', [
       maxHeight: '@',
       minHeight: '@',
       topStart: '@',
-      topEnd: '@'
+      topEnd: '@',
+      model: '='
     },
     controller: 'OWSCollapsibleCtrl',
     template: template,
     link: function (scope, element, attrs) {
+
+      angular.extend(scope.model, {
+        reset: function() {
+          scope.reset();
+        }
+      });
       
       scope.$watch('maxHeight', function(height) {
         scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
@@ -2259,9 +2266,12 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
   $scope.headerIsCollapsible = !owswallet.Plugin.isAndroid();
 
   $scope.getScrollPosition = function() {
-    var position = $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').getScrollPosition().top;
-    refreshHeader(position);
-    refreshSubscribers();
+    var scrollPos = $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').getScrollPosition().top;
+    refreshHeader(scrollPos);
+  };
+
+  $scope.reset = function() {
+    refreshHeader(0);
   };
 
   function refreshHeader(scrollPos) {
@@ -2277,15 +2287,6 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
       scrollPos = lastScrollPos;
     }
     lastScrollPos = scrollPos;
-
-    function outerHeight(el) {
-      var height = el.offsetHeight;
-      var style = getComputedStyle(el);
-
-      height -= parseInt(style.paddingBottom);
-      height += parseInt(style.marginTop) + parseInt(style.marginBottom);
-      return height;
-    };
 
     // Set collapsed header height.
     var collapsibleItemHeight = $scope.headerMaxHeight - scrollPos;
@@ -2310,40 +2311,19 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
 
     // Vary opacity for elements displayed when header is collapsed.
     $scope.elementOpacity = $scope.collapsibleItemPercent;
-    $scope.elementOpacityInverse = 1 - $scope.elementOpacity;
-
-    // Compute the amount of bottom padding needed to allow content that does not fill the view to collapse the header.
-    var contentPaddingBottom = paddingMax - outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]);
-    if (contentPaddingBottom < 0) {
-      contentPaddingBottom = 0;
-    }
 
     // Apply results to view.
     $window.requestAnimationFrame(function() {
-      $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
-
       var tabBarOffset = ($rootScope.hideTabs == '' ? TAB_BAR_HEIGHT : 0);
-      $scope.contentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin - tabBarOffset + 'px';
-
-      // Apply bottom margin to the scroll container to prevent the scroll container from moving down on resize events (margin takes up the space).
-      // Only apply if the content is larger than the visible space.
-      if (outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]) >= parseInt($scope.contentHeight)) {
-        document.querySelector('.ion-content-ows-collapsible .scroll').style.marginBottom = $scope.headerMaxHeight + 'px';
-/*
-        $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').freezeScroll(false);
-      } else {
-        $scope.contentHeight = outerHeight(document.getElementsByClassName('scrollable-ows-collapsible-content')[0]) + 'px';
-        contentPaddingBottom = 0;
-        $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').freezeScroll(true);
-*/
-      }
-  
+      $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
+      $scope.visibleContentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin - tabBarOffset + 'px';
       $scope.contentMargin = contentMargin + 'px';
       $scope.contentTransform = 'translateY(' + ($scope.headerMaxHeight - collapsibleItemHeight) + 'px)';
       $scope.collapsibleItemScale = 'scale3d(' + collapsibleItemContentScale + ',' + collapsibleItemContentScale + ',' + collapsibleItemContentScale + ') translateY(' + headerTop + 'px)';
       $scope.isCollapsing = collapsibleItemHeight < $scope.headerMaxHeight;
-      $scope.contentPaddingBottom = contentPaddingBottom + 'px';
       $scope.$digest();
+
+      refreshModel();
 
       $rootScope.$emit('owsCollapsibleChange', {
         percentage: $scope.collapsibleItemPercent
@@ -2351,23 +2331,13 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
     });
   };
 
-  function refreshSubscribers() {
-    // Apply scale to subscribers.
-    var scalable = document.querySelectorAll('[ows-collapsible="scale"]');
-    for (var i=0; i < scalable.length; i++) {
-      angular.element(scalable[i]).css('transform', $scope.collapsibleItemScale);
-    }
-
-    // Apply opacity to subscribers.
-    var opacity = document.querySelectorAll('[ows-collapsible="opacity"]');
-    for (var i=0; i < opacity.length; i++) {
-      angular.element(opacity[i]).css('opacity', $scope.elementOpacity);
-    }
-
-    // Apply inverse opacity to subscribers.
-    var opacityInverse = document.querySelectorAll('[ows-collapsible="opacityInverse"]');
-    for (var i=0; i < opacityInverse.length; i++) {
-      angular.element(opacityInverse[i]).css('opacity', $scope.elementOpacityInverse);
+  function refreshModel() {
+    if ($scope.model) {
+      $scope.model.percentage = $scope.collapsibleItemPercent;
+      $scope.model.headerHeight = $scope.collapsibleItemHeight;
+      $scope.model.bodyHeight = parseInt($scope.visibleContentHeight);
+      $scope.model.scale = $scope.collapsibleItemScale;
+      $scope.model.opacity = $scope.elementOpacity;
     }
   };
 

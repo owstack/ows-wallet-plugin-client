@@ -16,9 +16,9 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
       collapsible + '\
     </div>\
     <ion-content delegate-handle="owsCollapsibleScroll" on-scroll="getScrollPosition()"\
-      ng-style="{\'margin-top\': contentMargin, \'height\': contentHeight}"\
+      ng-style="{\'margin-top\': contentMargin, \'height\': visibleContentHeight}"\
       ng-class="{\'collapsible\': headerIsCollapsible}" class="ion-content-ows-collapsible">\
-      <div class="scrollable-ows-collapsible-content" ng-style="{\'transform\': contentTransform, \'padding-bottom\': contentPaddingBottom}">\
+      <div class="content-wrapper" ng-style="{\'transform\': contentTransform, \'padding-bottom\': contentPaddingBottom}">\
         <!-- -->\
         <!-- -->\
         <!-- -->\
@@ -45,11 +45,17 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
       maxHeight: '@',
       minHeight: '@',
       topStart: '@',
-      topEnd: '@'
+      topEnd: '@',
+      model: '='
     },
     controller: 'OWSCollapsibleCtrl',
     template: template,
     link: function (scope, element, attrs) {
+      angular.extend(scope.model, {
+        reset: function() {
+          scope.reset();
+        }
+      });
       
       scope.$watch('maxHeight', function(height) {
         scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;

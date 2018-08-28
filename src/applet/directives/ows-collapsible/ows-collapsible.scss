@@ -17,19 +17,17 @@
 
   ion-content {
     padding-top: 0;
+    margin-bottom: 0;
     top: 0;
     bottom: #{$nav-bar-height};
     bottom: calc(constant(safe-area-inset-bottom) + constant(safe-area-inset-top)) + #{$nav-bar-height};
     bottom: calc(env(safe-area-inset-bottom) + env(safe-area-inset-top)) + #{$nav-bar-height};
 
-    .scroll {
-      min-height: 300px;
+    .content-wrapper {
+      position: relative;
     }
   }
 
-  .scrollable-ows-collapsible-content {
-    position: relative;
-  }
 
   .head-wrapper {
     position: relative;
@@ -42,7 +40,8 @@
       box-shadow: $v-hovering-box-shadow;
     }
 
-    .scalable {
+    .balance-wrapper,
+    .error-wrapper {
       transform-origin: left top;
       -webkit-transform: scale3d(1, 1, 1) translateY(20px);
       transform: scale3d(1, 1, 1) translateY(20px);
