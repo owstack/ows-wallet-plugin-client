@@ -2197,38 +2197,47 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', [
       'body': 'owsCollapsibleBody'
     },
     scope: {
+/*
       maxHeight: '@',
       minHeight: '@',
       topStart: '@',
       topEnd: '@',
+*/
       model: '='
     },
     controller: 'OWSCollapsibleCtrl',
     template: template,
     link: function (scope, element, attrs) {
-
       angular.extend(scope.model, {
         reset: function() {
           scope.reset();
         }
       });
+
+      scope.$watch('model.listener', function(listener) {
+        scope.model.listener = listener;
+      });
       
-      scope.$watch('maxHeight', function(height) {
-        scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
+      scope.$watch('model.maxHeight', function(height) {
+        scope.headerMaxHeight = height || scope.headerMaxHeight;
         scope.contentMargin = scope.headerMaxHeight + 'px';
         scope.collapsibleItemHeight = scope.headerMaxHeight + 'px';
       });
 
-      scope.$watch('minHeight', function(height) {
-        scope.headerMinHeight = parseInt(height) || scope.headerMinHeight;
+      scope.$watch('model.minHeight', function(height) {
+        scope.headerMinHeight = height || scope.headerMinHeight;
       });
 
-      scope.$watch('topStart', function(top) {
-        scope.headerTop = parseInt(top) || scope.headerTop;
+      scope.$watch('model.topStart', function(top) {
+        scope.headerTop = top || scope.headerTop;
       });
 
-      scope.$watch('topEnd', function(top) {
-        scope.headerTopFinal = parseInt(top) || scope.headerTopFinal;
+      scope.$watch('model.topEnd', function(top) {
+        scope.headerTopFinal = top || scope.headerTopFinal;
+      });
+
+      scope.$watch('model.animationSpeed', function(speed) {
+        scope.animationSpeed = speed || scope.animationSpeed;
       });
     }
 	};
@@ -2249,6 +2258,8 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
   var HEADER_CONTENT_MIN_SCALE = 0.5; // Smallest scaling of fullsize content
   var TAB_BAR_HEIGHT = 49; // Height of a visible tab bar.
 
+  $scope.headerIsCollapsible = !owswallet.Plugin.isAndroid();
+
   // Set a default values which can be overridden by the directive link.
   $scope.headerMaxHeight = HEADER_MAX_HEIGHT;
   $scope.headerMinHeight = HEADER_MIN_HEIGHT;
@@ -2258,33 +2269,51 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
   $scope.contentMargin = $scope.headerMaxHeight + 'px';
   $scope.collapsibleItemHeight = $scope.headerMaxHeight + 'px';
 
-  // The most padding necessary to allow for header collapse when there is no view content.
-  var paddingMax = $window.screen.height - CONTENT_INSET_TOP - $scope.headerMinHeight;
+  const animationFrameInterval = 16.67; // ms (60hz)
+  $scope.animationSpeed = 200; // ms
 
-  var lastScrollPos = undefined;
-
-  $scope.headerIsCollapsible = !owswallet.Plugin.isAndroid();
+  var headerHeight = $scope.headerMaxHeight - $scope.headerMinHeight;
+  var lastScrollPos = 0;
+  var resetInProgress = false;
 
   $scope.getScrollPosition = function() {
+    if (resetInProgress) {
+      return;
+    }
     var scrollPos = $ionicScrollDelegate.$getByHandle('owsCollapsibleScroll').getScrollPosition().top;
     refreshHeader(scrollPos);
   };
 
   $scope.reset = function() {
-    refreshHeader(0);
+    function doReset() {
+      if (lastScrollPos >= 0) {
+        if (lastScrollPos > headerHeight) {
+          refreshHeader(headerHeight, true);
+        } else {
+          refreshHeader(Math.max(lastScrollPos - animationStep, 0), true);
+        }
+
+        if (lastScrollPos > 0) {
+          window.requestAnimationFrame(doReset);
+        } else {
+          resetInProgress = false;
+        }
+      }
+    };
+
+    resetInProgress = true;
+    var animationStep = headerHeight / ($scope.animationSpeed / animationFrameInterval);
+    window.requestAnimationFrame(doReset);
   };
 
-  function refreshHeader(scrollPos) {
+  function refreshHeader(scrollPos, skipAnimationRequest) {
     if (!$scope.headerIsCollapsible) {
       return;
     }
 
-    if (scrollPos == undefined && lastScrollPos == undefined) {
-      lastScrollPos = 0;
-    }
-
     if (scrollPos == undefined) {
-      scrollPos = lastScrollPos;
+      lastScrollPos = 0;
+      scrollPos = 0;
     }
     lastScrollPos = scrollPos;
 
@@ -2298,23 +2327,30 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
     }
 
     // Calculate percentage collapsed.
-    $scope.collapsibleItemPercent = (collapsibleItemHeight - $scope.headerMinHeight) / ($scope.headerMaxHeight - $scope.headerMinHeight);
+    var collapsibleItemPercent = (collapsibleItemHeight - $scope.headerMinHeight) / ($scope.headerMaxHeight - $scope.headerMinHeight);
 
     // Set the scaled size of the header content based on current scale.
-    var collapsibleItemContentScale = HEADER_CONTENT_MIN_SCALE + ($scope.collapsibleItemPercent * (1 - HEADER_CONTENT_MIN_SCALE));
+    var collapsibleItemContentScale = HEADER_CONTENT_MIN_SCALE + (collapsibleItemPercent * (1 - HEADER_CONTENT_MIN_SCALE));
 
     // Set the top of the view content below the header.
     var contentMargin = collapsibleItemHeight;
 
     // Set the top position for the header.
-    var headerTop = $scope.headerTopFinal - ($scope.collapsibleItemPercent * ($scope.headerTopFinal - $scope.headerTop));
+    var headerTop = $scope.headerTopFinal - (collapsibleItemPercent * ($scope.headerTopFinal - $scope.headerTop));
 
-    // Vary opacity for elements displayed when header is collapsed.
-    $scope.elementOpacity = $scope.collapsibleItemPercent;
+    // Update in case tab bar state has changed.
+    var tabBarOffset = ($rootScope.hideTabs == '' ? TAB_BAR_HEIGHT : 0);
 
     // Apply results to view.
-    $window.requestAnimationFrame(function() {
-      var tabBarOffset = ($rootScope.hideTabs == '' ? TAB_BAR_HEIGHT : 0);
+    if (skipAnimationRequest) {
+      update();
+    } else {
+      $window.requestAnimationFrame(function() {
+        update();
+      });
+    }
+
+    function update() {
       $scope.collapsibleItemHeight = collapsibleItemHeight + 'px';
       $scope.visibleContentHeight = $window.screen.height - CONTENT_INSET_TOP - contentMargin - tabBarOffset + 'px';
       $scope.contentMargin = contentMargin + 'px';
@@ -2323,22 +2359,22 @@ angular.module('owsWalletPluginClient.controllers').controller('OWSCollapsibleCt
       $scope.isCollapsing = collapsibleItemHeight < $scope.headerMaxHeight;
       $scope.$digest();
 
-      refreshModel();
+      notifyState();
+    };
 
-      $rootScope.$emit('owsCollapsibleChange', {
-        percentage: $scope.collapsibleItemPercent
-      });
-    });
-  };
+    function notifyState() {
+      if ($scope.model) {
+        $scope.model.percentage = collapsibleItemPercent;
+        $scope.model.headerHeight = collapsibleItemHeight;
+        $scope.model.bodyHeight = parseInt($scope.visibleContentHeight);
+        $scope.model.scale = $scope.collapsibleItemScale;
+        $scope.model.opacity = collapsibleItemPercent;
 
-  function refreshModel() {
-    if ($scope.model) {
-      $scope.model.percentage = $scope.collapsibleItemPercent;
-      $scope.model.headerHeight = $scope.collapsibleItemHeight;
-      $scope.model.bodyHeight = parseInt($scope.visibleContentHeight);
-      $scope.model.scale = $scope.collapsibleItemScale;
-      $scope.model.opacity = $scope.elementOpacity;
-    }
+        if ($scope.model.listener) {
+          $scope.model.listener();
+        }
+      }
+    };
   };
 
 }]);

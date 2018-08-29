@@ -42,10 +42,12 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
       'body': 'owsCollapsibleBody'
     },
     scope: {
+/*
       maxHeight: '@',
       minHeight: '@',
       topStart: '@',
       topEnd: '@',
+*/
       model: '='
     },
     controller: 'OWSCollapsibleCtrl',
@@ -56,23 +58,31 @@ angular.module('owsWalletPluginClient.directives').directive('owsCollapsible', f
           scope.reset();
         }
       });
+
+      scope.$watch('model.listener', function(listener) {
+        scope.model.listener = listener;
+      });
       
-      scope.$watch('maxHeight', function(height) {
-        scope.headerMaxHeight = parseInt(height) || scope.headerMaxHeight;
+      scope.$watch('model.maxHeight', function(height) {
+        scope.headerMaxHeight = height || scope.headerMaxHeight;
         scope.contentMargin = scope.headerMaxHeight + 'px';
         scope.collapsibleItemHeight = scope.headerMaxHeight + 'px';
       });
 
-      scope.$watch('minHeight', function(height) {
-        scope.headerMinHeight = parseInt(height) || scope.headerMinHeight;
+      scope.$watch('model.minHeight', function(height) {
+        scope.headerMinHeight = height || scope.headerMinHeight;
       });
 
-      scope.$watch('topStart', function(top) {
-        scope.headerTop = parseInt(top) || scope.headerTop;
+      scope.$watch('model.topStart', function(top) {
+        scope.headerTop = top || scope.headerTop;
       });
 
-      scope.$watch('topEnd', function(top) {
-        scope.headerTopFinal = parseInt(top) || scope.headerTopFinal;
+      scope.$watch('model.topEnd', function(top) {
+        scope.headerTopFinal = top || scope.headerTopFinal;
+      });
+
+      scope.$watch('model.animationSpeed', function(speed) {
+        scope.animationSpeed = speed || scope.animationSpeed;
       });
     }
 	};
